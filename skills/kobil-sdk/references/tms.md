@@ -1,0 +1,88 @@
+# TMS: transaction confirmation
+
+Status: documentation and reference-code study complete; TMS is not yet implemented
+or runtime-tested in this plugin's fresh app. Activation/login success does not
+verify transaction signing, notification delivery or backend completion.
+
+## Prerequisites and ownership
+
+Use the selected SDK family's transaction contract. This recipe covers AST/Shift;
+SSMS has a separate backend API and must not inherit these REST paths.
+
+- Reuse the registered app/version and an activated recipient. Keep registration
+  user, Keycloak user UUID and SDK device/user identifiers distinct.
+- Verify the signed service map and required transaction certificates/readiness.
+  A login result alone does not prove that transaction signing is ready.
+- Handle incoming events globally, including while another screen is open.
+  Current [KSSIDP initialization documentation](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-kssidp/development/kssidp-initialization/)
+  deprecates shouldKssIdpHandleTms/shouldHandleTms: implement application-owned
+  handling. Older binaries may retain the flag; inspect the actual release.
+- Start with foreground delivery as a separate test from background notification.
+  Push testing additionally requires provider configuration, a device push token
+  registered through SetPushTokenEvent, and the backend's push request settings.
+  See [TMS APIs](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-twv/idp/postman_usage/postman_tms).
+
+## App event sequence
+
+The [transaction guide](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-kssidp/development/transaction/)
+separates notification, presentation and completion:
+
+| Event/stage | App behavior |
+|---|---|
+| TriggerBannerEvent | Inspect banner type; transaction and display-message flows differ. |
+| StartTransactionEvent | Begin the selected transaction flow; avoid unrelated SDK operations while it is active. |
+| DisplayConfirmationRequestEvent | Present transactionInformation and its timer; obtain the user's accept/reject decision. |
+| DisplayConfirmationEvent | Submit the decision with transaction information according to the SDK contract. |
+| DisplayConfirmationResultEvent | Inspect status/errors; do not assume final backend acceptance. |
+| TransactionEndEvent | Handle completion, rejection, timeout, server cancellation and transport failures; clear stale UI. |
+
+For display messages, follow StartDisplayMessageEvent/DisplayMessageEvent instead
+of treating the message as a transaction approval. Handle any required
+TransactionPinRequiredRequestEvent and its release-specific response. Explicit
+or fresh authentication depends on backend policy and SDK mode; do not fabricate
+PIN events or assume a plain confirmation proves re-authentication.
+
+Kotlin reference code uses the event names above. Swift documentation uses KSM
+names and includes KSMTransactionFinishedEvent; Flutter examples use T-suffixed
+bindings. Inspect supplied APIs before adapting names or interpreting completion
+status. Validate Android, iOS, Windows and macOS separately for Flutter.
+
+## Backend contract
+
+The [AST test guide](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-kssidp/testing/tms/test_tms/)
+uses POST /v1/tenants/{tenant}/tms with the recipient's internal Keycloak UUID,
+not their username. The request includes tmsData, retrievalTimeout, tmsTimeout,
+requireExplicitAuthentication and requireFreshnessOfAuthentication. Resolve
+units and policy semantics from the deployed API; do not copy sample timeout
+numbers without checking them. Backend authorization remains server-side.
+
+Retain the returned transaction ID. Read status and final result independently;
+result may not be available while pending. Acceptance, rejection and expiry must
+be checked against the final server response, not inferred from an HTTP200,
+notification, button tap or local success banner. Cancellation and display-message
+operations are separate capabilities.
+
+Existing support tooling has trigger/status/result/cancel/display-message
+operations. The standalone customer MCP currently has none of these: discover
+an available authorized backend adapter or implement it explicitly. Do not claim
+that module selection supplies those tools. Do not copy internal connection
+profiles, credentials or environment-specific defaults into this repository.
+
+## Verification plan
+
+Use clearly labelled synthetic test content and one pending transaction at a
+time for the first implementation. Record the transaction ID, redacted recipient
+reference, app/SDK versions, timestamps, SDK events and backend final result.
+Keep payloads and authentication input out of routine shared logs.
+
+Verify separately: accept, reject, user timeout, server cancellation, interrupted
+connectivity, required re-authentication, display message, and background push.
+Do not automatically approve real transactions; synthetic automated confirmation
+requires the user's test scope. Handle duplicate notifications without duplicate
+submission and reject clicks after timeout/cancellation.
+
+On failure, capture Warning/RuntimeError/FatalError fields and the specific
+transaction result/status. Compare the last completed SDK stage with backend
+state before retrying. Ask the user when the next correction is unclear. After
+each passed scenario, add a version/platform-scoped skill checkpoint; until then,
+keep this recipe marked studied, not verified.

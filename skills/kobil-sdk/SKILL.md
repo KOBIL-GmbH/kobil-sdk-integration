@@ -27,6 +27,12 @@ SDK/wrapper versions, platform architectures, artifact checksums, identifiers,
 backend prerequisites, chosen modules and verification outcomes in the app's
 integration record. Exclude tokens, passwords, PINs and activation codes.
 
+## Feature recipes
+
+For transaction confirmation or display messages, read [TMS](references/tms.md).
+It separates AST backend operations, SDK event handling, authentication and push
+from end-to-end verification. TMS is studied but not yet runtime-verified here.
+
 ## Modules
 
 Read [modules.md](references/modules.md). Providers are conditional: a customer
