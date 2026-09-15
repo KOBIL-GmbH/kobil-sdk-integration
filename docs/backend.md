@@ -1,0 +1,75 @@
+# AST/Shift backend connection
+
+The MCP supports app creation/reuse, app-version creation/reuse and delivery of a
+backend-issued SDK configuration JWT. No backend is configured by default.
+
+## Runtime setup
+
+Create a JSON file outside this repository. Set `KOBIL_SDK_CONNECTION` to its
+absolute path in your MCP client's process environment. Example (replace all
+values with your own non-production connection):
+
+```json
+{
+  "environment": "development",
+  "tenant": "your-tenant",
+  "ast_url": "https://backend.example",
+  "oauth": {
+    "token_url": "https://identity.example/realms/your-realm/protocol/openid-connect/token",
+    "client_id": "your-service-client",
+    "client_secret_env": "KOBIL_SDK_CLIENT_SECRET"
+  }
+}
+```
+
+Have your secret manager supply `KOBIL_SDK_CLIENT_SECRET` to the server process.
+Do not paste secrets into chat, tool arguments, profiles or committed files.
+Alternatively replace `oauth` with `"token_env": "KOBIL_SDK_ACCESS_TOKEN"` and
+supply that environment variable through your runtime. Configure exactly one
+method. Token renewal for this second method is the runtime's responsibility.
+
+Use the actual OAuth token endpoint from your deployment, including any required
+path prefix. The service client needs permission for the selected AST tenant and
+operations. HTTPS verification is mandatory; redirects and environment proxy
+settings are disabled. This release uses the standard public certificate trust
+store. Private CA/proxy deployments need an explicit future connection extension.
+
+## Operations
+
+1. `sdk_backend_status()` checks configuration locally. It does not test credentials.
+2. `sdk_app_ensure(expected_environment, app_name, categories)` reads the named
+   app and creates it only after an app-endpoint 404. Authentication failures
+   never imply the app is absent. Existing settings are not changed or certified.
+3. `sdk_app_version_ensure(expected_environment, app_name, platform, version,
+   register_user_id, check_integrity)` reads all version pages before reuse or
+   creation. Version must be `major.minor.patch`; supply the exact platform name
+   supported by your backend. Registration user and integrity policy are explicit.
+   Locked/conflicting versions fail without changes. Policy-ID registration is
+   not yet exposed.
+4. `sdk_config_write(expected_environment, certificate_paths, output_path)` sends
+   public TLS certificates to `/v1/tenants/{tenant}/sdkconfig` and writes its
+   `sdkConfig` JWT into a new file. Supply trusted PEM/DER certificates separately,
+   one per file. Existing files and symlinks are refused. Output contains only a
+   path, SHA-256 and `signature_verified: false`; the SDK must verify the signature.
+   Use a private directory. POSIX files use mode 0600; Windows access protection
+   depends on the directory's ACLs. The parent directory must already exist.
+
+Mutating tools must be invoked for an explicitly requested backend setup.
+Selecting a planner module does not invoke these tools. There is no retry of
+writes: a timeout can mean the server committed the operation. Inspect backend
+state before retrying. Concurrent external administrators can race with checks;
+server conflicts are surfaced without overwrite or automatic retry. Version
+pagination stops at 100 pages and refuses incomplete or changing listings.
+
+## Contract and verification boundaries
+
+The adapter uses AST app/version and certificate-authority REST contracts. Unit
+and HTTP mock tests cover request shapes, OAuth, resource reuse, pagination,
+conflicts, environment checks, redirects, error redaction and JWT file handling.
+MCP stdio checks cover discovery and execution. Customer deployment permissions,
+API-version compatibility, live issuance and SDK consumption require live tests.
+
+This is backend setup tooling. It does not activate a device or implement the
+SDK login UI, IDP authentication flow, complete SDK feature recipes, SSMS,
+provider installation, distribution or native app builds. These remain separate
+modules and integration work, tracked explicitly by the skill and planner.

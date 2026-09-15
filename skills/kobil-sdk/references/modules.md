@@ -1,7 +1,8 @@
 # Customer modules
 
 The declarative catalog ships in the Python package as modules.json. All listed
-provider/backend adapters currently have status adapter_pending; dependency
+optional provider and SSMS adapters have status adapter_pending; the AST backend
+has implemented tools awaiting live verification. Dependency
 planning is implemented, provider execution and automatic installation are not.
 No external skill package or customer connection is silently installed.
 
@@ -31,3 +32,9 @@ appropriate user scope. Do not embed customer examples or internal endpoints.
 The initial Updraft/TestFlight contracts cover Android/iOS respectively. Desktop
 provider coverage and broader service support require implementation and tests.
 A missing distribution adapter must not prevent unrelated SDK build work.
+
+## AST implementation status
+The bundled AST module now implements app/version ensure and signed configuration
+file delivery. See [backend setup](../../../docs/backend.md). Live verification
+and user activation/login flow tooling remain pending. Other provider modules
+remain contracts until their implementations are installed and configured.

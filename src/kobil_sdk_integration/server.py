@@ -1,4 +1,4 @@
-"""Local stdio MCP. No backend credentials or remote provider actions."""
+"""Stdio MCP with local inspection and explicitly configured AST operations."""
 import hashlib
 import os
 from pathlib import Path
@@ -24,7 +24,7 @@ def sdk_plan(profile: dict, capabilities: list[str] | None = None) -> dict:
 
     Profile fields: framework, targets, backend, artifact_source; optional provider
     lists: distribution, observability, diagnostics, testing, infrastructure,
-    documentation, issue_tracking. No credentials. Required adapters are pending.
+    documentation, issue_tracking. No credentials. Adapter readiness is reported per module.
     """
     return plan(profile, capabilities if capabilities is not None else [])
 
@@ -61,3 +61,63 @@ def sdk_artifact_info(path: str) -> dict:
 
 def main():
     mcp.run()
+
+
+@mcp.tool()
+def sdk_backend_status() -> dict:
+    """Validate runtime connection configuration without contacting the backend.
+
+    KOBIL_SDK_CONNECTION points to a local JSON file. Credentials are supplied
+    through named environment variables, never through tool arguments/results.
+    """
+    from .backend import configuration
+    cfg = configuration()
+    return {'environment': cfg['environment'], 'tenant': cfg['tenant'],
+            'configured': True, 'connection_verified': False}
+
+
+def _backend_operation(expected_environment, operation):
+    from .backend import AST, configuration
+    backend = AST(configuration(expected_environment))
+    try:
+        return operation(backend)
+    finally:
+        backend.close()
+
+
+@mcp.tool()
+def sdk_app_ensure(expected_environment: str, app_name: str, categories: list[str]) -> dict:
+    """Reuse an AST app or create it if absent. This writes backend state.
+
+    Existing app settings are never overwritten. Categories must come from the
+    requested SDK feature/backend contract. Concurrent administrators can race;
+    failed writes are not retried automatically.
+    """
+    return _backend_operation(expected_environment, lambda b: b.ensure_app(app_name, categories))
+
+
+@mcp.tool()
+def sdk_app_version_ensure(expected_environment: str, app_name: str, platform: str,
+                           version: str, register_user_id: str, check_integrity: bool) -> dict:
+    """Reuse or register an AST app version. This writes backend state.
+
+    Supply the exact backend platform string and an explicit integrity policy.
+    No defaults disable integrity. Conflicting settings or incomplete listings
+    fail without writes. Select a valid registration user from backend policy.
+    """
+    return _backend_operation(expected_environment, lambda b: b.ensure_version(
+        app_name, platform, version, register_user_id, check_integrity))
+
+
+@mcp.tool()
+def sdk_config_write(expected_environment: str, certificate_paths: list[str], output_path: str) -> dict:
+    """Request backend-signed SDK config and save to a NEW private local JWT file.
+
+    Supply 1–50 trusted public TLS certificates, one PEM/DER certificate per file.
+    Output directory must exist. Returns path/hash, never JWT contents. The SDK
+    must verify the signature. On Windows use a user-private directory with ACLs.
+    This does not supply IDP client settings or activate a device.
+    """
+    from .sdk_config import write_config
+    return _backend_operation(expected_environment, lambda b: write_config(
+        certificate_paths, output_path, lambda body: b.request('POST', '/sdkconfig', body)))
