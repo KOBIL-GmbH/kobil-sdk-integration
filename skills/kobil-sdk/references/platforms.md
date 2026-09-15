@@ -9,8 +9,6 @@ selected SDK release's actual APIs and platform prerequisites before coding.
 | Swift / iOS | Bundle ID, SDK frameworks, Xcode target resources, delegates, signing and entitlements |
 | Flutter / Android | Dart wrapper plus compatible Android native artifacts, runner and device lifecycle |
 | Flutter / iOS | Dart wrapper plus compatible iOS native artifacts, resources, runner and signing |
-| Flutter / Windows | Dart/native SDK tuple, DLL loading, CMake/MSVC requirements, packaging and Windows runtime |
-| Flutter / macOS | Dart/native SDK tuple, dylib/framework bundling, signing/entitlements and macOS runtime |
 
 For Flutter, native SDK support does not guarantee a Dart binding. Verify exported
 wrapper APIs and event types rather than translating Kotlin/Swift names into
@@ -27,9 +25,9 @@ processing depend on the SDK family; do not mix contracts between SDKs.
 
 Acceptance: successful initialization, first activation, backend/device state,
 login after restart, errors, cancellation and interrupted connectivity. Test
-fresh and existing apps separately. Flutter requires Android, iOS, Windows and
-macOS evidence; a successful macOS build does not verify Windows. Missing test
-hosts and unavailable SDK artifacts remain explicit blockers.
+fresh and existing apps separately. Flutter requires separate Android and iOS evidence. Desktop app targets are
+excluded from the external-customer scope. Missing test hosts and unavailable
+SDK artifacts for the in-scope targets remain explicit blockers.
 
 ## Verified Android activation and login
 
@@ -99,6 +97,6 @@ preserved. AST notification categories were resolved separately from the sample
 application's category label. Test identity provisioning still used a local
 backend helper; this is not yet fully self-contained MCP onboarding.
 
-Swift/iOS, Flutter Android/iOS/Windows/macOS, existing-app integration, and all
+Swift/iOS, Flutter Android/iOS, existing-app integration, and all
 remaining SDK features require their own evidence. This milestone does not close
 the full-feature scope.
