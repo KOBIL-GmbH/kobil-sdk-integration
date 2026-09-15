@@ -30,3 +30,25 @@ login after restart, errors, cancellation and interrupted connectivity. Test
 fresh and existing apps separately. Flutter requires Android, iOS, Windows and
 macOS evidence; a successful macOS build does not verify Windows. Missing test
 hosts and unavailable SDK artifacts remain explicit blockers.
+
+## Verified Android setup checkpoints
+
+A fresh Kotlin Android debug project using KSSIDP 1.7.0 and separately supplied
+arm64 SDK artifacts was built and launched on an Android API35 emulator. These
+are build/launch findings; activation and return-login require separate evidence.
+
+- Verify `app/src/main/assets` against the built APK's `assets/` entries, including
+  JSON configuration, backend-issued JWT and each referenced public certificate.
+  Compare bytes/checksums, not merely filenames. Certificate references may name
+  subdirectories and must resolve exactly.
+- SDK AAR manifests can conflict on the application label and native preload
+  metadata. Resolve the merge explicitly using the selected SDK bundle's required
+  libraries; do not discard SDK preload metadata just to make the build pass.
+- This bundle required the Material dependency for resources referenced by its
+  AARs. Use the selected release's dependency requirements; successful Kotlin
+  compilation alone does not establish resource/link compatibility.
+- Confirm installation and foreground activity/process after building. These
+  prove launch only; wait for successful SDK StartResult before activation.
+- AST notification categories are a separate contract from a sample application's
+  category label. Use supported backend categories; do not copy the sample label
+  into sdk_app_ensure without checking the backend contract.
