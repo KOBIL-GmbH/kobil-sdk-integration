@@ -86,3 +86,22 @@ transaction result/status. Compare the last completed SDK stage with backend
 state before retrying. Ask the user when the next correction is unclear. After
 each passed scenario, add a version/platform-scoped skill checkpoint; until then,
 keep this recipe marked studied, not verified.
+
+## Patterns learned from existing apps
+
+Read-only Kotlin, Swift and Flutter app implementations confirm a reusable split:
+global SDK listener, transaction state, presentation, decision submission and
+terminal result handling. Keep desktop window activation outside the core flow.
+
+When implementing this split, check these demonstrated pitfalls:
+- Swift completion events expose status; do not construct success unconditionally.
+- Preserve cancellation, rejection and error distinctions instead of collapsing
+  every non-success event into a generic failure.
+- Cancel timers and clear completion callbacks on every terminal path, including
+  early timeout/server-cancel branches. Cancel every stream subscription on disposal
+  and prevent delayed callbacks from writing into closed state objects.
+- Retain the original transaction information for the SDK response separately
+  from formatted presentation. Avoid duplicate submission while a response is pending.
+
+These are code-review findings and implementation requirements, not new runtime
+checkpoints. The reference apps were not modified or exercised by this review.
