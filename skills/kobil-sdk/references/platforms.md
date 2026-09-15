@@ -62,3 +62,18 @@ A backend-issued JWT missing `astUrl` had failed parsing with native error
 801000008; requesting a new signed JWT with `astUrl` fixed startup. Verify the
 actual SDK result and runtime version after provisioning, not just HTTP success
 or JWT file creation. Activation and return-login are separate checkpoints.
+
+A new MCP-issued JWT containing the deployment service map was also packaged and
+verified with successful Start on this same SDK/platform tuple. Check the signed
+request includes the feature endpoints even when SDK startup already succeeds;
+startup alone does not exercise registration/key exchange.
+
+### AST key exchange verified
+
+On the same Android tuple, adding the authorized service map to the backend
+signing request resolved error 800000271. Both KexKeyExchangeInternalResultEvent
+and EstablishKeyExchangeResultEvent returned OK. The subsequent GetAstClientData
+operation encountered a native process crash before its result; registration,
+activation and return-login are therefore still unverified. A native process
+crash may prevent delivery of FatalErrorEvent: retain Android crash evidence
+alongside SDK events and inspect the last completed operation.
