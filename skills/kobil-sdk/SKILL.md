@@ -31,7 +31,8 @@ integration record. Exclude tokens, passwords, PINs and activation codes.
 
 For transaction confirmation or display messages, read [TMS](references/tms.md).
 It separates AST backend operations, SDK event handling, authentication and push
-from end-to-end verification. TMS is studied but not yet runtime-verified here.
+from end-to-end verification. Foreground Android acceptance is being verified; consult its recorded scenario
+checkpoints rather than assuming every TMS/platform combination passed.
 
 ## Modules
 
