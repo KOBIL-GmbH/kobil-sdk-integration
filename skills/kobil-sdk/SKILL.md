@@ -85,6 +85,11 @@ contains the actual cause. Logging only the event class or status is insufficien
   meaning first. A zero result code is not evidence that no diagnostic exists.
   Check the concrete resource/configuration named in the error before guessing
   SDK incompatibility or changing TLS, integrity, signing or hardening settings.
+- For KSSIDP REQUEST_FAILED, capture HTTP status, SDK request status, application
+  error code/subsystem and private error description. HTTP 200 can carry a
+  rejected activation. Read the actual explanation before interpreting numeric
+  codes across layers. Resolve the configured password/PIN policy and hashing
+  contract before generating test input; never weaken policy to pass a test.
 - Correct the identified cause and repeat initialization, activation and login
   after restart. Report each result separately. If fatal events are not received,
   verify listener registration/forwarding before escalating to SDK log decryption.
