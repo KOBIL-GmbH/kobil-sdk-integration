@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "KOBILSDK": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${CLAUDE_PLUGIN_ROOT}",
+        "kobil-sdk-mcp"
+      ]
+    }
+  }
+}
