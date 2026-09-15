@@ -49,7 +49,9 @@ explicit work; do not claim connections that this starter does not implement.
    remain separate work; never claim they ran based on module selection.
 4. Add minimal adapters, SDK initialization, lifecycle/event handling, UI flow,
    errors and cancellation to the customer's app. Read
-   [platforms.md](references/platforms.md) for native/Flutter requirements.
+   [platforms.md](references/platforms.md) for native/Flutter requirements. Install
+   the fatal/error event listener before sending the first Start/initialization
+   request; follow the diagnostic requirements below.
 5. Build and test each requested target. Verify actual feature behavior, restart,
    cancellation/errors and affected existing features. Track recipe-written,
    build-verified and runtime-verified separately. Repeat setup without duplicating
@@ -59,3 +61,28 @@ Extend the feature inventory against public SDK APIs and release documentation.
 For each feature record its platform/version support, dependencies, backend
 operations, recipe and test evidence. Missing implementation is not proof that
 an SDK feature is unsupported. Do not close the full-feature goal after login.
+
+## Fatal errors and startup diagnostics
+
+Treat asynchronous fatal/error events as essential diagnostic output. A failed
+Start/result callback can have errorCode=0 even when a separate FatalErrorEvent
+contains the actual cause. Logging only the event class or status is insufficient.
+
+- Attach the SDK's event/delegate listener as soon as its instance exists, before
+  the first Start request. Verify that wrapper-specific listeners forward fatal
+  events; observe the underlying SDK event stream when needed.
+- Handle FatalErrorEvent explicitly (or the release's equivalent). Capture its
+  numeric error code, subsystem, explanation/message, report/correlation ID and
+  timestamp where exposed. Inspect the selected SDK's real API; field names vary
+  between Kotlin, Swift and Dart wrappers. Do not invent getters.
+- Record the matching request/result status and the event sequence. Preserve the
+  useful error explanation in a restricted local diagnostic file. Redact tokens,
+  PINs, activation codes and personal data before sharing; never dump arbitrary
+  event objects or encrypted/decrypted logs into a public repository.
+- On failure, inspect the fatal-event explanation and documented error-code
+  meaning first. A zero result code is not evidence that no diagnostic exists.
+  Check the concrete resource/configuration named in the error before guessing
+  SDK incompatibility or changing TLS, integrity, signing or hardening settings.
+- Correct the identified cause and repeat initialization, activation and login
+  after restart. Report each result separately. If fatal events are not received,
+  verify listener registration/forwarding before escalating to SDK log decryption.
