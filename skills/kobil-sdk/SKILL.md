@@ -8,8 +8,10 @@ description: Integrate KOBIL SDK features into existing or fresh Kotlin Android,
 Scope: all public SDK features across supported releases and the six
 framework/OS combinations. Activation/login is the first milestone, not the
 product boundary. The MCP supplies planning, artifact inspection and AST app/version/configuration
-tools. Live verification, other backend/provider adapters and complete feature
-recipes remain pending.
+tools. Fresh Kotlin Android activation and returning login have passed on a
+physical device; see [verified workflow](references/platforms.md#verified-android-activation-and-login).
+Other platforms, backend/provider adapters and remaining feature recipes require
+separate implementation and verification.
 
 ## Resolve the customer's request
 
@@ -126,6 +128,14 @@ With MC 188.1.2937039, an empty services map allowed Start but caused error
 astLogin and the other required service endpoints are included before retrying
 registration/activation. Creating backend app/version records does not prove
 that SDK app/device registration has completed.
+
+## Ask when progress stalls
+
+When a failure has no evidence-backed next correction, ask the user promptly
+with the exact event/error, the last successful step and the specific missing
+input or access. Do not keep trying authentication modes, identities or settings
+to find one that works. If a failure may have consumed an activation code or
+changed backend credentials, inspect that state and explain it before continuing.
 
 ## Record each verified step
 
