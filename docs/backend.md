@@ -86,3 +86,9 @@ The MCP refuses an absent/empty map, duplicate names or non-HTTPS URLs. Do not
 assume every service shares the AST gateway. Missing `astLogin`, for example,
 can allow Start to succeed but prevent registration/key exchange and activation.
 App/version records alone do not complete the SDK's app/device registration flow.
+
+Prefer reusing an appropriate existing AST app/version with its existing
+registration user. Creating a fresh client application does not require a new
+AST app record. For new provisioning, select an existing tenant user explicitly;
+this API records registerUserId on the version. Do not silently replace an
+existing registration user with the device activation identity.
