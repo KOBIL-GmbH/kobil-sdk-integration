@@ -49,7 +49,11 @@ explicit work; do not claim connections that this starter does not implement.
    remain separate work; never claim they ran based on module selection.
 4. Add minimal adapters, SDK initialization, lifecycle/event handling, UI flow,
    errors and cancellation to the customer's app. Read
-   [platforms.md](references/platforms.md) for native/Flutter requirements. Install
+   [platforms.md](references/platforms.md) for native/Flutter requirements.
+   Resolve SDK AuthenticationMode independently of the name of the input field:
+   a backend password/PIN does not imply SDK PIN mode. In the inspected native
+   implementation, PIN mode requires jwtSignKeySecurityPolicy; preserve the
+   selected deployment contract instead of inventing that policy. Install
    the fatal/error event listener before sending the first Start/initialization
    request; follow the diagnostic requirements below.
 5. Build and test each requested target. Verify actual feature behavior, restart,
