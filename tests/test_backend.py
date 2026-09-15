@@ -147,12 +147,28 @@ class BackendTests(unittest.TestCase):
                  patch('kobil_sdk_integration.backend.AST') as factory, \
                  patch('kobil_sdk_integration.sdk_config.certificate_bundle', return_value=['public-cert']):
                 backend = factory.return_value
-                backend.cfg = CFG
+                backend.cfg = CFG | {'services': [{'name': 'astLogin', 'url': 'https://backend.example'}]}
                 backend.request.return_value = {'sdkConfig': 'header.payload.signature'}
                 sdk_config_write('test', ['cert.pem'], str(Path(directory) / 'sdk.jwt'))
                 backend.request.assert_called_once_with('POST', '/sdkconfig', {
-                    'tlsBundle': ['public-cert'], 'astUrl': 'https://backend.example'})
+                    'tlsBundle': ['public-cert'], 'astUrl': 'https://backend.example',
+                    'services': [{'name': 'astLogin', 'url': 'https://backend.example'}]})
                 backend.close.assert_called_once()
+
+    def test_config_tool_refuses_missing_or_invalid_services(self):
+        from kobil_sdk_integration.server import sdk_config_write
+        with tempfile.TemporaryDirectory() as directory:
+            connection = Path(directory) / 'connection.json'
+            connection.write_text(json.dumps(CFG))
+            for services in [None, [], [{'name': 'astLogin', 'url': 'http://backend.example'}],
+                             [{'name': 'astLogin', 'url': 'https://backend.example'}] * 2]:
+                with patch.dict(os.environ, {'KOBIL_SDK_CONNECTION': str(connection)}), patch('kobil_sdk_integration.backend.AST') as factory:
+                    backend = factory.return_value
+                    backend.cfg = CFG | {'services': services}
+                    with self.assertRaises(ValueError):
+                        sdk_config_write('test', ['missing.pem'], str(Path(directory) / 'sdk.jwt'))
+                    backend.request.assert_not_called()
+                    self.assertFalse((Path(directory) / 'sdk.jwt').exists())
 
     def test_missing_secret_fails_before_network(self):
         backend = self.client(lambda req: self.fail('Unexpected network request'))

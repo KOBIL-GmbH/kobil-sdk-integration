@@ -100,10 +100,16 @@ a competing retry loop. Clear readiness during restart, then route by the new
 SDK state. StartLoginEvent is for previously activated users after start/restart;
 do not wait for it on first activation or immediately after Shift Lite activation.
 
-For signed AST configuration, include astUrl in the backend signing request:
+For signed AST configuration, include astUrl and the deployment-specific services
+map in the backend signing request:
 the SDK requires the gateway in the signed payload even if the backend accepts
 its omission. A successfully issued JWT is not proof of SDK compatibility.
 Never patch a signed JWT locally; request a corrected one from the backend.
+With MC 188.1.2937039, an empty services map allowed Start but caused error
+800000271 (REST module is not initialised) during GetAstClientData. Check that
+astLogin and the other required service endpoints are included before retrying
+registration/activation. Creating backend app/version records does not prove
+that SDK app/device registration has completed.
 
 ## Record each verified step
 
