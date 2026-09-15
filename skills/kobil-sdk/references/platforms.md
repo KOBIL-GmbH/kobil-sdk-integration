@@ -52,3 +52,13 @@ are build/launch findings; activation and return-login require separate evidence
 - AST notification categories are a separate contract from a sample application's
   category label. Use supported backend categories; do not copy the sample label
   into sdk_app_ensure without checking the backend contract.
+
+### SDK initialization verified
+
+MC SDK 188.1.2937039 with KSSIDP 1.7.0 reached `StartResultEvent` status `OK`,
+state `ACTIVATION_REQUIRED`, zero activated users, followed by
+`StartActivationUserIdAndCodeOnlyEvent` on the API35 arm64 debug emulator.
+A backend-issued JWT missing `astUrl` had failed parsing with native error
+801000008; requesting a new signed JWT with `astUrl` fixed startup. Verify the
+actual SDK result and runtime version after provisioning, not just HTTP success
+or JWT file creation. Activation and return-login are separate checkpoints.
