@@ -1,7 +1,7 @@
 # TMS: transaction confirmation
 
-Status: documentation and reference-code study complete; TMS is not yet implemented
-or runtime-tested in this plugin's fresh app. Activation/login success does not
+Status: foreground MCP tools and Android handling are implemented; runtime
+acceptance scenarios are in progress. Activation/login success does not
 verify transaction signing, notification delivery or backend completion.
 
 ## Prerequisites and ownership
@@ -62,11 +62,11 @@ be checked against the final server response, not inferred from an HTTP200,
 notification, button tap or local success banner. Cancellation and display-message
 operations are separate capabilities.
 
-Existing support tooling has trigger/status/result/cancel/display-message
-operations. The standalone customer MCP currently has none of these: discover
-an available authorized backend adapter or implement it explicitly. Do not claim
-that module selection supplies those tools. Do not copy internal connection
-profiles, credentials or environment-specific defaults into this repository.
+The standalone MCP provides sdk_tms_trigger, sdk_tms_status, sdk_tms_result and
+sdk_tms_cancel for foreground plain-text transactions. See [backend contract](../../../docs/backend.md).
+Push and display-message backend adapters remain separate work. Results omit
+payloads and signatures; final status checks do not cryptographically verify a
+signature. Never copy internal connection profiles or environment defaults here.
 
 ## Verification plan
 
@@ -105,3 +105,13 @@ When implementing this split, check these demonstrated pitfalls:
 
 These are code-review findings and implementation requirements, not new runtime
 checkpoints. The reference apps were not modified or exercised by this review.
+
+## Verified foreground Android checkpoints
+
+On Pixel 8/API36 arm64 with KSSIDP1.7.0 / MC188.1.2937039, a synthetic
+foreground transaction triggered through sdk_tms_trigger was received, presented
+and accepted once. DisplayConfirmationResult and TransactionEnd returned OK;
+sdk_tms_result independently reported ACCEPTED. SDK transactionInformation
+contained a JSON envelope: parse text for presentation/automation matching but
+return the unchanged original information in the confirmation. Other scenarios
+remain pending until recorded below.

@@ -92,3 +92,19 @@ registration user. Creating a fresh client application does not require a new
 AST app record. For new provisioning, select an existing tenant user explicitly;
 this API records registerUserId on the version. Do not silently replace an
 existing registration user with the device activation identity.
+
+## Foreground TMS transactions
+
+- `sdk_tms_trigger` creates one authorized transaction for a Keycloak recipient
+  UUID with explicit retrieval/confirmation timeouts in seconds and explicit
+  authentication/freshness settings. This first adapter skips push and accepts
+  plain text; it does not support arbitrary structured payloads or display messages.
+- `sdk_tms_status` reads progress; `sdk_tms_result` reads final result metadata.
+  Returned data excludes transaction payloads, recipient identities and signatures.
+  No-result/404 is ambiguous (pending, unknown or expired); it is never success.
+- `sdk_tms_cancel` requests cancellation; query the final result separately.
+
+These tools do not confirm transactions on the device or cryptographically verify
+server signatures. Do not retry an uncertain creation automatically. Use only
+authorized recipients/content and preserve the returned transaction ID. Push,
+explicit re-authentication and platform behavior require separate runtime tests.

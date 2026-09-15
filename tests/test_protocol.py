@@ -25,7 +25,7 @@ class ProtocolTests(unittest.TestCase):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 7)
+                        self.assertEqual(len(names), 11)
                         result = await session.call_tool('sdk_backend_status', {})
                         self.assertFalse(result.isError)
                         self.assertNotIn('protocol-fixture', str(result))

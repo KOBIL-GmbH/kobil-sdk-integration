@@ -136,3 +136,40 @@ def sdk_config_write(expected_environment: str, certificate_paths: list[str], ou
         return write_config(certificate_paths, output_path, lambda body: backend.request(
             'POST', '/sdkconfig', {**body, 'astUrl': backend.cfg['ast_url'], 'services': services}))
     return _backend_operation(expected_environment, deliver)
+
+
+@mcp.tool()
+def sdk_tms_trigger(expected_environment: str, user_uuid: str, text: str,
+                    retrieval_timeout_seconds: int, confirmation_timeout_seconds: int,
+                    require_explicit_authentication: bool, freshness_seconds: int) -> dict:
+    """Create an authorized AST transaction, foreground only (push skipped).
+
+    Writes backend state; do not retry an uncertain creation. Use a Keycloak
+    recipient UUID, explicit timeouts/auth policy, and authorized content.
+    Returns ID/status only; does not approve the transaction or verify signing.
+    """
+    from .tms import trigger
+    return _backend_operation(expected_environment, lambda b: trigger(
+        b, user_uuid, text, retrieval_timeout_seconds, confirmation_timeout_seconds,
+        require_explicit_authentication, freshness_seconds))
+
+
+@mcp.tool()
+def sdk_tms_status(expected_environment: str, transaction_id: str) -> dict:
+    """Read AST transaction status; excludes payload, identities and signatures."""
+    from .tms import read
+    return _backend_operation(expected_environment, lambda b: read(b, transaction_id))
+
+
+@mcp.tool()
+def sdk_tms_result(expected_environment: str, transaction_id: str) -> dict:
+    """Read final AST result metadata; a missing result is not success."""
+    from .tms import read
+    return _backend_operation(expected_environment, lambda b: read(b, transaction_id, result=True))
+
+
+@mcp.tool()
+def sdk_tms_cancel(expected_environment: str, transaction_id: str) -> dict:
+    """Request cancellation of the specified authorized transaction; verify result separately."""
+    from .tms import cancel
+    return _backend_operation(expected_environment, lambda b: cancel(b, transaction_id))

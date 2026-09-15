@@ -51,6 +51,9 @@ Tools:
 | sdk_app_ensure | Reuse or create a configured tenant's AST app |
 | sdk_app_version_ensure | Reuse or create an AST app version with explicit registration/integrity settings |
 | sdk_config_write | Request signed SDK configuration and write a new private JWT file |
+| sdk_tms_trigger | Create an authorized foreground transaction with explicit policy |
+| sdk_tms_status / sdk_tms_result | Read redacted progress and final-result metadata |
+| sdk_tms_cancel | Request cancellation; final result checked separately |
 
 Example `sdk_plan` arguments:
 
