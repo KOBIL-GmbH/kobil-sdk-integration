@@ -1,7 +1,7 @@
 # TMS: transaction confirmation
 
-Status: foreground MCP tools and Android handling are implemented; runtime
-acceptance scenarios are in progress. Activation/login success does not
+Status: foreground MCP tools and Android handling are implemented. Accept,
+reject, timeout and server cancellation passed on the Android tuple below. Activation/login success does not
 verify transaction signing, notification delivery or backend completion.
 
 ## Prerequisites and ownership
@@ -113,5 +113,24 @@ foreground transaction triggered through sdk_tms_trigger was received, presented
 and accepted once. DisplayConfirmationResult and TransactionEnd returned OK;
 sdk_tms_result independently reported ACCEPTED. SDK transactionInformation
 contained a JSON envelope: parse text for presentation/automation matching but
-return the unchanged original information in the confirmation. Other scenarios
-remain pending until recorded below.
+return the unchanged original information in the confirmation. Each scenario is verified separately below.
+
+On the same tuple, explicit rejection sent one CANCEL decision; the SDK returned
+USER_CANCEL for confirmation and transaction end, and the backend final result
+was REJECTED. UI/timer state was cleared before the next transaction.
+
+Timeout was also verified: no accept/reject input, one timer-driven TIMEOUT
+response, SDK USER_CONFIRMATION_TIMEOUT and backend TIMEOUT. The confirmation
+timer used the SDK-provided seconds; expired UI was cleared and accepted no click.
+
+Server cancellation was verified after the backend reported DOWNLOADED:
+sdk_tms_cancel returned successful cancellation request, the SDK emitted
+SERVER_CANCEL without a local decision, and sdk_tms_result reported CANCELLED.
+The dialog and timer were cleared. These four tests preserved activation and
+login; the TMS build passed returning login before the transaction series.
+
+Live coverage remains limited to foreground single transactions on this Android
+tuple, without explicit re-authentication. Background push, display messages,
+concurrent transactions, connection interruption, Swift and Flutter targets are
+not verified. The app reports unsupported explicit-authentication requests rather
+than silently bypassing them.
