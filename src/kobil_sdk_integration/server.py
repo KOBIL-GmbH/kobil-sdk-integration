@@ -120,4 +120,4 @@ def sdk_config_write(expected_environment: str, certificate_paths: list[str], ou
     """
     from .sdk_config import write_config
     return _backend_operation(expected_environment, lambda b: write_config(
-        certificate_paths, output_path, lambda body: b.request('POST', '/sdkconfig', body)))
+        certificate_paths, output_path, lambda body: b.request('POST', '/sdkconfig', {**body, 'astUrl': b.cfg['ast_url']})))

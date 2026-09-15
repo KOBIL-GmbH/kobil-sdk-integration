@@ -138,6 +138,22 @@ class BackendTests(unittest.TestCase):
                         sdk_app_ensure('different', 'sample', ['tms'])
                     cls.assert_not_called()
 
+    def test_config_tool_supplies_ast_gateway_to_signer(self):
+        from kobil_sdk_integration.server import sdk_config_write
+        with tempfile.TemporaryDirectory() as directory:
+            connection = Path(directory) / 'connection.json'
+            connection.write_text(json.dumps(CFG))
+            with patch.dict(os.environ, {'KOBIL_SDK_CONNECTION': str(connection)}), \
+                 patch('kobil_sdk_integration.backend.AST') as factory, \
+                 patch('kobil_sdk_integration.sdk_config.certificate_bundle', return_value=['public-cert']):
+                backend = factory.return_value
+                backend.cfg = CFG
+                backend.request.return_value = {'sdkConfig': 'header.payload.signature'}
+                sdk_config_write('test', ['cert.pem'], str(Path(directory) / 'sdk.jwt'))
+                backend.request.assert_called_once_with('POST', '/sdkconfig', {
+                    'tlsBundle': ['public-cert'], 'astUrl': 'https://backend.example'})
+                backend.close.assert_called_once()
+
     def test_missing_secret_fails_before_network(self):
         backend = self.client(lambda req: self.fail('Unexpected network request'))
         with patch.dict(os.environ, {}, clear=True):

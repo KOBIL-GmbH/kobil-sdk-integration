@@ -62,7 +62,7 @@ For each feature record its platform/version support, dependencies, backend
 operations, recipe and test evidence. Missing implementation is not proof that
 an SDK feature is unsupported. Do not close the full-feature goal after login.
 
-## Fatal errors and startup diagnostics
+## Warning, runtime and fatal error diagnostics
 
 Treat asynchronous fatal/error events as essential diagnostic output. A failed
 Start/result callback can have errorCode=0 even when a separate FatalErrorEvent
@@ -71,7 +71,9 @@ contains the actual cause. Logging only the event class or status is insufficien
 - Attach the SDK's event/delegate listener as soon as its instance exists, before
   the first Start request. Verify that wrapper-specific listeners forward fatal
   events; observe the underlying SDK event stream when needed.
-- Handle FatalErrorEvent explicitly (or the release's equivalent). Capture its
+- Handle WarningEvent, RuntimeErrorEvent and FatalErrorEvent explicitly (or the
+  release's equivalents). All three MC-to-UI events carry errorType,
+  errorDescription and errorCode. Capture their
   numeric error code, subsystem, explanation/message, report/correlation ID and
   timestamp where exposed. Inspect the selected SDK's real API; field names vary
   between Kotlin, Swift and Dart wrappers. Do not invent getters.
@@ -86,3 +88,19 @@ contains the actual cause. Logging only the event class or status is insufficien
 - Correct the identified cause and repeat initialization, activation and login
   after restart. Report each result separately. If fatal events are not received,
   verify listener registration/forwarding before escalating to SDK log decryption.
+
+## Start and restart lifecycle
+
+Follow the [Start/Restart documentation](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-idpsdk/development/start#restartevent).
+Gate SDK operations on successful StartResultEvent or RestartResultEvent. A
+global listener must handle unsolicited restart results at any time. Handle
+RuntimeErrorEvent immediately; its explanation precedes the automatic restart.
+Do not wait for the original operation result to discover the failure or start
+a competing retry loop. Clear readiness during restart, then route by the new
+SDK state. StartLoginEvent is for previously activated users after start/restart;
+do not wait for it on first activation or immediately after Shift Lite activation.
+
+For signed AST configuration, include astUrl in the backend signing request:
+the SDK requires the gateway in the signed payload even if the backend accepts
+its omission. A successfully issued JWT is not proof of SDK compatibility.
+Never patch a signed JWT locally; request a corrected one from the backend.
