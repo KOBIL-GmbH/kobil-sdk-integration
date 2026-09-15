@@ -1,0 +1,178 @@
+{
+  "schema_version": 1,
+  "provider_groups": {
+    "distribution": {
+      "capability": "distribution",
+      "per_target": true
+    },
+    "observability": {
+      "capability": "observability",
+      "per_target": false
+    },
+    "diagnostics": {
+      "capability": "diagnostics",
+      "per_target": false
+    },
+    "testing": {
+      "capability": "testing",
+      "per_target": true
+    },
+    "infrastructure": {
+      "capability": "infrastructure",
+      "per_target": false
+    },
+    "issue_tracking": {
+      "capability": "issue-tracking",
+      "per_target": false
+    },
+    "documentation": {
+      "capability": "documentation",
+      "per_target": false
+    }
+  },
+  "modules": [
+    {
+      "id": "ast-shift-backend",
+      "when": {
+        "backend": "ast-shift"
+      },
+      "dependency": "ast-shift-backend",
+      "status": "adapter_pending",
+      "mode": "required"
+    },
+    {
+      "id": "ssms-backend",
+      "when": {
+        "backend": "ssms"
+      },
+      "dependency": "ssms-backend",
+      "status": "adapter_pending",
+      "mode": "required"
+    },
+    {
+      "id": "teamcity-artifacts",
+      "when": {
+        "artifact_source": "teamcity"
+      },
+      "dependency": "teamcity-artifacts",
+      "status": "adapter_pending",
+      "mode": "required"
+    },
+    {
+      "id": "updraft",
+      "when": {
+        "distribution_contains": "updraft"
+      },
+      "dependency": "updraft",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "distribution",
+      "targets": [
+        "android"
+      ]
+    },
+    {
+      "id": "testflight",
+      "when": {
+        "distribution_contains": "testflight"
+      },
+      "dependency": "testflight",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "distribution",
+      "targets": [
+        "ios"
+      ]
+    },
+    {
+      "id": "grafana",
+      "when": {
+        "observability_contains": "grafana"
+      },
+      "dependency": "grafana",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "observability"
+    },
+    {
+      "id": "android-device",
+      "when": {
+        "diagnostics_contains": "android-device"
+      },
+      "dependency": "android-device",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "diagnostics",
+      "targets": [
+        "android"
+      ]
+    },
+    {
+      "id": "ios-device",
+      "when": {
+        "diagnostics_contains": "ios-device"
+      },
+      "dependency": "ios-device",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "diagnostics",
+      "targets": [
+        "ios"
+      ]
+    },
+    {
+      "id": "sdk-log-decryption",
+      "when": {
+        "diagnostics_contains": "sdk-logs"
+      },
+      "dependency": "sdk-log-decryption",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "diagnostics"
+    },
+    {
+      "id": "robot-appium",
+      "when": {
+        "testing_contains": "robot-appium"
+      },
+      "dependency": "robot-appium",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "testing",
+      "targets": [
+        "android",
+        "ios"
+      ]
+    },
+    {
+      "id": "kubernetes",
+      "when": {
+        "infrastructure_contains": "kubernetes"
+      },
+      "dependency": "kubernetes",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "infrastructure"
+    },
+    {
+      "id": "jira",
+      "when": {
+        "issue_tracking_contains": "jira"
+      },
+      "dependency": "jira",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "issue-tracking"
+    },
+    {
+      "id": "confluence",
+      "when": {
+        "documentation_contains": "confluence"
+      },
+      "dependency": "confluence",
+      "status": "adapter_pending",
+      "mode": "offer",
+      "capability": "documentation"
+    }
+  ]
+}

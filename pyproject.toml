@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kobil-sdk-integration"
+version = "0.1.0"
+description = "Modular KOBIL SDK integration planning for native and Flutter apps"
+requires-python = ">=3.11"
+dependencies = ["mcp>=1.0,<2"]
+
+[project.scripts]
+kobil-sdk-mcp = "kobil_sdk_integration.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+kobil_sdk_integration = ["modules.json"]

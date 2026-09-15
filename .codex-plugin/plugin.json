@@ -1,0 +1,22 @@
+{
+  "name": "kobil-sdk-integration",
+  "version": "0.1.0",
+  "description": "Modular KOBIL SDK integration for Kotlin, Swift and Flutter apps",
+  "author": {
+    "name": "KOBIL"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "KOBIL SDK Integration",
+    "shortDescription": "Integrate SDK features with optional customer providers",
+    "longDescription": "Plan SDK integration for Kotlin Android, Swift iOS and Flutter Android, iOS, Windows and macOS. SDK binaries are provided separately.",
+    "developerName": "KOBIL",
+    "category": "Engineering",
+    "capabilities": [
+      "Read"
+    ],
+    "defaultPrompt": "Plan the KOBIL SDK features needed by my app."
+  },
+  "mcpServers": "./.mcp.json",
+  "repository": "https://github.com/KOBIL-GmbH/kobil-sdk-integration"
+}
