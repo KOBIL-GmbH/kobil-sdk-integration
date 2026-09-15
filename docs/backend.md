@@ -47,7 +47,8 @@ store. Private CA/proxy deployments need an explicit future connection extension
    Locked/conflicting versions fail without changes. Policy-ID registration is
    not yet exposed.
 4. `sdk_config_write(expected_environment, certificate_paths, output_path)` sends
-   public TLS certificates to `/v1/tenants/{tenant}/sdkconfig` and writes its
+   public TLS certificates and the configured `astUrl` gateway to
+   `/v1/tenants/{tenant}/sdkconfig` and writes its
    `sdkConfig` JWT into a new file. Supply trusted PEM/DER certificates separately,
    one per file. Existing files and symlinks are refused. Output contains only a
    path, SHA-256 and `signature_verified: false`; the SDK must verify the signature.
