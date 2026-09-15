@@ -14,6 +14,10 @@ values with your own non-production connection):
   "environment": "development",
   "tenant": "your-tenant",
   "ast_url": "https://backend.example",
+  "services": [
+    {"name": "astCa", "url": "https://backend.example"},
+    {"name": "astLogin", "url": "https://backend.example"}
+  ],
   "oauth": {
     "token_url": "https://identity.example/realms/your-realm/protocol/openid-connect/token",
     "client_id": "your-service-client",
@@ -47,7 +51,8 @@ store. Private CA/proxy deployments need an explicit future connection extension
    Locked/conflicting versions fail without changes. Policy-ID registration is
    not yet exposed.
 4. `sdk_config_write(expected_environment, certificate_paths, output_path)` sends
-   public TLS certificates and the configured `astUrl` gateway to
+   public TLS certificates, the configured `astUrl` gateway and explicit SDK
+   `services` endpoint list to
    `/v1/tenants/{tenant}/sdkconfig` and writes its
    `sdkConfig` JWT into a new file. Supply trusted PEM/DER certificates separately,
    one per file. Existing files and symlinks are refused. Output contains only a
@@ -74,3 +79,10 @@ This is backend setup tooling. It does not activate a device or implement the
 SDK login UI, IDP authentication flow, complete SDK feature recipes, SSMS,
 provider installation, distribution or native app builds. These remain separate
 modules and integration work, tracked explicitly by the skill and planner.
+
+The example service list is illustrative. Supply the complete endpoint map for
+selected SDK features and your deployment, using its authorized configuration.
+The MCP refuses an absent/empty map, duplicate names or non-HTTPS URLs. Do not
+assume every service shares the AST gateway. Missing `astLogin`, for example,
+can allow Start to succeed but prevent registration/key exchange and activation.
+App/version records alone do not complete the SDK's app/device registration flow.

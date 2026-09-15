@@ -33,7 +33,7 @@ def configuration(expected_environment=None):
     try:
         path = Path(os.environ['KOBIL_SDK_CONNECTION']).expanduser()
         cfg = json.loads(path.read_text())
-        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth'}:
+        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services'}:
             raise ValueError()
         segment(cfg['environment'])
         segment(cfg['tenant'])

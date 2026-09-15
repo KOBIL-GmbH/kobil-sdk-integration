@@ -119,5 +119,20 @@ def sdk_config_write(expected_environment: str, certificate_paths: list[str], ou
     This does not supply IDP client settings or activate a device.
     """
     from .sdk_config import write_config
-    return _backend_operation(expected_environment, lambda b: write_config(
-        certificate_paths, output_path, lambda body: b.request('POST', '/sdkconfig', {**body, 'astUrl': b.cfg['ast_url']})))
+    from .backend import https_url, segment
+    def deliver(backend):
+        services = backend.cfg.get('services')
+        if not isinstance(services, list) or not 1 <= len(services) <= 50:
+            raise ValueError('Configure the SDK service endpoints before requesting a signed configuration')
+        names = set()
+        for service in services:
+            if not isinstance(service, dict) or set(service) != {'name', 'url'}:
+                raise ValueError('Each SDK service requires a name and HTTPS URL')
+            segment(service['name'])
+            https_url(service['url'])
+            if service['name'] in names:
+                raise ValueError('Duplicate SDK service name')
+            names.add(service['name'])
+        return write_config(certificate_paths, output_path, lambda body: backend.request(
+            'POST', '/sdkconfig', {**body, 'astUrl': backend.cfg['ast_url'], 'services': services}))
+    return _backend_operation(expected_environment, deliver)
