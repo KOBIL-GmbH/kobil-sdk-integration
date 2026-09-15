@@ -45,6 +45,13 @@ explicit work; do not claim connections that this starter does not implement.
    sdk_backend_status, sdk_app_ensure and sdk_app_version_ensure with the exact
    environment and explicit registration user/integrity policy. Request signed
    configuration with sdk_config_write; never invent a JWT or expose it in chat.
+   Prefer reusing an appropriate existing backend app/version and its selected
+   registration user; a fresh client app does not require a new backend app.
+   When creating an app/version, select an existing tenant user explicitly as
+   registration user. The deployment owner may choose any existing user; do not
+   invent a mandatory special registration-account type. For this AST API the
+   registerUserId field is set on the version. Preserve an existing selection
+   and verify readback; never silently replace it with the activation user.
    The registration user must already exist. Other backend/user-flow adapters
    remain separate work; never claim they ran based on module selection.
 4. Add minimal adapters, SDK initialization, lifecycle/event handling, UI flow,
