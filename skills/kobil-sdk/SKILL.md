@@ -104,3 +104,13 @@ For signed AST configuration, include astUrl in the backend signing request:
 the SDK requires the gateway in the signed payload even if the backend accepts
 its omission. A successfully issued JWT is not proof of SDK compatibility.
 Never patch a signed JWT locally; request a corrected one from the backend.
+
+## Record each verified step
+
+After each successful integration step, update the relevant skill/reference with
+what worked, the applicable SDK/platform versions, prerequisites and verification
+method. Do this at the checkpoint, not only at the end of the task. Keep the
+entry reusable and customer-neutral; internal hosts, credentials, test identities,
+JWTs and private logs stay in local evidence. Record build, launch, SDK start,
+activation and return-login separately. Failed or untested steps remain explicitly
+pending; a passed backend request is not a passed SDK integration.
