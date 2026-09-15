@@ -3,7 +3,7 @@
 This repository has one purpose: integrating KOBIL SDK features into customer
 apps through a portable skill, MCP tools and optional provider modules.
 
-- Support Kotlin/Android, Swift/iOS and Flutter/Dart on Android, iOS, Windows and macOS.
+- Support Kotlin/Android, Swift/iOS and Flutter/Dart on Android and iOS. Desktop app targets are outside customer scope.
 - SDK binaries are supplied separately. Do not commit binaries, credentials,
   internal hostnames, customer identities, internal runbooks or private logs.
 - Use customer-configured connections. Optional providers must not become
