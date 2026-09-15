@@ -86,3 +86,15 @@ StartResult returned OK / ACTIVATION_REQUIRED and zero users, followed by
 StartActivationUserIdAndCodeOnlyEvent. Select an explicit adb serial when an
 emulator and physical device are both connected. Activation remains a separate
 check; successful startup does not establish support for the entire OS/SDK tuple.
+
+### Native logging isolation on physical Android
+
+On Pixel 8/API36 with the same SDK tuple and preserved app data, replacing the
+optional Java Log.RegisterCallback sink with native Log.StartEncryption file
+logging avoided the observed GetAstClientData SIGSEGV and reached the HTTP
+activation stage. The exact native/JNI cause is unproven. For this tuple, use
+restricted app-private native log files and retain Warning/RuntimeError/FatalError
+event listeners; these are independent logging paths. The selected implementation
+treats StartEncryption input as a directory and creates ks.log within it. Verify
+that contract for other releases. The HTTP activation request still returned an
+error, so activation and returning login remained pending at this checkpoint.
