@@ -31,101 +31,74 @@ fresh and existing apps separately. Flutter requires Android, iOS, Windows and
 macOS evidence; a successful macOS build does not verify Windows. Missing test
 hosts and unavailable SDK artifacts remain explicit blockers.
 
-## Verified Android setup checkpoints
+## Verified Android activation and login
 
-A fresh Kotlin Android debug project using KSSIDP 1.7.0 and separately supplied
-arm64 SDK artifacts was built and launched on an Android API35 emulator. These
-are build/launch findings; activation and return-login require separate evidence.
+Verified tuple: fresh Kotlin debug app, KSSIDP 1.7.0 / MC 188.1.2937039,
+Pixel 8, Android API36, arm64. Activation and returning login passed. The API35
+arm64 emulator passed startup/key exchange; its complete flow remains unverified.
+This evidence does not establish support for every OS/device/SDK combination.
 
-- Verify `app/src/main/assets` against the built APK's `assets/` entries, including
-  JSON configuration, backend-issued JWT and each referenced public certificate.
-  Compare bytes/checksums, not merely filenames. Certificate references may name
-  subdirectories and must resolve exactly.
-- SDK AAR manifests can conflict on the application label and native preload
-  metadata. Resolve the merge explicitly using the selected SDK bundle's required
-  libraries; do not discard SDK preload metadata just to make the build pass.
-- This bundle required the Material dependency for resources referenced by its
-  AARs. Use the selected release's dependency requirements; successful Kotlin
-  compilation alone does not establish resource/link compatibility.
-- Confirm installation and foreground activity/process after building. These
-  prove launch only; wait for successful SDK StartResult before activation.
-- AST notification categories are a separate contract from a sample application's
-  category label. Use supported backend categories; do not copy the sample label
-  into sdk_app_ensure without checking the backend contract.
+### Reusable workflow
 
-### SDK initialization verified
+1. Prefer an appropriate existing AST app/version and its registration user.
+   A fresh client app can reuse backend registration. For a new backend record,
+   explicitly select an existing tenant user; any existing user may be selected
+   by the deployment owner. This API stores registerUserId on the version.
+   Verify readback and keep the registration and activation-user roles separate.
+2. Request a backend-signed JWT containing astUrl, the deployment service map
+   (including astLogin) and trusted TLS certificates. Never modify a signed JWT.
+   Package it with app_config.json, mc_config.json and every referenced certificate
+   under app/src/main/assets. Compare packaged APK asset bytes, including exact
+   certificate subdirectory paths.
+3. Resolve manifest merges and native preload metadata from the supplied AARs.
+   The tested bundle required the Material resource dependency. Do not drop SDK
+   providers or preload libraries to make a build pass. Pass the required
+   Application context and register SDK error-event listeners before Start.
+4. Resolve authentication mode, backend password policy and hashing contract
+   independently. This selected integration used explicit AuthenticationMode.NO
+   and hashPin=false with a backend password. NO does not remove that password
+   requirement. Do not choose SDK PIN mode because an input field is named PIN:
+   the inspected implementation requires jwtSignKeySecurityPolicy for that mode.
+5. Use restricted native file logging for this tested tuple; retain the separate
+   Warning/RuntimeError/FatalError event listener. The selected StartEncryption
+   implementation accepts a directory and creates ks.log inside it. Confirm
+   useful log records are actually written; file/header creation alone is not
+   sufficient evidence of log capture. Verify the contract for other releases.
+6. Target the intended device explicitly with adb when multiple devices exist.
+   Install and launch, then wait for StartResult OK / ACTIVATION_REQUIRED and
+   StartActivationUserIdAndCodeOnlyEvent before the first activation. Supply a
+   valid activation method and policy-compliant credentials through private input.
+7. Require KSSIDP SUCCESS and SetAuthorisationCodeResultEvent OK for activation.
+   Preserve app data, force-stop/relaunch, and check StartResult OK / LOGIN_REQUIRED
+   with the activated user and StartLoginEvent. Resolve userId and the required
+   AST-user header from the SDK user list; do not substitute the Keycloak UUID.
+   Submit returning login and require its own SUCCESS / OK result.
 
-MC SDK 188.1.2937039 with KSSIDP 1.7.0 reached `StartResultEvent` status `OK`,
-state `ACTIVATION_REQUIRED`, zero activated users, followed by
-`StartActivationUserIdAndCodeOnlyEvent` on the API35 arm64 debug emulator.
-A backend-issued JWT missing `astUrl` had failed parsing with native error
-801000008; requesting a new signed JWT with `astUrl` fixed startup. Verify the
-actual SDK result and runtime version after provisioning, not just HTTP success
-or JWT file creation. Activation and return-login are separate checkpoints.
+### Observed errors and corrections
 
-A new MCP-issued JWT containing the deployment service map was also packaged and
-verified with successful Start on this same SDK/platform tuple. Check the signed
-request includes the feature endpoints even when SDK startup already succeeds;
-startup alone does not exercise registration/key exchange.
+| Evidence | Correction or diagnostic action |
+|---|---|
+| Native startup error 801000008; JWT payload invalid | Include astUrl in the signing request and obtain a newly signed JWT. |
+| 800000271, REST module not initialised; astLogin absent | Include the authorized service map; both key-exchange result events then returned OK. |
+| Native SIGSEGV during GetAstClientData with Java Log.RegisterCallback | Replacing the optional callback with native file logging avoided the crash on Pixel. Exact JNI cause remains unproven; keep error-event listeners. |
+| HTTP200/request SUCCESS but application error580/0017 | Read the explanation: this test password lacked uppercase characters. Respect the realm policy; HTTP success is not activation success. |
+| SetAuthorisationCodeResult NOT_SUPPORTED/code0 | The test incorrectly selected PIN without its signing-key policy. Use the selected deployment's documented authentication mode. |
+| Failed SDK handoff after successful backend enrollment | The activation code may already be consumed and a password created. Inspect partial state; do not blindly replay, reset accounts or keep issuing codes. |
 
-### AST key exchange verified
+A failed result can omit useful numeric information, and a native crash may
+prevent FatalErrorEvent delivery entirely. Preserve restricted SDK and Android
+crash evidence, report the last successful operation, and ask for help when no
+supported correction is clear.
 
-On the same Android tuple, adding the authorized service map to the backend
-signing request resolved error 800000271. Both KexKeyExchangeInternalResultEvent
-and EstablishKeyExchangeResultEvent returned OK. The subsequent GetAstClientData
-operation encountered a native process crash before its result; registration,
-activation and return-login are therefore still unverified. A native process
-crash may prevent delivery of FatalErrorEvent: retain Android crash evidence
-alongside SDK events and inspect the last completed operation.
+### Acceptance evidence and limits
 
-### Physical Android startup verified
+The physical test passed activation (SUCCESS / OK), persisted one user through
+force-stop/relaunch (LOGIN_REQUIRED), and passed returning login (SUCCESS / OK)
+with the same successful identity. App data and backend security settings were
+preserved. AST notification categories were resolved separately from the sample
+application's category label. Test identity provisioning still used a local
+backend helper; this is not yet fully self-contained MCP onboarding.
 
-The same fresh debug APK with KSSIDP 1.7.0 / MC 188.1.2937039 installed on a
-Pixel 8 running Android API36 (arm64), with no prior validation-app installation.
-StartResult returned OK / ACTIVATION_REQUIRED and zero users, followed by
-StartActivationUserIdAndCodeOnlyEvent. Select an explicit adb serial when an
-emulator and physical device are both connected. Activation remains a separate
-check; successful startup does not establish support for the entire OS/SDK tuple.
-
-### Native logging isolation on physical Android
-
-On Pixel 8/API36 with the same SDK tuple and preserved app data, replacing the
-optional Java Log.RegisterCallback sink with native Log.StartEncryption file
-logging avoided the observed GetAstClientData SIGSEGV and reached the HTTP
-activation stage. The exact native/JNI cause is unproven. For this tuple, use
-restricted app-private native log files and retain Warning/RuntimeError/FatalError
-event listeners; these are independent logging paths. The selected implementation
-treats StartEncryption input as a directory and creates ks.log within it. Verify
-that contract for other releases. The HTTP activation request still returned an
-error, so activation and returning login remained pending at this checkpoint.
-
-### Physical Android activation verified
-
-Fresh Kotlin app on Pixel 8/API36 with KSSIDP 1.7.0 / MC 188.1.2937039 completed
-activation: KSSIDP SUCCESS and SetAuthorisationCodeResultEvent OK, errorCode0,
-followed by ChatOfflineInitialisedEvent and Idle. This used native file logging,
-a fresh dedicated identity with a policy-compliant backend password, and explicit
-AuthenticationMode.NO matching the selected reference contract. NO here does
-not remove the backend password requirement. Do not infer SDK PIN mode from a
-field named PIN: that mode requires a signing-key policy in this implementation.
-A prior failed SDK handoff had already consumed the activation code and created
-a backend password; preserve partial state and inspect it before retrying.
-Returning login remains a separate checkpoint.
-
-After force-stop and relaunch without clearing app data, the same Pixel test
-returned StartResult OK / LOGIN_REQUIRED with one user and StartLoginEvent. This
-verifies persistence separately from activation; returning-login success must
-still be checked. Backend readback also confirmed registerUserId was set on the
-AST version to an existing registration user UUID. Resolve that account explicitly
-during provisioning and keep its role separate from the device activation user.
-
-### Returning login verified
-
-On that Pixel 8/API36 test, login after force-stop/relaunch completed with
-KSSIDP SUCCESS and SetAuthorisationCodeResultEvent OK (errorCode0). The same
-activated identity and backend password were used, with userId and the required
-AST-user header resolved from the SDK Start user list. Do not substitute the
-Keycloak UUID for an SDK-provided identifier. App data and backend settings were
-preserved. This completes the fresh Kotlin Android activation/return-login
-checkpoint only; other platforms, existing-app integrations and full SDK feature
-coverage still require their own validation.
+Swift/iOS, Flutter Android/iOS/Windows/macOS, existing-app integration, and all
+remaining SDK features require their own evidence. This milestone does not close
+the full-feature scope.
