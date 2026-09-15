@@ -111,3 +111,21 @@ field named PIN: that mode requires a signing-key policy in this implementation.
 A prior failed SDK handoff had already consumed the activation code and created
 a backend password; preserve partial state and inspect it before retrying.
 Returning login remains a separate checkpoint.
+
+After force-stop and relaunch without clearing app data, the same Pixel test
+returned StartResult OK / LOGIN_REQUIRED with one user and StartLoginEvent. This
+verifies persistence separately from activation; returning-login success must
+still be checked. Backend readback also confirmed registerUserId was set on the
+AST version to an existing registration user UUID. Resolve that account explicitly
+during provisioning and keep its role separate from the device activation user.
+
+### Returning login verified
+
+On that Pixel 8/API36 test, login after force-stop/relaunch completed with
+KSSIDP SUCCESS and SetAuthorisationCodeResultEvent OK (errorCode0). The same
+activated identity and backend password were used, with userId and the required
+AST-user header resolved from the SDK Start user list. Do not substitute the
+Keycloak UUID for an SDK-provided identifier. App data and backend settings were
+preserved. This completes the fresh Kotlin Android activation/return-login
+checkpoint only; other platforms, existing-app integrations and full SDK feature
+coverage still require their own validation.
