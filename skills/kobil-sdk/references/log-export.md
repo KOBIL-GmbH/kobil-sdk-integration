@@ -12,9 +12,14 @@ describes encrypted SDK logging, severity and storage locations. INFO is the
 normal baseline; TRACE is for controlled debugging only, not production, and
 may change timing. Revert temporary verbosity after reproducing an issue.
 
-Status: source-reviewed recipe, not a newly runtime-tested export feature.
-Earlier Android diagnostic collection worked for MC 188.1.2937039; that does
-not verify the share UI, archive completeness or other platform versions.
+Status: Android export button runtime-tested with MC 188.1.2937039 on a
+physical Pixel 8. An app update preserved its data; tapping export produced
+a ZIP with 23 files and opened the Android share chooser. A private local copy
+passed ZIP CRC validation (4,205,396 archive bytes). This proves archive creation
+and chooser launch, not receiver access, current-reproduction coverage or
+decryption. No new authentication operation was needed to export existing logs.
+iOS/Flutter remain source-reviewed only. Receiver opening, cancellation and
+post-share cleanup still require verification.
 
 ## Collection contract
 
