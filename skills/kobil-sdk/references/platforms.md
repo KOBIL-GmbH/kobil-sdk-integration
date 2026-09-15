@@ -77,3 +77,12 @@ operation encountered a native process crash before its result; registration,
 activation and return-login are therefore still unverified. A native process
 crash may prevent delivery of FatalErrorEvent: retain Android crash evidence
 alongside SDK events and inspect the last completed operation.
+
+### Physical Android startup verified
+
+The same fresh debug APK with KSSIDP 1.7.0 / MC 188.1.2937039 installed on a
+Pixel 8 running Android API36 (arm64), with no prior validation-app installation.
+StartResult returned OK / ACTIVATION_REQUIRED and zero users, followed by
+StartActivationUserIdAndCodeOnlyEvent. Select an explicit adb serial when an
+emulator and physical device are both connected. Activation remains a separate
+check; successful startup does not establish support for the entire OS/SDK tuple.
