@@ -134,3 +134,6 @@ tuple, without explicit re-authentication. Background push, display messages,
 concurrent transactions, connection interruption, Swift and Flutter targets are
 not verified. The app reports unsupported explicit-authentication requests rather
 than silently bypassing them.
+
+A subsequent visible demo was manually accepted on the device: no automation
+tapped a decision, and both SDK OK and backend ACCEPTED were observed.
