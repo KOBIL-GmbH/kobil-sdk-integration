@@ -98,3 +98,16 @@ event listeners; these are independent logging paths. The selected implementatio
 treats StartEncryption input as a directory and creates ks.log within it. Verify
 that contract for other releases. The HTTP activation request still returned an
 error, so activation and returning login remained pending at this checkpoint.
+
+### Physical Android activation verified
+
+Fresh Kotlin app on Pixel 8/API36 with KSSIDP 1.7.0 / MC 188.1.2937039 completed
+activation: KSSIDP SUCCESS and SetAuthorisationCodeResultEvent OK, errorCode0,
+followed by ChatOfflineInitialisedEvent and Idle. This used native file logging,
+a fresh dedicated identity with a policy-compliant backend password, and explicit
+AuthenticationMode.NO matching the selected reference contract. NO here does
+not remove the backend password requirement. Do not infer SDK PIN mode from a
+field named PIN: that mode requires a signing-key policy in this implementation.
+A prior failed SDK handoff had already consumed the activation code and created
+a backend password; preserve partial state and inspect it before retrying.
+Returning login remains a separate checkpoint.
