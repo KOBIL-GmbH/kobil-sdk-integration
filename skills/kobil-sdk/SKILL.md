@@ -86,6 +86,10 @@ For each feature record its platform/version support, dependencies, backend
 operations, recipe and test evidence. Missing implementation is not proof that
 an SDK feature is unsupported. Do not close the full-feature goal after login.
 
+For SDK log collection, read [log export](references/log-export.md): locate the
+actual native log directories, create and validate an encrypted ZIP, then share
+through the platform UI. Export and decryption are separate operations.
+
 ## Warning, runtime and fatal error diagnostics
 
 Treat asynchronous fatal/error events as essential diagnostic output. A failed
