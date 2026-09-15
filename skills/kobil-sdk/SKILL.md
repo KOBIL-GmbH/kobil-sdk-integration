@@ -1,17 +1,21 @@
 ---
 name: kobil-sdk
-description: Integrate KOBIL SDK features into existing or fresh Kotlin Android, Swift iOS and Flutter/Dart apps on Android, iOS, Windows and macOS, using separately supplied SDKs and optional customer-selected provider modules.
+description: Integrate KOBIL SDK features into existing or fresh Kotlin Android, Swift iOS and Flutter/Dart apps on Android and iOS, using separately supplied SDKs and optional customer-selected provider modules.
 ---
 
 # KOBIL SDK integration
 
-Scope: all public SDK features across supported releases and the six
+Scope: all public SDK features across supported releases and the four
 framework/OS combinations. Activation/login is the first milestone, not the
 product boundary. The MCP supplies planning, artifact inspection and AST app/version/configuration
 tools. Fresh Kotlin Android activation and returning login have passed on a
 physical device; see [verified workflow](references/platforms.md#verified-android-activation-and-login).
 Other platforms, backend/provider adapters and remaining feature recipes require
 separate implementation and verification.
+
+External-customer app targets are Android and iOS only. macOS and Windows
+apps are outside this scope; do not offer or plan them as customer SDK targets.
+This is a scope decision, not a claim that desktop SDKs do not exist.
 
 ## Resolve the customer's request
 

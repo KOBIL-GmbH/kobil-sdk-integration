@@ -45,7 +45,8 @@ PIN events or assume a plain confirmation proves re-authentication.
 Kotlin reference code uses the event names above. Swift documentation uses KSM
 names and includes KSMTransactionFinishedEvent; Flutter examples use T-suffixed
 bindings. Inspect supplied APIs before adapting names or interpreting completion
-status. Validate Android, iOS, Windows and macOS separately for Flutter.
+status. Validate Android and iOS separately for Flutter; desktop targets are outside
+the external-customer scope.
 
 ## Backend contract
 
@@ -91,7 +92,7 @@ keep this recipe marked studied, not verified.
 
 Read-only Kotlin, Swift and Flutter app implementations confirm a reusable split:
 global SDK listener, transaction state, presentation, decision submission and
-terminal result handling. Keep desktop window activation outside the core flow.
+terminal result handling. Keep platform-specific presentation outside the core flow.
 
 When implementing this split, check these demonstrated pitfalls:
 - Swift completion events expose status; do not construct success unconditionally.

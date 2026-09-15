@@ -7,7 +7,7 @@ authorized artifact source.
 ## Target scope
 
 - Kotlin on Android and Swift on iOS.
-- Flutter/Dart on **Android, iOS, Windows and macOS**.
+- Flutter/Dart on **Android and iOS**.
 - All public SDK features, with support and verification tracked per SDK release,
   wrapper version and target platform. Activation/login is the first milestone.
 - Optional provider modules selected from the customer's workflow, including
@@ -61,7 +61,7 @@ Example `sdk_plan` arguments:
 {
   "profile": {
     "framework": "flutter",
-    "targets": ["android", "ios", "windows", "macos"],
+    "targets": ["android", "ios"],
     "backend": "ast-shift",
     "artifact_source": "local",
     "distribution": ["updraft", "testflight"],

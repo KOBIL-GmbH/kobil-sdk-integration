@@ -10,11 +10,16 @@ from kobil_sdk_integration.server import mcp, sdk_artifact_info, sdk_targets
 
 class StarterTests(unittest.TestCase):
     def profile(self, **updates):
-        return {"framework": "flutter", "targets": ["android", "ios", "windows", "macos"],
+        return {"framework": "flutter", "targets": ["android", "ios"],
                 "backend": "ast-shift", "artifact_source": "local", **updates}
 
-    def test_four_flutter_platforms(self):
-        self.assertEqual(set(sdk_targets()["frameworks"]["flutter"]), {"android", "ios", "windows", "macos"})
+    def test_customer_flutter_platforms(self):
+        self.assertEqual(set(sdk_targets()["frameworks"]["flutter"]), {"android", "ios"})
+
+    def test_desktop_customer_targets_rejected(self):
+        for target in ("windows", "macos"):
+            with self.assertRaises(ValueError):
+                plan(self.profile(targets=[target]), [])
 
     def test_provider_is_offered_not_required_by_default(self):
         result = plan(self.profile(distribution=["updraft"], observability=["grafana"]), [])
@@ -30,7 +35,7 @@ class StarterTests(unittest.TestCase):
 
     def test_diagnostics_cannot_fill_distribution_gaps(self):
         result = plan(self.profile(diagnostics=["android-device", "ios-device"]), ["diagnostics", "distribution"])
-        self.assertEqual({g["target"] for g in result["gaps"]}, {"android", "ios", "windows", "macos"})
+        self.assertEqual({g["target"] for g in result["gaps"]}, {"android", "ios"})
 
     def test_unknown_provider_is_visible(self):
         result = plan(self.profile(distribution=["custom-provider"]), [])

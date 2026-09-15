@@ -2,7 +2,8 @@
 from importlib.resources import files
 import json
 
-TARGETS = {"android", "ios", "windows", "macos"}
+# Customer app targets; desktop SDK availability is outside this product scope.
+TARGETS = {"android", "ios"}
 FRAMEWORKS = {"kotlin": {"android"}, "swift": {"ios"}, "flutter": TARGETS}
 
 
