@@ -15,15 +15,16 @@ authorized artifact source.
 
 ## Current state
 
-Implemented: a runnable MCP that reports targets, plans modular dependencies and
-computes local SDK artifact hashes; an integration skill and initial platform
-guidance; tests for planning, isolation of optional providers and file handling.
+Implemented: a runnable MCP for targets, conditional dependency planning, local
+SDK artifact hashes, AST app/version creation and reuse, and backend-signed SDK
+configuration delivery to a private file. Customer connections are configured
+at runtime. See [backend setup](docs/backend.md).
 
-Pending: customer-configured backend adapters (including app/version registration
-and signed SDK configuration delivery), provider implementations, automatic
-module installation, complete feature recipes and end-to-end platform validation.
-Module declarations are extension contracts, not bundled provider integrations.
-No SDK binaries or internal support history are included.
+Pending: live deployment verification, SSMS and optional provider adapters,
+automatic module installation, complete SDK feature recipes and end-to-end
+platform validation. The AST module includes backend tools; other module
+declarations remain extension contracts. No SDK binaries or internal support
+history are included.
 
 ## Run
 
@@ -46,6 +47,10 @@ Tools:
 | sdk_targets | List the integration targets and verification state |
 | sdk_plan | Resolve required modules, optional offers and capability/platform gaps |
 | sdk_artifact_info | Inspect one customer-supplied binary/archive; return size/hash only |
+| sdk_backend_status | Validate local connection configuration without exposing credentials |
+| sdk_app_ensure | Reuse or create a configured tenant's AST app |
+| sdk_app_version_ensure | Reuse or create an AST app version with explicit registration/integrity settings |
+| sdk_config_write | Request signed SDK configuration and write a new private JWT file |
 
 Example `sdk_plan` arguments:
 
@@ -74,8 +79,8 @@ artifact provider. Record exact versions, native architectures and checksums in
 the app's integration record. Do not assume a Dart wrapper includes all native
 libraries or that a filename proves version compatibility.
 
-Future adapters must use customer-configured endpoints and keep credentials
-inside trusted runtime helpers. No provider account or backend connection is
+Backend tools use customer-configured endpoints and keep credentials
+inside the server runtime. No provider account or backend connection is
 preconfigured. Only connect services needed for the requested capability.
 
 ## Validation

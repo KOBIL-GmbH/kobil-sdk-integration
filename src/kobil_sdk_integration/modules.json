@@ -37,7 +37,7 @@
         "backend": "ast-shift"
       },
       "dependency": "ast-shift-backend",
-      "status": "adapter_pending",
+      "status": "backend_tools_implemented_live_verification_pending",
       "mode": "required"
     },
     {

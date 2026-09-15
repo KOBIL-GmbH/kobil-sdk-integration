@@ -21,7 +21,7 @@ class StarterTests(unittest.TestCase):
         self.assertEqual({m["id"] for m in result["offered_modules"]}, {"updraft", "grafana"})
         self.assertNotIn("updraft", result["required_dependencies"])
         self.assertFalse(result["ready_to_execute"])
-        self.assertTrue(all(m["status"] == "adapter_pending" for m in result["required_modules"]))
+        self.assertEqual(result["required_modules"][0]["status"], "backend_tools_implemented_live_verification_pending")
 
     def test_grafana_request_does_not_select_distribution(self):
         result = plan(self.profile(distribution=["testflight"], observability=["grafana"]), ["observability"])
@@ -60,7 +60,7 @@ class StarterTests(unittest.TestCase):
 
     def test_mcp_tools_registered(self):
         names = {tool.name for tool in asyncio.run(mcp.list_tools())}
-        self.assertEqual(names, {"sdk_targets", "sdk_plan", "sdk_artifact_info"})
+        self.assertEqual(names, {"sdk_targets", "sdk_plan", "sdk_artifact_info", "sdk_backend_status", "sdk_app_ensure", "sdk_app_version_ensure", "sdk_config_write"})
 
 
 if __name__ == "__main__":

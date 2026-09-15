@@ -7,8 +7,9 @@ description: Integrate KOBIL SDK features into existing or fresh Kotlin Android,
 
 Scope: all public SDK features across supported releases and the six
 framework/OS combinations. Activation/login is the first milestone, not the
-product boundary. This starter supplies planning and local artifact inspection;
-backend adapters, complete feature recipes and runtime verification are pending.
+product boundary. The MCP supplies planning, artifact inspection and AST app/version/configuration
+tools. Live verification, other backend/provider adapters and complete feature
+recipes remain pending.
 
 ## Resolve the customer's request
 
@@ -40,10 +41,12 @@ explicit work; do not claim connections that this starter does not implement.
 2. Inspect separately supplied artifacts with sdk_artifact_info. Its checksum
    is a fingerprint, not compatibility or authenticity verification. Verify the
    release against trusted metadata before use.
-3. Reuse matching backend app/version/user resources through a configured adapter
-   when available. Obtain signed SDK configuration from the backend; never invent
-   a JWT or put admin credentials into the app. Implement a missing adapter before
-   claiming this step has run.
+3. For AST/Shift, read [backend setup](../../docs/backend.md), then call
+   sdk_backend_status, sdk_app_ensure and sdk_app_version_ensure with the exact
+   environment and explicit registration user/integrity policy. Request signed
+   configuration with sdk_config_write; never invent a JWT or expose it in chat.
+   The registration user must already exist. Other backend/user-flow adapters
+   remain separate work; never claim they ran based on module selection.
 4. Add minimal adapters, SDK initialization, lifecycle/event handling, UI flow,
    errors and cancellation to the customer's app. Read
    [platforms.md](references/platforms.md) for native/Flutter requirements.
