@@ -8,8 +8,8 @@ description: Integrate KOBIL SDK features into existing or fresh Kotlin Android,
 Scope: all public SDK features across supported releases and the four
 framework/OS combinations. Activation/login is the first milestone, not the
 product boundary. The MCP supplies planning, artifact inspection and AST app/version/configuration
-tools. Fresh Kotlin Android activation and returning login have passed on a
-physical device; see [verified workflow](references/platforms.md#verified-android-activation-and-login).
+tools. Fresh Kotlin Android and Swift iOS activation and returning login have passed
+on physical devices; see the [verified platform workflows](references/platforms.md).
 Other platforms, backend/provider adapters and remaining feature recipes require
 separate implementation and verification.
 

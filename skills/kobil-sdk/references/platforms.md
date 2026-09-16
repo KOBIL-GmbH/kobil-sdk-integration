@@ -128,3 +128,25 @@ consumed the activation credential and stored a password; preserve that state
 and investigate before retrying. Do not claim simulator incompatibility from
 this result alone. Returning login, physical-device signing and log export
 remain separate pending checks.
+
+## Verified iOS device activation and returning login
+
+On 2026-09-16 the fresh Swift app using MCSDK iOS 15.16.803.3089231 debug
+XCFrameworks and bundled KSSIDP passed on iPhone 17 Pro Max / iOS 26.6.2.
+Existing development signing and automatic provisioning produced an installable
+app; code-signature verification passed. This is development-device evidence,
+not an App Store distribution or release-hardening check.
+
+Verified sequence: Start OK / ACTIVATION_REQUIRED; first activation SUCCESS
+with SDK result OK; terminate/relaunch preserving data; Start OK / LOGIN_REQUIRED
+with one SDK user; StartLoginEvent; returning login SUCCESS with SDK result OK.
+Use the activation-code credential key, explicit IAM certificate-chain startup
+parameter and the activated SDK user identifier for X-KOBIL-ASTUSERID. This
+backend used AuthenticationMode.no and shouldHashPin=false with a backend
+password; preserve the deployment contract rather than generalizing that mode.
+
+The earlier simulator DM crypto key failure did not recur on the physical device.
+Do not label it a proven simulator defect or infer that every simulator is
+unsupported. Preserve a consumed simulator activation identity and use a fresh
+approved identity for a separate device test. Log export, negative authentication
+and network interruption remain separate unverified cases for this app.
