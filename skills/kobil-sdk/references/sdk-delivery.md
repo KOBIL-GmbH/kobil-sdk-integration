@@ -27,6 +27,9 @@ credentials. The SDK binaries remain outside this repository.
    trusted supplied checksums/signatures where available; a locally calculated
    checksum alone does not prove authenticity. Record non-secret release and
    compatibility evidence in the app integration record.
+7. Print the downloaded release's changelog in the user-facing response without
+   waiting for a separate request. Follow the output contract below before
+   continuing integration.
 
 SFTP is a documented delivery workflow, not an implemented download capability
 of the SDK MCP. Use an available approved SFTP client/adapter; do not claim that
@@ -53,3 +56,34 @@ and a local hash do not replace a supplier integrity manifest.
 See [15.16 release review](release-review-15.16.md) for a completed download and
 source-review checkpoint. Download verification does not establish runtime
 compatibility or authorize upgrading existing apps.
+
+## Mandatory changelog output after download
+
+After each SDK release download, display its changelog to the user in chat;
+saving a review file or saying "changelog reviewed" is not sufficient.
+
+- Identify the SDK family, platform, exact release and release date as supplied.
+- Print the actual changelog entries for that downloaded release, preserving
+  their Added, Changed, Fixed, API Changes, Deprecations and Known Issues
+  categories where present. Do not substitute only selected highlights or
+  silently omit breaking changes. Preserve original technical wording.
+- A cumulative CHANGELOG may contain years of history: print the section for
+  the downloaded version, not unrelated earlier releases. If several downloaded
+  platforms share an identical section, print it once and name both platforms;
+  show platform-specific differences separately.
+- Link the complete local changelog alongside the printed section. If the
+  section is too long for one response, split it into clearly labelled parts
+  rather than silently truncating it. Respect applicable disclosure and content
+  restrictions; explain any redaction or limitation instead of claiming that
+  the complete original was printed.
+- Put additional README requirements, known issues and integration implications
+  in a separate labelled section. Clearly distinguish source entries from
+  interpretation, and call out discrepancies between README and CHANGELOG.
+- If no changelog is supplied or the downloaded release has no matching section,
+  explicitly report it as missing. Do not present a nearby release's notes as
+  the downloaded version's changelog.
+- Include the download/integrity result separately. Printed release notes do
+  not imply successful build, runtime verification or an app upgrade.
+
+Do not include credentials, access emails or private connection details in this
+output. Keep full delivery files in private local storage, outside the repository.

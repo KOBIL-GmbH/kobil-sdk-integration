@@ -28,7 +28,9 @@ release or commit artifacts/credentials to this repository.
 
 Customers generally receive a separate SFTP account for SDK delivery. Read
 [SDK delivery](references/sdk-delivery.md) when acquiring supplied artifacts;
-SFTP access and backend provisioning are separate connections.
+SFTP access and backend provisioning are separate connections. After downloading
+a release, print its changelog in the user-facing response as required by the
+delivery recipe; a saved review or link alone is insufficient.
 
 Use sdk_targets and sdk_plan to choose dependencies. Record requested features,
 SDK/wrapper versions, platform architectures, artifact checksums, identifiers,
