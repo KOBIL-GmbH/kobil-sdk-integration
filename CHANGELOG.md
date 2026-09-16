@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased — portable credentials (0.4.0 development)
+
+- Add version-2 credential references with native OS keyring, environment and
+  explicit age-file providers; retain legacy authentication profiles.
+- Add local hidden-input setup, sanitized probes, exact-account checks and
+  reference-only migration; no secret-returning MCP tools.
+- Add editor adapter support behind the release capability gate. Current editor
+  installers continue to pin v0.3.3 and reject v2 until a new release is pinned.
+- Native macOS and age tests passed with disposable credentials. Windows/Linux,
+  live backend and editor enrollment validation remain pending. No release cut.
+
 ## 0.3.3
 
 First tagged GitHub release. Previous package versions existed only in development history.

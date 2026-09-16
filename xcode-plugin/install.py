@@ -10,6 +10,7 @@ import subprocess
 import sys
 
 VERSION = "0.1.0"
+CREDENTIAL_SCHEMA = 1  # Raise only when TAG/COMMIT pin a release with the shared resolver.
 TAG = "v0.3.3"
 COMMIT = "6736dc9f8cde8bbc29e4d484575677f86b30e36e"
 REPOSITORY = "https://github.com/KOBIL-GmbH/kobil-sdk-integration.git"
@@ -159,6 +160,16 @@ def main(argv=None):
     connection = args.connection.expanduser().resolve() if args.connection else None
     if connection and not connection.is_file():
         parser.error("Connection JSON must be an existing private file.")
+    if connection:
+        try:
+            profile = json.loads(connection.read_text())
+        except (ValueError, OSError):
+            parser.error("Connection JSON cannot be read.")
+        if profile.get('schema_version') == 2:
+            if CREDENTIAL_SCHEMA < 2:
+                parser.error("Credential profiles v2 require the upcoming release; this installer still pins v0.3.3.")
+            if any((args.keychain_service, args.keychain_account, args.secret_env)):
+                parser.error("Version-2 profiles resolve credentials directly; do not add the legacy launcher.")
     keychain = (args.keychain_service, args.keychain_account, args.secret_env)
     if any(keychain):
         if not all(keychain) or not connection:

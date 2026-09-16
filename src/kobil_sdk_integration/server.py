@@ -67,8 +67,8 @@ def main():
 def sdk_backend_status() -> dict:
     """Validate runtime connection configuration without contacting the backend.
 
-    KOBIL_SDK_CONNECTION points to a local JSON file. Credentials are supplied
-    through named environment variables, never through tool arguments/results.
+    KOBIL_SDK_CONNECTION points to a local JSON file. Credentials resolve locally through configured references or legacy runtime
+    environment variables, never through tool arguments/results.
     """
     from .backend import configuration
     cfg = configuration()
