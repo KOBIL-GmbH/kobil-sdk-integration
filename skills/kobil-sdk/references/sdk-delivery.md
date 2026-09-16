@@ -33,3 +33,23 @@ of the SDK MCP. Use an available approved SFTP client/adapter; do not claim that
 sdk_artifact_info downloads artifacts or that receiving account details proves
 connectivity, directory access or compatibility. Track connection, download,
 artifact inspection, build and runtime verification as separate checkpoints.
+
+## Review the release before integration
+
+Read both CHANGELOG and platform README, plus component/version metadata inside
+the downloaded package. Record breaking changes, minimum API requirements,
+commercial OS support, build toolchain, backend requirements, compatibility,
+known issues and regression tests needed by the requested feature. Do not treat
+minimum API level and commercial OS support as equivalent. Cross-check a
+changelog claiming no known issues against the README's known-issues section.
+
+A standalone wrapper directory can lag behind the wrapper bundled in an MCSDK
+release. Prefer the documented release combination; never replace the bundled
+wrapper with a separately downloaded one solely because its directory looks
+current. A missing Flutter delivery is an access/artifact gap, not evidence that
+Flutter is unsupported. Record missing checksums explicitly; ZIP CRC validation
+and a local hash do not replace a supplier integrity manifest.
+
+See [15.16 release review](release-review-15.16.md) for a completed download and
+source-review checkpoint. Download verification does not establish runtime
+compatibility or authorize upgrading existing apps.
