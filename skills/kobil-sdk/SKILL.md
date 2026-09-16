@@ -178,3 +178,15 @@ entry reusable and customer-neutral; internal hosts, credentials, test identitie
 JWTs and private logs stay in local evidence. Record build, launch, SDK start,
 activation and return-login separately. Failed or untested steps remain explicitly
 pending; a passed backend request is not a passed SDK integration.
+
+### Connection failure before backend access
+
+If backend tools report `Invalid connection configuration`, inspect the installed
+MCP server's connection selection first. A planning-only editor import has no
+backend connection even when all tools are discoverable. Check command/arguments
+and whether `KOBIL_SDK_CONNECTION` is supplied directly or by the configured
+credential launcher; never print secret values. Reopen settings to verify saved
+changes persisted, restart the server, then run `sdk_backend_status` and an
+authorized read-only app lookup. See [connection diagnostics](../../docs/backend.md#connection-diagnostics-unreleased)
+for the new fixed error codes. Configuration validation alone does not prove
+credential validity or backend reachability.

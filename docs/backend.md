@@ -4,7 +4,7 @@ The MCP supports app creation/reuse, app-version creation/reuse and delivery of 
 backend-issued SDK configuration JWT. No backend is configured by default.
 
 See [the shared credential provider work](credentials.md) for version-2 profiles
-on the feature branch. Released v0.3.3 uses the legacy setup below.
+on main (unreleased). Released v0.3.3 uses the legacy setup below.
 
 ## Runtime setup
 
@@ -125,3 +125,27 @@ These tools neither create activation users nor return their credentials.
 TMS status/result reads reject a conflicting transaction ID and missing status.
 Missing IDs may inherit the requested ID for endpoints that omit it. Missing
 results (HTTP404) remain explicitly unavailable, rather than successful results.
+
+## Connection diagnostics (unreleased)
+
+Configuration failures return a fixed error code and recovery instruction. The
+same code is logged to the MCP process stderr through Python logging; no profile
+contents, paths, credentials or underlying exception text are included.
+
+| Code | Action |
+| --- | --- |
+| `CONNECTION_NOT_SELECTED` | Set `KOBIL_SDK_CONNECTION` in the server setup or use your configured credential launcher. Restart the MCP server. |
+| `CONNECTION_FILE_NOT_FOUND` | Reselect an existing connection JSON file. |
+| `CONNECTION_FILE_UNREADABLE` | Check path, file permissions and UTF-8 encoding. |
+| `CONNECTION_JSON_INVALID` | Correct the JSON syntax. |
+| `CONNECTION_SCHEMA_UNSUPPORTED` | Match the profile schema to the installed runtime. |
+| `CONNECTION_FIELDS_INVALID` | Check the required connection and authentication fields. |
+
+Released v0.3.3 reports these cases as `Invalid connection configuration`.
+An Xcode plugin imported without a connection is planning-only: skill discovery
+and tool listing can work while backend tools fail before any network request.
+Inspect the installed server command, arguments and environment rather than
+assuming a successful import configured backend access. Reopen the editor's
+server settings after saving to confirm the changes persisted. Then restart the
+server or start a fresh agent session and call `sdk_backend_status`; follow with
+an explicitly requested read-only `sdk_app_get` to verify backend access.

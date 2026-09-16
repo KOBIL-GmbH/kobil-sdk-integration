@@ -1,5 +1,6 @@
 """Customer-configured AST operations. Credentials never enter tool arguments."""
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -59,16 +60,44 @@ def authentication(cfg):
     return auth
 
 
+def _configuration_error(code, message):
+    # Fixed messages only: never log file contents, paths, credentials or exceptions.
+    logging.getLogger(__name__).warning('Connection configuration rejected: %s', code)
+    return BackendError(f'{code}: {message}')
+
+
 def configuration(expected_environment=None, path=None):
+    selected = path if path is not None else os.environ.get('KOBIL_SDK_CONNECTION')
+    if not selected:
+        raise _configuration_error('CONNECTION_NOT_SELECTED',
+            'Set KOBIL_SDK_CONNECTION to a connection JSON file in the MCP server setup, then restart the server.')
     try:
-        source = Path(path or os.environ['KOBIL_SDK_CONNECTION']).expanduser()
-        cfg = json.loads(source.read_text())
-        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services', 'schema_version', 'auth'}:
+        source = Path(selected).expanduser()
+        raw = source.read_text(encoding='utf-8')
+    except FileNotFoundError:
+        raise _configuration_error('CONNECTION_FILE_NOT_FOUND',
+            'The selected connection file does not exist. Reselect it in the MCP setup.') from None
+    except (OSError, ValueError, TypeError, RuntimeError):
+        raise _configuration_error('CONNECTION_FILE_UNREADABLE',
+            'The selected connection file cannot be read. Check its path and permissions.') from None
+    try:
+        cfg = json.loads(raw)
+    except (ValueError, RecursionError):
+        raise _configuration_error('CONNECTION_JSON_INVALID',
+            'The selected connection file is not valid JSON. See backend setup documentation.') from None
+    try:
+        if not isinstance(cfg, dict) or set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services', 'schema_version', 'auth'}:
             raise ValueError()
+        if 'schema_version' in cfg and (type(cfg['schema_version']) is not int or cfg['schema_version'] != 2):
+            raise _configuration_error('CONNECTION_SCHEMA_UNSUPPORTED',
+                'This runtime supports legacy profiles and schema_version 2. Check the profile and installed runtime version.')
         segment(cfg['environment']); segment(cfg['tenant']); https_url(cfg['ast_url'])
         authentication(cfg)
+    except BackendError:
+        raise
     except Exception:
-        raise BackendError('Invalid connection configuration; see backend setup documentation') from None
+        raise _configuration_error('CONNECTION_FIELDS_INVALID',
+            'Required connection or authentication fields are missing or invalid. See backend setup documentation.') from None
     if expected_environment is not None and expected_environment != cfg['environment']:
         raise ValueError('Active environment mismatch')
     return cfg
