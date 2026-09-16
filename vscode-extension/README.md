@@ -6,8 +6,8 @@ Android/iOS apps with GitHub Copilot.
 1. Install this VSIX using **Extensions: Install from VSIX**.
 2. Open **KOBIL SDK: Open Setup** from the command palette or the KOBIL activity icon.
 3. Choose **Install integration**. Git and uv must be available; configurable paths
-   are available under **Tool paths & settings**. The private GitHub repository
-   currently requires an already-authenticated Git installation.
+   are available under **Tool paths & settings**. The public GitHub repository
+   can be downloaded without signing in.
 4. Optionally import your deployment connection JSON and enter its credential in
    the secure prompt. The dashboard provides a template; its example URLs must
    be replaced with your complete deployment service map.
