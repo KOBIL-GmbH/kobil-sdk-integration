@@ -115,16 +115,16 @@ class AST:
         self.request('POST', path, {'categories': categories})
         return {'app_name': name, 'created': True, 'settings_verified': False}
 
-    def ensure_version(self, app_name, platform, version, register_user_id, check_integrity):
+    def get_app(self, name):
+        value = self.request('GET', '/apps/' + segment(name), allow_not_found=True)
+        if value is None:
+            return {'app_name': name, 'exists': False}
+        if not isinstance(value, dict) or value.get('appName') != name:
+            raise BackendError('Unrecognized app response')
+        return {'app_name': name, 'exists': True}
+
+    def _version_rows(self, app_name):
         segment(app_name)
-        segment(platform)
-        segment(version)
-        if not 3 <= len(app_name) <= 255 or len(platform) > 100 or not re.fullmatch(r'\d+\.\d+\.\d+', version):
-            raise ValueError('Use app name length 3–255, platform length 1–100 and version major.minor.patch')
-        if not register_user_id or len(register_user_id) > 255:
-            raise ValueError('A registration user ID is required')
-        if type(check_integrity) is not bool:
-            raise ValueError('Choose an explicit boolean integrity policy')
         rows, expected_total = [], None
         for page in range(1, 101):
             response = self.request('GET', '/versions?appName=' + segment(app_name) + '&pageSize=100&page=' + str(page))
@@ -146,6 +146,34 @@ class AST:
                 raise BackendError('Version listing is incomplete')
         else:
             raise BackendError('Version listing exceeds automatic pagination limit')
+        return rows
+
+    def list_versions(self, app_name):
+        versions = []
+        for row in self._version_rows(app_name):
+            if row['appName'] != app_name:
+                raise BackendError('Version response does not match requested app')
+            required = ('platform', 'versionStr', 'registerUserId')
+            if any(not isinstance(row.get(k), str) or not row[k] for k in required):
+                raise BackendError('Incomplete version registration metadata')
+            if type(row.get('isCheckIntegrity')) is not bool or type(row.get('versionLock')) is not bool:
+                raise BackendError('Incomplete version policy metadata')
+            versions.append({'platform': row['platform'], 'version': row['versionStr'],
+                             'register_user_id': row['registerUserId'],
+                             'check_integrity': row['isCheckIntegrity'], 'locked': row['versionLock']})
+        return {'app_name': app_name, 'versions': versions}
+
+    def ensure_version(self, app_name, platform, version, register_user_id, check_integrity):
+        segment(app_name)
+        segment(platform)
+        segment(version)
+        if not 3 <= len(app_name) <= 255 or len(platform) > 100 or not re.fullmatch(r'\d+\.\d+\.\d+', version):
+            raise ValueError('Use app name length 3–255, platform length 1–100 and version major.minor.patch')
+        if not register_user_id or len(register_user_id) > 255:
+            raise ValueError('A registration user ID is required')
+        if type(check_integrity) is not bool:
+            raise ValueError('Choose an explicit boolean integrity policy')
+        rows = self._version_rows(app_name)
         matches = [r for r in rows if r.get('appName', app_name) == app_name
                    and r.get('platform') == platform and r.get('versionStr') == version]
         if len(matches) > 1:

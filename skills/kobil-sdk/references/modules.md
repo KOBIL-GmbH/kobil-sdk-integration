@@ -35,6 +35,11 @@ A missing distribution adapter must not prevent unrelated SDK build work.
 
 ## AST implementation status
 The bundled AST module now implements app/version ensure and signed configuration
-file delivery. See [backend setup](../../../docs/backend.md). Live verification
-and user activation/login flow tooling remain pending. Other provider modules
+file delivery. See [backend setup](../../../docs/backend.md). Selected backend flows have passed live verification; customer-independent
+test-user provisioning remains pending. Read-only sdk_app_get/sdk_app_versions
+expose existing registration metadata without modifying resources. Other provider modules
 remain contracts until their implementations are installed and configured.
+
+SFTP delivery: artifact_source=sftp selects sftp-artifacts with status
+external_client_required. An approved SFTP client and customer connection are
+required; this contract does not implement downloading or credential storage.
