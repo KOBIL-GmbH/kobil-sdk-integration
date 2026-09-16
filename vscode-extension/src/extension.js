@@ -34,7 +34,9 @@ function activate(context){
  async function env(){
   const c=status().connection;if(!c)return {};
   const info=connectionInfo(JSON.parse(await fs.readFile(c,'utf8')));
-  const value=await context.secrets.get('backendCredential');
+  if(info.config.schema_version===2 && RELEASE.credentialSchema<2)throw Error('This pinned release does not support credential profiles v2. Upgrade the integration release first.');
+  if(info.provider && info.provider!=='env')return {KOBIL_SDK_CONNECTION:c};
+  const value=await context.secrets.get(status().credentialKey || 'backendCredential');
   if(!value)throw Error('Backend credential is missing. Choose Connect backend to store it securely.');
   return {KOBIL_SDK_CONNECTION:c,[info.secretName]:value};
  }
@@ -70,12 +72,30 @@ function activate(context){
  async function connect(){
   const selected=await vscode.window.showOpenDialog({title:'Select your backend connection JSON',canSelectMany:false,filters:{'Connection JSON':['json']}});if(!selected)return;
   let info;try{info=connectionInfo(JSON.parse(await fs.readFile(selected[0].fsPath,'utf8')));}catch(e){throw Error('Invalid connection: '+(e instanceof SyntaxError?'The file is not valid JSON.':e.message));}
-  const secret=await vscode.window.showInputBox({title:'Backend credential',prompt:`Enter the value for ${info.secretName}. Stored in VS Code SecretStorage, never in your project.`,password:true,ignoreFocusOut:true});if(secret===undefined)return;if(!secret)throw Error('The credential cannot be empty.');
+  if(info.config.schema_version===2 && RELEASE.credentialSchema<2)throw Error('Credential profiles v2 require the upcoming integration release. This extension still pins v0.3.3.');
+  let secret,enroll=false;
+  if(info.provider==='keyring'){
+   const choice=await vscode.window.showQuickPick(['Use existing OS credential','Store a new OS credential'],{title:'Backend credential storage'});if(!choice)return;
+   enroll=choice==='Store a new OS credential';
+  }
+  if(!info.provider || info.provider==='env' || enroll){
+   secret=await vscode.window.showInputBox({title:'Backend credential',prompt:enroll?'Enter a new credential for the selected OS-store account. Existing entries will not be overwritten.':`Enter the value for ${info.secretName}. Stored in VS Code SecretStorage.`,password:true,ignoreFocusOut:true});
+   if(secret===undefined)return;if(!secret)throw Error('The credential cannot be empty.');
+  }
   await fs.mkdir(context.globalStorageUri.fsPath,{recursive:true,mode:0o700});
-  const file=path.join(context.globalStorageUri.fsPath,'connection.json');
-  await fs.writeFile(file,JSON.stringify(info.config,null,2)+'\n',{mode:0o600});
-  await context.secrets.store('backendCredential',secret);
-  await save({connection:file,checked:false});message='Connection saved securely. Run Check setup to validate local configuration. Backend authentication is tested by the agent when you request an operation.';
+  // Use a new profile so failures cannot change the active connection.
+  const file=path.join(context.globalStorageUri.fsPath,'connection-'+crypto.randomUUID()+'.json');
+  await fs.writeFile(file,JSON.stringify(info.config,null,2)+'\n',{mode:0o600,flag:'wx'});
+  if(enroll){
+   if(!await verified())throw Error('Install the integration before storing an OS credential.');
+   await new Promise((resolve,reject)=>{
+    const child=execFile(python(),['-m','kobil_sdk_integration.credential_cli','--config',file,'set','--stdin'],{timeout:120000,maxBuffer:65536},error=>error?reject(Error('OS credential storage failed. Existing credentials are preserved; check the local setup CLI.')):resolve());
+    child.stdin.on('error',()=>{});child.stdin.end(secret);
+   });
+  }
+  const credentialKey='backendCredential:'+path.basename(file);
+  if(!enroll && secret!==undefined)await context.secrets.store(credentialKey,secret);
+  await save({connection:file,credentialKey,checked:false});message='Connection saved securely. Run Check setup to validate local configuration. Backend authentication is tested by the agent when you request an operation.';
  }
  async function check(){
   if(!await verified())throw Error('Install the release before checking setup.');

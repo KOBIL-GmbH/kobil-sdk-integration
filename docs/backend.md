@@ -3,6 +3,9 @@
 The MCP supports app creation/reuse, app-version creation/reuse and delivery of a
 backend-issued SDK configuration JWT. No backend is configured by default.
 
+See [the shared credential provider work](credentials.md) for version-2 profiles
+on the feature branch. Released v0.3.3 uses the legacy setup below.
+
 ## Runtime setup
 
 Create a JSON file outside this repository. Set `KOBIL_SDK_CONNECTION` to its
