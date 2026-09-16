@@ -29,6 +29,16 @@ class TmsTests(unittest.TestCase):
         backend.request.return_value = None
         self.assertFalse(read(backend, 'TEST01', True)['result_available'])
 
+    def test_read_rejects_missing_status_and_mismatched_id(self):
+        from kobil_sdk_integration.backend import BackendError
+        for payload in [{}, {'info': {}}, {'info': {'id': 'OTHER', 'status': 'ACCEPTED'}}, {'status': 42}]:
+            for result in [False, True]:
+                backend = Mock()
+                backend.request.return_value = payload
+                with self.assertRaises(BackendError): read(backend, 'EXPECTED', result)
+        backend.request.return_value = {'status': 'ACCEPTED'}
+        self.assertEqual(read(backend, 'EXPECTED', True)['transaction_id'], 'EXPECTED')
+
     def test_cancel_is_not_final_result(self):
         backend = Mock()
         self.assertFalse(cancel(backend, 'TEST01')['final_result_verified'])

@@ -26,6 +26,32 @@ class BackendTests(unittest.TestCase):
         self.addCleanup(self.env.stop)
         return backend
 
+    def test_read_metadata_pagination_and_no_write(self):
+        row = {'appName': 'sample', 'platform': 'iOS', 'versionStr': '1.0.0',
+               'registerUserId': 'registration-user', 'isCheckIntegrity': True,
+               'versionLock': False, 'secret': 'must-not-echo'}
+        calls = []
+        def handler(req):
+            calls.append(req.method)
+            if '/apps/' in req.url.path:
+                return httpx.Response(200, json={'appName': 'sample', 'secret': 'must-not-echo'})
+            page = req.url.params['page']
+            return httpx.Response(200, json={'data': [row | {'versionStr': '1.0.' + page}], 'totalCount': 2})
+        backend = self.client(handler)
+        self.assertEqual(backend.get_app('sample'), {'app_name': 'sample', 'exists': True})
+        result = backend.list_versions('sample')
+        self.assertEqual(len(result['versions']), 2)
+        self.assertEqual(result['versions'][0]['register_user_id'], 'registration-user')
+        self.assertNotIn('must-not-echo', str(result))
+        self.assertEqual(calls, ['GET', 'GET', 'GET'])
+
+    def test_read_metadata_refuses_incomplete_policy(self):
+        row = {'appName': 'sample', 'platform': 'iOS', 'versionStr': '1.0.0'}
+        backend = self.client(lambda req: httpx.Response(200, json={'data': [row], 'totalCount': 1}))
+        with self.assertRaises(BackendError): backend.list_versions('sample')
+        backend = self.client(lambda req: httpx.Response(404))
+        self.assertFalse(backend.get_app('sample')['exists'])
+
     def test_app_repeat_does_not_write(self):
         apps, writes = [], []
         def handler(req):

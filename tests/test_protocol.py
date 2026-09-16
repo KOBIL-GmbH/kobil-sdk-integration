@@ -25,7 +25,8 @@ class ProtocolTests(unittest.TestCase):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 11)
+                        self.assertEqual(len(names), 13)
+                        self.assertTrue({'sdk_app_get', 'sdk_app_versions'} <= names)
                         result = await session.call_tool('sdk_backend_status', {})
                         self.assertFalse(result.isError)
                         self.assertNotIn('protocol-fixture', str(result))
@@ -33,4 +34,7 @@ class ProtocolTests(unittest.TestCase):
                             'expected_environment': 'wrong', 'app_name': 'sample', 'categories': ['tms']})
                         self.assertTrue(result.isError)
                         self.assertNotIn('protocol-fixture', str(result))
+                        for name in ['sdk_app_get', 'sdk_app_versions']:
+                            result = await session.call_tool(name, {'expected_environment': 'wrong', 'app_name': 'sample'})
+                            self.assertTrue(result.isError)
         asyncio.run(check())

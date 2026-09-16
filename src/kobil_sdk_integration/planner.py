@@ -56,7 +56,7 @@ def plan(profile: dict, capabilities: list[str]) -> dict:
             offered.append(entry)
     if profile.get("backend") not in {"ast-shift", "ssms"}:
         gaps.append({"capability": "backend", "reason": "Select or implement a backend adapter"})
-    if profile.get("artifact_source") not in {"local", "teamcity"}:
+    if profile.get("artifact_source") not in {"local", "teamcity", "sftp"}:
         gaps.append({"capability": "artifacts", "reason": "Select or implement an artifact provider"})
     for field, group in groups.items():
         capability = group["capability"]

@@ -97,7 +97,7 @@ preserved. AST notification categories were resolved separately from the sample
 application's category label. Test identity provisioning still used a local
 backend helper; this is not yet fully self-contained MCP onboarding.
 
-Swift/iOS, Flutter Android/iOS, existing-app integration, and all
+Flutter Android/iOS, existing-app integration, and all
 remaining SDK features require their own evidence. This milestone does not close
 the full-feature scope.
 
@@ -122,12 +122,12 @@ simulator, SDK Start returned OK / ACTIVATION_REQUIRED after the following fix:
   For KSSIDP eventFailed, retain the nested result event's errorCode/reportId,
   not just wrapper status or a fabricated zero code.
 
-Activation is not verified: after backend acceptance, SetAuthorisationCode
+Historical simulator checkpoint (physical-device success follows below): after backend acceptance, SetAuthorisationCode
 returned "Failed to get DM crypto key" in the simulator. Backend acceptance
 consumed the activation credential and stored a password; preserve that state
 and investigate before retrying. Do not claim simulator incompatibility from
-this result alone. Returning login, physical-device signing and log export
-remain separate pending checks.
+this result alone. Simulator activation/login remain unverified; physical-device
+signing and login subsequently passed as recorded below. Log export remains pending.
 
 ## Verified iOS device activation and returning login
 
