@@ -2,9 +2,9 @@
 
 ## Install v0.3.3
 
-Requires Git, Python 3.11+ and uv. While this repository is private, Git must
-already be authenticated with an account that has access. Never put an access
-token in the clone URL or MCP configuration. SDK binaries are supplied separately.
+Requires Git, Python 3.11+ and uv. This repository is public; no GitHub login
+is required. Never put an access token in the clone URL or MCP configuration.
+SDK binaries are supplied separately.
 
 Install each release into its own directory; do not reuse a development checkout:
 
