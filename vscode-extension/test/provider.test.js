@@ -13,3 +13,23 @@ test('registers a stdio MCP with the VS Code constructor contract, without crede
  sandbox.module.exports.activate({globalStorageUri:{fsPath:'/private/extension'},globalState:{get:k=>k==='setup'?{installed:true}:true},subscriptions:[],secrets:{get(){throw Error('Secret must not be read during discovery');}}});
  const [server]=provider.provideMcpServerDefinitions();assert.equal(server.label,'KOBIL SDK Release');assert.equal(server.version,'0.3.3');assert.equal(Object.keys(server.env).length,0);assert(server.command.includes('v0.3.3'));assert(registered['kobilSdk.open']);
 });
+
+test('rejects a modified release before invoking uv sync',async()=>{
+ let receive,viewProvider,finish;const calls=[];
+ const failure=new Promise(resolve=>{finish=resolve;});
+ const vscode={
+  EventEmitter:class{event=()=>{};fire(){}dispose(){}},
+  lm:{registerMcpServerDefinitionProvider:()=>({dispose(){}})},
+  workspace:{getConfiguration:()=>({get:key=>key==='gitPath'?'git':'uv'})},
+  window:{registerWebviewViewProvider:(id,p)=>{viewProvider=p;return {dispose(){}};},showErrorMessage:finish},
+  commands:{registerCommand:()=>({dispose(){}})}
+ };
+ const execFile=(cmd,args,opts,callback)=>{calls.push([cmd,args]);callback(null,{stdout:args.includes('rev-parse')?require('../src/core').RELEASE.commit:args.includes('status')?' M pyproject.toml\n':'',stderr:''});};
+ const sandbox={require:n=>n==='vscode'?vscode:n==='./core'?require('../src/core'):n==='node:fs/promises'?{access:async()=>{},mkdir:async()=>{}}:n==='node:child_process'?{execFile}:require(n),module:{exports:{}},process,URL};
+ vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../src/extension.js'),'utf8'),sandbox);
+ sandbox.module.exports.activate({globalStorageUri:{fsPath:'/test/extension'},globalState:{get:k=>k==='setup'?{}:true},subscriptions:[]});
+ viewProvider.resolveWebviewView({webview:{onDidReceiveMessage:f=>{receive=f;return {dispose(){}};}}});
+ receive({action:'install'});
+ assert.match(await failure,/local modifications/);
+ assert.equal(calls.some(([cmd,args])=>cmd==='uv'&&args.includes('sync')),false);
+});
