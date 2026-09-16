@@ -1,0 +1,92 @@
+{
+  "name": "kobil-sdk-integration",
+  "displayName": "KOBIL SDK Integration",
+  "description": "Set up the KOBIL SDK MCP and Copilot app-building skill with a pinned release.",
+  "version": "0.1.0",
+  "publisher": "kobil",
+  "engines": {
+    "vscode": "^1.137.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "extensionKind": [
+    "ui"
+  ],
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KOBIL-GmbH/kobil-sdk-integration",
+    "directory": "vscode-extension"
+  },
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "4.0.0",
+    "@types/vscode": "1.137.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "kobilSdk.open",
+        "title": "KOBIL SDK: Open Setup"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "kobilSdk",
+          "title": "KOBIL SDK",
+          "icon": "media/kobil.svg"
+        }
+      ]
+    },
+    "views": {
+      "kobilSdk": [
+        {
+          "id": "kobilSdk.welcome",
+          "name": "App Builder",
+          "type": "webview"
+        }
+      ]
+    },
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "kobilSdk.release",
+        "label": "KOBIL SDK Release"
+      }
+    ],
+    "configuration": {
+      "title": "KOBIL SDK",
+      "properties": {
+        "kobilSdk.uvPath": {
+          "type": "string",
+          "default": "uv",
+          "scope": "machine",
+          "description": "uv executable name or absolute path."
+        },
+        "kobilSdk.gitPath": {
+          "type": "string",
+          "default": "git",
+          "scope": "machine",
+          "description": "Git executable name or absolute path."
+        }
+      }
+    }
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  }
+}
