@@ -1,0 +1,7 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');
+const {connectionInfo,escapeHtml,agentText,RELEASE}=require('../src/core');
+const config=()=>({environment:'dev',tenant:'example',ast_url:'https://ast.example',services:[{name:'astLogin',url:'https://ast.example'}],oauth:{token_url:'https://idp.example/token',client_id:'sdk',client_secret_env:'KOBIL_SDK_CLIENT_SECRET'}});
+test('sanitizes imported connection and never persists inline secrets',()=>{let c=config();c.password='private';c.oauth.client_secret='private';const r=connectionInfo(c);assert(!JSON.stringify(r).includes('private'));assert.equal(r.secretName,'KOBIL_SDK_CLIENT_SECRET');});
+test('rejects dangerous or ambiguous runtime configuration',()=>{for(const change of [c=>c.ast_url='http://ast.example',c=>c.oauth.client_secret_env='PATH',c=>c.token_env='KOBIL_TOKEN',c=>c.services.push(c.services[0]),c=>c.oauth.token_url='https://user:password@idp.example/token']){const c=config();change(c);assert.throws(()=>connectionInfo(c));}});
+test('escapes injected webview markup',()=>assert.equal(escapeHtml('<img onerror="x">'), '&lt;img onerror=&quot;x&quot;&gt;'));
+test('release agent explicitly enables file and terminal tools',()=>{const s=agentText('/release');assert(s.includes("'edit', 'execute'"));assert(s.includes("'kobil-sdk-release/*'"));assert(s.includes('/release/skills/kobil-sdk/SKILL.md'));assert.match(RELEASE.commit,/^[a-f0-9]{40}$/);});
