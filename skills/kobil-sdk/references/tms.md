@@ -138,3 +138,13 @@ than silently bypassing them.
 
 A subsequent visible demo was manually accepted on the device: no automation
 tapped a decision, and both SDK OK and backend ACCEPTED were observed.
+
+## iOS foreground checkpoint
+
+Fresh Swift app, MCSDK 15.16.803.3089231 with bundled KSSIDP, iPhone 17 Pro Max / iOS 26.6.2: synthetic foreground acceptance passed. SDK DisplayConfirmationResult and TransactionFinished returned OK, dialog/timer cleared, and independent MCP backend result returned ACCEPTED. The debug harness matched an exact synthetic text before submitting once; original transactionInformation was preserved. Other iOS scenarios are tracked separately.
+
+On the same iOS device tuple, foreground reject passed: backend REJECTED, SDK terminal event recorded and dialog/timer cleared. One local decision was submitted.
+
+On the same iOS device tuple, foreground timeout passed: backend TIMEOUT, SDK terminal event recorded and dialog/timer cleared. One local decision was submitted.
+
+On the same iOS device tuple, foreground cancel passed: backend CANCELLED, SDK terminal event recorded and dialog/timer cleared. Server cancellation completed without a local decision.
