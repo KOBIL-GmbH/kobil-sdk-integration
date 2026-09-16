@@ -110,3 +110,9 @@ uv run python -m unittest discover -s tests -v
 ```
 
 The tests do not contact customer services or validate native SDK activation.
+
+## Xcode 27 agent plug-in
+
+Use the [portable Xcode installer](xcode-plugin/README.md) to install the pinned
+MCP and skill together. Optional macOS Keychain integration supplies backend
+credentials at startup. SDK binaries are delivered separately.
