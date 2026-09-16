@@ -31,7 +31,12 @@ platform validation. The AST module includes backend tools; other module
 declarations remain extension contracts. No SDK binaries or internal support
 history are included.
 
-## Run
+## Install a fixed release
+
+Use [versioned installation](docs/releases.md) for a fixed MCP and skill version.
+The current release is **v0.3.3**. Upgrades are explicit; do not deploy from `main`.
+
+## Run from a development checkout
 
 With Python 3.11+ and uv installed, from the repository root:
 
