@@ -21,6 +21,8 @@ def summary(value, transaction_id=None):
     if not isinstance(txn_id, str) or not txn_id:
         raise BackendError('Transaction response has no ID; do not retry creation blindly')
     identifier(txn_id)
+    if transaction_id is not None and txn_id != transaction_id:
+        raise BackendError("Transaction response ID does not match requested ID")
     if status is not None and (not isinstance(status, str) or not re.fullmatch(r'[A-Z_]{1,64}', status)):
         raise BackendError('Unrecognized transaction status')
     return {'transaction_id': txn_id, 'status': status}
@@ -55,6 +57,8 @@ def read(backend, transaction_id, result=False):
         return {'transaction_id': transaction_id, 'result_available': False,
                 'note': 'No result returned (not ready, expired or unknown ID); inspect status'}
     response = summary(value, transaction_id)
+    if response['status'] is None:
+        raise BackendError('Transaction response has no status')
     if result:
         response['result_available'] = True
     return response

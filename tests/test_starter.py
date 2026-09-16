@@ -26,7 +26,15 @@ class StarterTests(unittest.TestCase):
         self.assertEqual({m["id"] for m in result["offered_modules"]}, {"updraft", "grafana"})
         self.assertNotIn("updraft", result["required_dependencies"])
         self.assertFalse(result["ready_to_execute"])
-        self.assertEqual(result["required_modules"][0]["status"], "backend_tools_implemented_live_verification_pending")
+        self.assertEqual(result["required_modules"][0]["status"], "implemented_selected_live_flows_verified")
+
+    def test_sftp_contract_does_not_claim_execution(self):
+        result = plan(self.profile(artifact_source='sftp'), [])
+        self.assertIn('sftp-artifacts', result['required_dependencies'])
+        self.assertEqual(result['gaps'], [])
+        module = next(m for m in result['required_modules'] if m['id'] == 'sftp-artifacts')
+        self.assertEqual(module['status'], 'external_client_required')
+        self.assertFalse(result['ready_to_execute'])
 
     def test_grafana_request_does_not_select_distribution(self):
         result = plan(self.profile(distribution=["testflight"], observability=["grafana"]), ["observability"])
@@ -65,7 +73,7 @@ class StarterTests(unittest.TestCase):
 
     def test_mcp_tools_registered(self):
         names = {tool.name for tool in asyncio.run(mcp.list_tools())}
-        self.assertEqual(names, {"sdk_targets", "sdk_plan", "sdk_artifact_info", "sdk_backend_status", "sdk_app_ensure", "sdk_app_version_ensure", "sdk_config_write", "sdk_tms_trigger", "sdk_tms_status", "sdk_tms_result", "sdk_tms_cancel"})
+        self.assertEqual(names, {"sdk_targets", "sdk_plan", "sdk_artifact_info", "sdk_backend_status", "sdk_app_get", "sdk_app_versions", "sdk_app_ensure", "sdk_app_version_ensure", "sdk_config_write", "sdk_tms_trigger", "sdk_tms_status", "sdk_tms_result", "sdk_tms_cancel"})
 
 
 if __name__ == "__main__":

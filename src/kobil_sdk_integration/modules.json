@@ -37,7 +37,7 @@
         "backend": "ast-shift"
       },
       "dependency": "ast-shift-backend",
-      "status": "backend_tools_implemented_live_verification_pending",
+      "status": "implemented_selected_live_flows_verified",
       "mode": "required"
     },
     {
@@ -56,6 +56,15 @@
       },
       "dependency": "teamcity-artifacts",
       "status": "adapter_pending",
+      "mode": "required"
+    },
+    {
+      "id": "sftp-artifacts",
+      "when": {
+        "artifact_source": "sftp"
+      },
+      "dependency": "sftp-artifacts",
+      "status": "external_client_required",
       "mode": "required"
     },
     {

@@ -20,7 +20,12 @@ SDK artifact hashes, AST app/version creation and reuse, and backend-signed SDK
 configuration delivery to a private file. Customer connections are configured
 at runtime. See [backend setup](docs/backend.md).
 
-Pending: live deployment verification, SSMS and optional provider adapters,
+Selected nonproduction backend flows and fresh native Android/iOS activation,
+returning login and foreground TMS have passed; see the version-scoped
+[platform](skills/kobil-sdk/references/platforms.md) and
+[TMS](skills/kobil-sdk/references/tms.md) evidence.
+
+Pending: SSMS and optional provider adapters,
 automatic module installation, complete SDK feature recipes and end-to-end
 platform validation. The AST module includes backend tools; other module
 declarations remain extension contracts. No SDK binaries or internal support
@@ -48,6 +53,7 @@ Tools:
 | sdk_plan | Resolve required modules, optional offers and capability/platform gaps |
 | sdk_artifact_info | Inspect one customer-supplied binary/archive; return size/hash only |
 | sdk_backend_status | Validate local connection configuration without exposing credentials |
+| sdk_app_get / sdk_app_versions | Read named app existence and version registration/security metadata |
 | sdk_app_ensure | Reuse or create a configured tenant's AST app |
 | sdk_app_version_ensure | Reuse or create an AST app version with explicit registration/integrity settings |
 | sdk_config_write | Request signed SDK configuration and write a new private JWT file |

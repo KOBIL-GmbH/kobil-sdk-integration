@@ -108,3 +108,17 @@ These tools do not confirm transactions on the device or cryptographically verif
 server signatures. Do not retry an uncertain creation automatically. Use only
 authorized recipients/content and preserve the returned transaction ID. Push,
 explicit re-authentication and platform behavior require separate runtime tests.
+
+## Read existing registration metadata
+
+Use sdk_app_get(expected_environment, app_name) to check a named app without
+creating it. Use sdk_app_versions(expected_environment, app_name) to retrieve
+all paginated versions with platform, version, register_user_id, check_integrity
+and locked fields. Only these fields are returned. Incomplete policy metadata
+fails explicitly; no defaults silently replace missing backend settings.
+Reuse the selected registration user and policy with sdk_app_version_ensure.
+These tools neither create activation users nor return their credentials.
+
+TMS status/result reads reject a conflicting transaction ID and missing status.
+Missing IDs may inherit the requested ID for endpoints that omit it. Missing
+results (HTTP404) remain explicitly unavailable, rather than successful results.
