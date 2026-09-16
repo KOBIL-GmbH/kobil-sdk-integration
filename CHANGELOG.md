@@ -2,6 +2,9 @@
 
 ## Unreleased — portable credentials (0.4.0 development)
 
+- Distinguish missing connection selection, file access, JSON, schema and field
+  failures with fixed recovery messages and secret-safe stderr diagnostic codes.
+
 - Add version-2 credential references with native OS keyring, environment and
   explicit age-file providers; retain legacy authentication profiles.
 - Add local hidden-input setup, sanitized probes, exact-account checks and
