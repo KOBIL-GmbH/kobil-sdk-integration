@@ -12,10 +12,10 @@ mcp = FastMCP("KOBILSDK")
 
 @mcp.tool()
 def sdk_targets() -> dict:
-    """List required integration targets; no native runtime coverage is claimed."""
+    """List integration targets and point to scoped native runtime evidence."""
     return {"frameworks": {k: sorted(v) for k, v in FRAMEWORKS.items()},
             "feature_scope": "All public KOBIL SDK features, subject to version/platform support",
-            "runtime_verification": "pending"}
+            "runtime_verification": "partial_native_android_ios; see skill platform/version evidence"}
 
 
 @mcp.tool()
@@ -83,6 +83,22 @@ def _backend_operation(expected_environment, operation):
         return operation(backend)
     finally:
         backend.close()
+
+
+@mcp.tool()
+def sdk_app_get(expected_environment: str, app_name: str) -> dict:
+    """Read whether a named AST app exists. Does not create or modify resources."""
+    return _backend_operation(expected_environment, lambda b: b.get_app(app_name))
+
+
+@mcp.tool()
+def sdk_app_versions(expected_environment: str, app_name: str) -> dict:
+    """Read all versions of a named app with registration user ID and security policy.
+
+    Returns only allowlisted metadata, never user credentials or SDK config.
+    Use the existing selection for reuse; this does not provision test identities.
+    """
+    return _backend_operation(expected_environment, lambda b: b.list_versions(app_name))
 
 
 @mcp.tool()

@@ -31,6 +31,9 @@ credentials. The SDK binaries remain outside this repository.
    Wait for the selection, then print that SDK's downloaded release changelog
    in the user-facing response following the output contract below.
 
+Select artifact_source=sftp in sdk_plan to require the sftp-artifacts contract,
+marked external_client_required. Credentials and client setup remain separate.
+
 SFTP is a documented delivery workflow, not an implemented download capability
 of the SDK MCP. Use an available approved SFTP client/adapter; do not claim that
 sdk_artifact_info downloads artifacts or that receiving account details proves

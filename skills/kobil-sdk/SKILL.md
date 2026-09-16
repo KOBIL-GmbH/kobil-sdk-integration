@@ -62,7 +62,8 @@ explicit work; do not claim connections that this starter does not implement.
    is a fingerprint, not compatibility or authenticity verification. Verify the
    release against trusted metadata before use.
 3. For AST/Shift, read [backend setup](../../docs/backend.md), then call
-   sdk_backend_status, sdk_app_ensure and sdk_app_version_ensure with the exact
+   sdk_backend_status, then sdk_app_get and sdk_app_versions to discover existing
+   registration/security metadata. Use sdk_app_ensure and sdk_app_version_ensure with the exact
    environment and explicit registration user/integrity policy. Request signed
    configuration with sdk_config_write; never invent a JWT or expose it in chat.
    Prefer reusing an appropriate existing backend app/version and its selected
