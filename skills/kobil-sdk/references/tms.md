@@ -1,7 +1,7 @@
 # TMS: transaction confirmation
 
-Status: foreground MCP tools and Android handling are implemented. Accept,
-reject, timeout and server cancellation passed on the Android tuple below. Activation/login success does not
+Status: foreground MCP tools and native Android/iOS handling are implemented.
+Accept, reject, timeout and server cancellation passed on the recorded device tuples below. Activation/login success does not
 verify transaction signing, notification delivery or backend completion.
 
 ## Prerequisites and ownership
@@ -132,8 +132,8 @@ login; the TMS build passed returning login before the transaction series.
 
 Live coverage remains limited to foreground single transactions on this Android
 tuple, without explicit re-authentication. Background push, display messages,
-concurrent transactions, connection interruption, Swift and Flutter targets are
-not verified. The app reports unsupported explicit-authentication requests rather
+concurrent transactions, connection interruption and Flutter targets are
+not verified. Swift foreground coverage is recorded below. The app reports unsupported explicit-authentication requests rather
 than silently bypassing them.
 
 A subsequent visible demo was manually accepted on the device: no automation
@@ -148,3 +148,5 @@ On the same iOS device tuple, foreground reject passed: backend REJECTED, SDK te
 On the same iOS device tuple, foreground timeout passed: backend TIMEOUT, SDK terminal event recorded and dialog/timer cleared. One local decision was submitted.
 
 On the same iOS device tuple, foreground cancel passed: backend CANCELLED, SDK terminal event recorded and dialog/timer cleared. Server cancellation completed without a local decision.
+
+For iOS the observed terminal status values were 0 (accept), 3 (reject), 4 (timeout) and 53 (server cancellation). Each accept/reject/timeout submitted one local decision; cancellation submitted none. Returning login passed before every case. Disable debug scenario arguments after testing; normal confirmations require user input. Background push, explicit re-authentication and network interruption remain unverified.
