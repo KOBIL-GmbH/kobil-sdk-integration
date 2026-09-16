@@ -193,3 +193,8 @@ credential validity or backend reachability. Xcode can regenerate agent settings
 from its imported registration: if the old command returns, reimport the connected
 plugin and replace the stale registration instead of repeatedly patching caches.
 Verify through the editor itself; an external launcher test is insufficient.
+
+A successful `sdk_backend_status` returns `configured: true` and
+`connection_verified: false` because it performs no network request. The latter
+is not a failed connection. When backend verification is requested, continue with
+the authorized read-only `sdk_app_get` using the returned environment.
