@@ -149,3 +149,17 @@ assuming a successful import configured backend access. Reopen the editor's
 server settings after saving to confirm the changes persisted. Then restart the
 server or start a fresh agent session and call `sdk_backend_status`; follow with
 an explicitly requested read-only `sdk_app_get` to verify backend access.
+
+
+### Xcode imported registration versus generated files
+
+Xcode can regenerate its agent runtime configuration from the imported MCP
+registration. Editing the copied plugin manifests or the agent's `config.toml`
+alone does not prove that the next agent session will use the new command.
+If the old command returns after restart, prepare and import the connected
+plugin through Settings → Intelligence → Plug-ins. Replace the superseded
+planning-only registration to avoid duplicate server names, keeping the skill
+if it is installed separately. Confirm the actual regenerated server command,
+then verify `sdk_backend_status` and an authorized read-only app lookup from
+inside Xcode. A successful external stdio test validates the launcher but does
+not validate Xcode's registration.

@@ -189,4 +189,7 @@ credential launcher; never print secret values. Reopen settings to verify saved
 changes persisted, restart the server, then run `sdk_backend_status` and an
 authorized read-only app lookup. See [connection diagnostics](../../docs/backend.md#connection-diagnostics-unreleased)
 for the new fixed error codes. Configuration validation alone does not prove
-credential validity or backend reachability.
+credential validity or backend reachability. Xcode can regenerate agent settings
+from its imported registration: if the old command returns, reimport the connected
+plugin and replace the stale registration instead of repeatedly patching caches.
+Verify through the editor itself; an external launcher test is insufficient.
