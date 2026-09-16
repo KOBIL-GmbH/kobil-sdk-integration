@@ -27,9 +27,9 @@ credentials. The SDK binaries remain outside this repository.
    trusted supplied checksums/signatures where available; a locally calculated
    checksum alone does not prove authenticity. Record non-secret release and
    compatibility evidence in the app integration record.
-7. Print the downloaded release's changelog in the user-facing response without
-   waiting for a separate request. Follow the output contract below before
-   continuing integration.
+7. Ask which SDK changelog the user wants to see: iOS, Android or Flutter.
+   Wait for the selection, then print that SDK's downloaded release changelog
+   in the user-facing response following the output contract below.
 
 SFTP is a documented delivery workflow, not an implemented download capability
 of the SDK MCP. Use an available approved SFTP client/adapter; do not claim that
@@ -59,8 +59,16 @@ compatibility or authorize upgrading existing apps.
 
 ## Mandatory changelog output after download
 
-After each SDK release download, display its changelog to the user in chat;
-saving a review file or saying "changelog reviewed" is not sufficient.
+After SDK downloads, ask: "Which SDK changelog would you like to see: iOS,
+Android or Flutter?" Wait for the answer before printing release notes. If the
+user already explicitly selected a changelog in the current request, use that
+selection without asking again. This selection concerns release notes, not
+exported runtime SDK logs.
+
+Display the selected changelog in chat; saving a review file or saying
+"changelog reviewed" is not sufficient. If Flutter notes are unavailable in the
+delivery, report that explicitly when selected; never substitute native SDK
+notes or infer Flutter support from an empty delivery directory.
 
 - Identify the SDK family, platform, exact release and release date as supplied.
 - Print the actual changelog entries for that downloaded release, preserving
