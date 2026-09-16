@@ -8,7 +8,7 @@ from install import VERSION
 root = Path(__file__).resolve().parent.parent
 output = root / "dist" / f"kobil-sdk-xcode-{VERSION}.zip"
 output.parent.mkdir(exist_ok=True)
-files = ["xcode-plugin/install.py", "xcode-plugin/README.md", "docs/backend.md"]
+files = ["xcode-plugin/install.py", "xcode-plugin/README.md", "docs/backend.md", "docs/credentials.md"]
 with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
     for name in files:
         entry = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
