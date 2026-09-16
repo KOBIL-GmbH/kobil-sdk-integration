@@ -26,6 +26,10 @@ result. Never infer a customer's tenant, account or provider from internal
 examples. SDK binaries are supplied separately; never fetch an unauthorized
 release or commit artifacts/credentials to this repository.
 
+Customers generally receive a separate SFTP account for SDK delivery. Read
+[SDK delivery](references/sdk-delivery.md) when acquiring supplied artifacts;
+SFTP access and backend provisioning are separate connections.
+
 Use sdk_targets and sdk_plan to choose dependencies. Record requested features,
 SDK/wrapper versions, platform architectures, artifact checksums, identifiers,
 backend prerequisites, chosen modules and verification outcomes in the app's
