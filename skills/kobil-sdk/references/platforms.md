@@ -100,3 +100,31 @@ backend helper; this is not yet fully self-contained MCP onboarding.
 Swift/iOS, Flutter Android/iOS, existing-app integration, and all
 remaining SDK features require their own evidence. This milestone does not close
 the full-feature scope.
+
+## iOS 15.16 startup checkpoint
+
+A fresh Swift/UIKit simulator app built with the delivered 15.16.803.3089231
+XCFrameworks and bundled KSSIDP. Host Xcode reported 27.0; the delivery README
+specifies 26.1, so this is not verification of that exact toolchain. On iOS 26.5
+simulator, SDK Start returned OK / ACTIVATION_REQUIRED after the following fix:
+
+- KSMStartEventEx must receive the IAM certificate bytes via its explicit
+  iamCertificateChain parameter for this configuration. Packaging a certificate
+  and passing only certificateChain was insufficient: FatalError 800000174
+  reported the IAM chain missing from the SDK database.
+- Preserve the bundle resource folder layout and verify packaged bytes. Use the
+  installed release's API signatures rather than translating Android startup.
+- This inspected iOS flow expects credentials["activation-code"]. A local
+  identity file may call its field activation_code; map it explicitly instead
+  of forwarding that storage key as the protocol field.
+- Handle KSMWarningEvent.errorStatus, KSMErrorRuntimeEvent.errorType and
+  KSMErrorFatalEvent.errorType with their numeric codes and private explanations.
+  For KSSIDP eventFailed, retain the nested result event's errorCode/reportId,
+  not just wrapper status or a fabricated zero code.
+
+Activation is not verified: after backend acceptance, SetAuthorisationCode
+returned "Failed to get DM crypto key" in the simulator. Backend acceptance
+consumed the activation credential and stored a password; preserve that state
+and investigate before retrying. Do not claim simulator incompatibility from
+this result alone. Returning login, physical-device signing and log export
+remain separate pending checks.
