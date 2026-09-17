@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased (branch feature/activation-and-ios-tooling)
+## 0.4.0 — 2026-09-17
 
 Additive on top of 0.3.3; no existing tool was renamed or removed. 34 MCP tools (21 new),
 125 tests. Verified on a KOBIL development realm with an iPhone 15 Pro and MCSDK iOS
@@ -33,9 +33,23 @@ hand-built app and for an app built by Xcode's coding agent from the plug-in alo
   state and realm-specific client names.
 - Docs: `docs/backend.md` extended for all of the above.
 
-Known: the branch is based on 0.3.3 (`6736dc9`); merging onto the credential-provider work
-on `main` needs the `admin` block and `oauth.scope` expressed as credential references
-(two hunks in `backend.py`).
+Known limits:
+
+- The iOS reference always sends `acr_values=1`. Its verification notes report a
+  missing `amr` claim and HTTP 403 on signing-key upload; activation/login results
+  do not establish signing or TMS readiness for this reference.
+- Installing a replacement archive under an existing SDK version can remove the
+  previous installation before replacement validation completes.
+- Repeated Xcode integration does not repair missing frameworks or apply version
+  changes once its project references exist.
+- Reusing an IDP client does not validate or complete a missing AST client scope.
+- The user-setup workflow recommends setting a password even when reusing an
+  existing user; that operation replaces the user's current permanent password.
+- Generated test-user passwords and activation codes are returned in MCP results.
+- VS Code/Xcode installers and shared credential-provider changes are maintained
+  separately and are not included in this release.
+- Use the full Git checkout for skills and Swift references. The Python package
+  does not bundle these files; `sdk_docs` does not expose nested Swift sources.
 
 ## 0.3.3
 
