@@ -38,15 +38,6 @@ SDK/wrapper versions, platform architectures, artifact checksums, identifiers,
 backend prerequisites, chosen modules and verification outcomes in the app's
 integration record. Exclude tokens, passwords, PINs and activation codes.
 
-## Local backend credential setup
-
-If backend credentials are missing, read [credential setup](../../docs/credentials.md).
-Direct the user to the local hidden-input CLI or editor credential prompt; never
-request secrets in chat. Version-2 profiles require the new resolver and must not
-be used with pinned v0.3.3 installations. A successful credential probe is not a
-backend permission check or an SDK activation result. Native Windows/Linux and
-editor enrollment checks remain pending; do not imply cross-platform verification.
-
 ## Feature recipes
 
 For transaction confirmation or display messages, read [TMS](references/tms.md).

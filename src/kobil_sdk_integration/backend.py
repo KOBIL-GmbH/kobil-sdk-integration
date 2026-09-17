@@ -29,44 +29,26 @@ def https_url(value):
     return value.rstrip('/')
 
 
-def authentication(cfg):
-    """Validate auth without resolving a credential; legacy files are not rewritten."""
-    from .credentials import validate_reference
-    if 'schema_version' in cfg:
-        if type(cfg['schema_version']) is not int or cfg['schema_version'] != 2 or 'oauth' in cfg or 'token_env' in cfg:
-            raise ValueError('Invalid authentication schema')
-        auth = cfg['auth']
-        fields = {'type', 'credential'}
-        if auth.get('type') == 'oauth_client_credentials':
-            fields |= {'token_url', 'client_id'}
-            https_url(auth['token_url']); segment(auth['client_id'])
-        elif auth.get('type') != 'bearer':
-            raise ValueError('Invalid authentication mode')
-        if set(auth) != fields: raise ValueError('Invalid authentication fields')
-        validate_reference(auth['credential'])
-        return auth
-    if 'auth' in cfg or bool(cfg.get('token_env')) == bool(cfg.get('oauth')):
-        raise ValueError('Ambiguous authentication')
-    if cfg.get('token_env'):
-        auth = {'type': 'bearer', 'credential': {'provider': 'env', 'name': cfg['token_env']}}
-    else:
-        oauth = cfg['oauth']
-        if set(oauth) != {'token_url', 'client_id', 'client_secret_env'}: raise ValueError()
-        https_url(oauth['token_url']); segment(oauth['client_id'])
-        auth = {'type': 'oauth_client_credentials', 'token_url': oauth['token_url'],
-                'client_id': oauth['client_id'], 'credential': {'provider': 'env', 'name': oauth['client_secret_env']}}
-    validate_reference(auth['credential'])
-    return auth
-
-
-def configuration(expected_environment=None, path=None):
+def configuration(expected_environment=None):
     try:
-        source = Path(path or os.environ['KOBIL_SDK_CONNECTION']).expanduser()
-        cfg = json.loads(source.read_text())
-        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services', 'schema_version', 'auth'}:
+        path = Path(os.environ['KOBIL_SDK_CONNECTION']).expanduser()
+        cfg = json.loads(path.read_text())
+        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services'}:
             raise ValueError()
-        segment(cfg['environment']); segment(cfg['tenant']); https_url(cfg['ast_url'])
-        authentication(cfg)
+        segment(cfg['environment'])
+        segment(cfg['tenant'])
+        https_url(cfg['ast_url'])
+        if bool(cfg.get('token_env')) == bool(cfg.get('oauth')):
+            raise ValueError()
+        if cfg.get('oauth'):
+            oauth = cfg['oauth']
+            if set(oauth) != {'token_url', 'client_id', 'client_secret_env'}:
+                raise ValueError()
+            https_url(oauth['token_url'])
+            segment(oauth['client_id'])
+        secret_ref = cfg.get('token_env') or cfg['oauth']['client_secret_env']
+        if not isinstance(secret_ref, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]*', secret_ref):
+            raise ValueError()
     except Exception:
         raise BackendError('Invalid connection configuration; see backend setup documentation') from None
     if expected_environment is not None and expected_environment != cfg['environment']:
@@ -84,15 +66,13 @@ class AST:
         self.client.close()
 
     def token(self):
-        from .credentials import resolve, CredentialError
-        auth = authentication(self.cfg)
-        try:
-            secret = resolve(auth['credential'])
-        except CredentialError as error:
-            raise BackendError(str(error)) from None
-        if auth['type'] == 'bearer':
+        ref = self.cfg.get('token_env') or self.cfg['oauth']['client_secret_env']
+        secret = os.environ.get(ref)
+        if not secret:
+            raise BackendError('Backend credential is not configured in the runtime environment')
+        if self.cfg.get('token_env'):
             return secret
-        oauth = auth
+        oauth = self.cfg['oauth']
         result = self.send('POST', oauth['token_url'], data={
             'grant_type': 'client_credentials', 'client_id': oauth['client_id'],
             'client_secret': secret})

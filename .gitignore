@@ -40,7 +40,3 @@ logs/
 *.tar
 *.gz
 .DS_Store
-
-# VS Code extension
-node_modules/
-*.vsix

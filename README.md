@@ -31,12 +31,6 @@ platform validation. The AST module includes backend tools; other module
 declarations remain extension contracts. No SDK binaries or internal support
 history are included.
 
-## VS Code extension preview
-
-A guided installer and Copilot setup dashboard is available in
-[vscode-extension](vscode-extension/README.md). Extension 0.1.0 installs the pinned
-MCP/skill release v0.3.3. It is a VSIX preview, not yet on the Marketplace.
-
 ## Install a fixed release
 
 Use [versioned installation](docs/releases.md) for a fixed MCP and skill version.
@@ -110,9 +104,3 @@ uv run python -m unittest discover -s tests -v
 ```
 
 The tests do not contact customer services or validate native SDK activation.
-
-## Xcode 27 agent plug-in
-
-Use the [portable Xcode installer](xcode-plugin/README.md) to install the pinned
-MCP and skill together. Optional macOS Keychain integration supplies backend
-credentials at startup. SDK binaries are delivered separately.
