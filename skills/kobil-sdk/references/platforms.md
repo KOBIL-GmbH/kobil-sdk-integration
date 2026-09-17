@@ -145,6 +145,12 @@ parameter and the activated SDK user identifier for X-KOBIL-ASTUSERID. This
 backend used AuthenticationMode.no and shouldHashPin=false with a backend
 password; preserve the deployment contract rather than generalizing that mode.
 
+A second verification on 2026-09-16/17 (iPhone 15 Pro, iOS 26.6.1, same SDK release, a
+KSSIDP activation-code flow with `acr_values=1` on the authorisation request) passed first
+activation, relaunch to login required, returning login and logout. Its source is the
+reference implementation in [ios/README.md](ios/README.md); the rules behind it are in
+[activation-login-findings.md](activation-login-findings.md).
+
 The earlier simulator DM crypto key failure did not recur on the physical device.
 Do not label it a proven simulator defect or infer that every simulator is
 unsupported. Preserve a consumed simulator activation identity and use a fresh
