@@ -60,7 +60,12 @@ explicit work; do not claim connections that this starter does not implement.
    architectures and backend requirements from the supplied SDK documentation.
 2. Inspect separately supplied artifacts with sdk_artifact_info. Its checksum
    is a fingerprint, not compatibility or authenticity verification. Verify the
-   release against trusted metadata before use.
+   release against trusted metadata before use. For iOS, sdk_ios_project_integrate
+   wires the SDK into the Xcode project (frameworks as Embed & Sign, bridging header,
+   version) and, when the local store is empty, first imports the delivery bundled with
+   this MCP, verified against the shipped .sha512 files. Then show the release notes
+   with sdk_artifacts_notes and build before coding. Use sdk_artifacts_import or
+   sdk_artifacts_install only for a delivery that arrived somewhere else.
 3. For AST/Shift, read [backend setup](../../docs/backend.md), then call
    sdk_backend_status, then sdk_app_get and sdk_app_versions to discover existing
    registration/security metadata. Use sdk_app_ensure and sdk_app_version_ensure with the exact
@@ -70,14 +75,37 @@ explicit work; do not claim connections that this starter does not implement.
    registration user; a fresh client app does not require a new backend app.
    When creating an app/version, select an existing tenant user explicitly as
    registration user. The deployment owner may choose any existing user; do not
-   invent a mandatory special registration-account type. For this AST API the
+   invent a mandatory special registration-account type. With no known user,
+   create a dedicated registrar with sdk_activation_user_ensure and use its uuid.
+   App categories are push-notification categories ("tms" for transaction
+   confirmation, "chat" for messaging); sdk_app_get shows the tenant's values. For this AST API the
    registerUserId field is set on the version. Preserve an existing selection
    and verify readback; never silently replace it with the activation user.
    The registration user must already exist. Other backend/user-flow adapters
    remain separate work; never claim they ran based on module selection.
+   For the first activation of a device, find the realm's journeys with
+   sdk_idp_journeys: it reports which clients run an activation-code flow and which run
+   a login flow, whatever they are named; never assume a client name from another realm.
+   sdk_activation_flow_ensure with sdk_activation_client_ensure create an activation
+   journey when the realm has none, under names of your choosing. Then create a separate activation user with sdk_activation_user_ensure, give it
+   its permanent login password with sdk_activation_password_set (the activation journey
+   sets none) and issue its one-time code with sdk_activation_code_set. Both need the optional admin block in the connection
+   file. Hand the code to the tester only; never log, commit or repeat it, and do
+   not reissue after a failure before inspecting whether it was consumed.
+   Before the first device run read
+   [activation-login-findings.md](references/activation-login-findings.md): the token-time
+   513_4036 defect, its `acr_values=1` bypass, and the client/flow/theme pairings that work.
+   Before a login test, and first whenever a login hangs on a spinner, run
+   sdk_idp_theme_check on the login client: a page KSSIDP cannot parse fails silently.
+   When the device console is silent or expired, sdk_activation_user_status is the
+   record: a session for the login client proves a login, a failure count proves a
+   rejected credential, a consumed ACTIVATION_CODE proves the activation reached the end.
 4. Add minimal adapters, SDK initialization, lifecycle/event handling, UI flow,
    errors and cancellation to the customer's app. Read
-   [platforms.md](references/platforms.md) for native/Flutter requirements.
+   [platforms.md](references/platforms.md) for native/Flutter requirements. For Swift
+   iOS start from the verified reference implementation in
+   [references/ios/README.md](references/ios/README.md) and its five source files; they
+   encode every device failure found so far, so copy them before writing new SDK code.
    Resolve SDK AuthenticationMode independently of the name of the input field:
    a backend password/PIN does not imply SDK PIN mode. In the inspected native
    implementation, PIN mode requires jwtSignKeySecurityPolicy; preserve the
@@ -85,7 +113,15 @@ explicit work; do not claim connections that this starter does not implement.
    the fatal/error event listener before sending the first Start/initialization
    request; follow the diagnostic requirements below.
 5. Build and test each requested target. Verify actual feature behavior, restart,
-   cancellation/errors and affected existing features. Track recipe-written,
+   cancellation/errors and affected existing features. Credential entry on the device
+   is the tester's job: run the app, hand the tester the user id, one-time code and
+   password in chat, and wait; then read the console or sdk_activation_user_status.
+   Do not automate those screens with UI tests or synthesized taps, and never write
+   an activation code or password into source files, test files, scripts, logs or
+   commits. Never uninstall, replace or reconfigure other apps or settings on the
+   tester's device, or delete files outside the project, without asking first and
+   getting a yes; report what would be removed and why. A code embedded in a test is both a leak and a one-time value that the
+   test will spend. Track recipe-written,
    build-verified and runtime-verified separately. Repeat setup without duplicating
    backend resources or deleting existing device bindings.
 
