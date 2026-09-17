@@ -11,6 +11,13 @@
 - Native macOS and age tests passed with disposable credentials. Windows/Linux,
   live backend and editor enrollment validation remain pending. No release cut.
 
+### Unreleased IDP provisioning
+
+- Optional IDP connection with shared keyring/age/environment credential references.
+- Exact test-user lookup and creation; random activation codes delivered privately.
+- Explicit environment/provisioning gates, no secret-returning tools or write replay.
+- Initial unactivated users only; POSIX private file delivery. Deployment validation pending.
+
 ## 0.3.3
 
 First tagged GitHub release. Previous package versions existed only in development history.

@@ -71,6 +71,8 @@ Tools:
 | sdk_tms_trigger | Create an authorized foreground transaction with explicit policy |
 | sdk_tms_status / sdk_tms_result | Read redacted progress and final-result metadata |
 | sdk_tms_cancel | Request cancellation; final result checked separately |
+| sdk_idp_status / sdk_idp_user_get | Validate optional IDP profile and select an exact user (unreleased) |
+| sdk_idp_test_user_create / sdk_idp_activation_write | Create an unactivated test user and privately deliver its activation code (unreleased) |
 
 Example `sdk_plan` arguments:
 
@@ -116,3 +118,7 @@ The tests do not contact customer services or validate native SDK activation.
 Use the [portable Xcode installer](xcode-plugin/README.md) to install the pinned
 MCP and skill together. Optional macOS Keychain integration supplies backend
 credentials at startup. SDK binaries are delivered separately.
+
+IDP test-user and activation-code provisioning uses a separate optional
+[IDP connection](docs/idp.md) with shared Keystore/age credential references.
+These tools are not present in released v0.3.3 clients.

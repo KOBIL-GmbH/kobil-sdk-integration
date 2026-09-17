@@ -189,3 +189,52 @@ def sdk_tms_cancel(expected_environment: str, transaction_id: str) -> dict:
     """Request cancellation of the specified authorized transaction; verify result separately."""
     from .tms import cancel
     return _backend_operation(expected_environment, lambda b: cancel(b, transaction_id))
+
+
+@mcp.tool()
+def sdk_idp_status() -> dict:
+    """Validate optional IDP configuration locally; never resolves secrets or contacts a backend."""
+    from .idp import configuration
+    cfg = configuration()
+    return {'environment': cfg['environment'], 'realm': cfg['realm'], 'configured': True,
+            'connection_verified': False, 'test_provisioning_enabled': cfg['allow_test_provisioning']}
+
+
+def _idp_operation(expected_environment, operation):
+    from .idp import IDP, configuration
+    backend = IDP(configuration(expected_environment))
+    try:
+        return operation(backend)
+    finally:
+        backend.close()
+
+
+@mcp.tool()
+def sdk_idp_user_get(expected_environment: str, username: str) -> dict:
+    """Read one exact IDP username; returns only ID/existence/enabled metadata."""
+    return _idp_operation(expected_environment, lambda b: b.user_get(username))
+
+
+@mcp.tool()
+def sdk_idp_test_user_create(expected_environment: str, username: str) -> dict:
+    """Create an explicitly requested passwordless test user; never change existing users.
+
+    Requires configured IDP test provisioning permission. If creation fails, inspect
+    exact user lookup before retrying; a failed response may have committed.
+    """
+    return _idp_operation(expected_environment, lambda b: b.user_create(username))
+
+
+@mcp.tool()
+def sdk_idp_activation_write(expected_environment: str, username: str, user_id: str,
+                             output_path: str, period: str = '1d', replace_existing: bool = False) -> dict:
+    """Generate and set a random activation code for an unactivated test user.
+
+    Requires explicit user authorization. Delivers only to a new 0600 file in a
+    private 0700 directory. Never read the code into chat. Register-user IDs are
+    unrelated. No password/PIN is generated. Existing activation credentials need
+    explicit replacement; enrolled users are refused. Unknown write outcome must
+    not be retried automatically. POSIX file delivery only in this preview.
+    """
+    return _idp_operation(expected_environment, lambda b: b.activation_write(
+        username, user_id, output_path, period, replace_existing))
