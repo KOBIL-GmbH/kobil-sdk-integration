@@ -116,3 +116,10 @@ The tests do not contact customer services or validate native SDK activation.
 Use the [portable Xcode installer](xcode-plugin/README.md) to install the pinned
 MCP and skill together. Optional macOS Keychain integration supplies backend
 credentials at startup. SDK binaries are delivered separately.
+
+## Claude Code and Claude Desktop
+
+Use the [Claude installer](claude-install/README.md) for one-command setup of the
+pinned MCP and guide. Claude Code receives a plugin/skill; Desktop receives MCP
+tools and guide access. Backend credentials and SDK binaries are configured
+separately. Desktop chat does not gain local app-build tools from this package.
