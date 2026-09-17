@@ -41,5 +41,5 @@ expose existing registration metadata without modifying resources. Other provide
 remain contracts until their implementations are installed and configured.
 
 SFTP delivery: artifact_source=sftp selects sftp-artifacts with status
-external_client_required. An approved SFTP client and customer connection are
+implemented_configured_sftp. Built-in sdk_sftp_list/sdk_sftp_download and a customer connection are
 required; this contract does not implement downloading or credential storage.
