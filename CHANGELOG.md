@@ -1,3 +1,9 @@
+# 0.5.0
+
+- Add configured SFTP listing and downloads with server-side Keychain/environment/private-file/SSH-key authentication.
+- Verify known host keys, restrict remote paths, preserve supplier checksums/release notes, and remove failed partial deliveries.
+- Document acquisition through MCP and optional binary delivery; retain platform changelog selection/output.
+
 # Changelog
 
 ## 0.4.0 — 2026-09-17

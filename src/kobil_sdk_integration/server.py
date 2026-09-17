@@ -576,3 +576,31 @@ def sdk_activation_step_config(expected_environment: str, alias: str, provider: 
                                 lambda b: configure_step(b, alias, provider, config, None, occurrence))
     result['next_step'] = 'Retry the activation on the device; no app rebuild is needed.'
     return result
+
+
+@mcp.tool()
+def sdk_sftp_list(relative_path: str = '.') -> dict:
+    """List customer SDK deliveries via configured SFTP. Read-only, no credentials in arguments.
+
+    Uses KOBIL_SDK_SFTP_CONNECTION (default ~/.config/kobil-sdk/sftp.json), verified
+    known_hosts and server-side credential references. Paths stay within remote_root.
+    Choose an explicit release; never assume the newest SDK is compatible.
+    """
+    from .sftp import list_delivery
+    return list_delivery(relative_path)
+
+
+@mcp.tool()
+def sdk_sftp_download(relative_path: str, expected_sha512: str | None = None,
+                      companion_paths: list[str] | None = None) -> dict:
+    """Download one selected SDK archive, checksum sidecar or release note via SFTP.
+
+    Pass companion_paths for the selected .sha512 sidecar and release notes; these
+    land alongside the archive and the sidecar is verified automatically.
+    Read-only on the server. Files are saved privately under KOBIL_SDK_DELIVERY or
+    ~/.kobil-sdk/delivery, with no overwrite. Optional supplier SHA-512 is checked
+    before publishing the download. No credential arguments. Follow with artifact
+    import/install and print the selected platform's release changelog.
+    """
+    from .sftp import download
+    return download(relative_path, expected_sha512, companion_paths)

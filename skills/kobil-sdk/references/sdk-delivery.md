@@ -17,7 +17,7 @@ credentials. The SDK binaries remain outside this repository.
    approved remote release path. Do not hardcode a shared account, endpoint,
    password or internal path in the skill. An HTTP link in an access email does
    not change the transport: connect with SFTP over SSH, not HTTP or FTP.
-2. Use an approved SFTP client with credentials supplied through a secure
+2. Use the configured MCP SFTP tools with credentials supplied through a secure
    credential store or interactive authentication. Never place passwords in
    command arguments, scripts, planning files, manifests, logs or Git history.
    Do not copy credentials from chat into repository configuration.
@@ -38,14 +38,61 @@ credentials. The SDK binaries remain outside this repository.
    Wait for the selection, then print that SDK's downloaded release changelog
    in the user-facing response following the output contract below.
 
-Select artifact_source=sftp in sdk_plan to require the sftp-artifacts contract,
-marked external_client_required. Credentials and client setup remain separate.
+## Built-in SFTP MCP workflow (0.5.0)
 
-SFTP is a documented delivery workflow, not an implemented download capability
-of the SDK MCP. Use an available approved SFTP client/adapter; do not claim that
-sdk_artifact_info downloads artifacts or that receiving account details proves
-connectivity, directory access or compatibility. Track connection, download,
-artifact inspection, build and runtime verification as separate checkpoints.
+Select `artifact_source=sftp` in `sdk_plan`. The module is implemented by
+`sdk_sftp_list` and `sdk_sftp_download`; no external client or temporary script
+is needed. If these tools are absent, the client is running an older MCP.
+Refresh/restart its MCP connection and recheck discovery before continuing.
+
+1. `sdk_sftp_list(relative_path=".")` lists the configured release root.
+2. Narrow the listing to the chosen platform/release. Reuse explicit user choices.
+3. Call `sdk_sftp_download(relative_path="release/SDK.zip",
+   companion_paths=["release/SDK.zip.sha512", "release/CHANGELOG.md", "release/README.md"])`
+   using only files confirmed by the listing. This creates a private delivery
+   directory, verifies a supplied sidecar, and returns `delivery_dir` and integrity
+   evidence. Alternatively supply `expected_sha512` from the supplier. Missing
+   checksums are reported as unverified; the artifact installer will refuse them.
+4. Pass that `delivery_dir` to `sdk_artifacts_import`, or pass the iOS archive path
+   and supplier checksum to `sdk_artifacts_install`.
+5. Ask which platform's changelog to show (unless already selected), then call
+   `sdk_artifacts_notes` and print the release section under the contract below.
+
+Downloads do not install frameworks or prove backend/runtime compatibility.
+Bundled SDK delivery is optional. An installation without binaries is normal.
+
+### Customer configuration
+
+Set `KOBIL_SDK_SFTP_CONNECTION` to a local JSON profile, or use the default
+`~/.config/kobil-sdk/sftp.json`. This is separate from backend configuration.
+Example (non-secret placeholders):
+
+```json
+{
+  "host": "sdk.example.com",
+  "port": 22,
+  "username": "customer",
+  "remote_root": "/releases",
+  "known_hosts": "~/.ssh/known_hosts",
+  "password_keyring": {"service": "sdk-delivery", "account": "customer"}
+}
+```
+
+Use exactly one authentication source: `password_keyring` (native OS credential
+store via keyring), `password_env` (name only), `password_file` (private UTF-8
+file, mode 0600 on Unix), or `private_key` (path to an unencrypted SSH key).
+Provision credentials outside chat; the server resolves these references.
+Existing credential-transfer workflows can populate the named keystore entry
+or private file. An encrypted transfer bundle is not itself a password file;
+import/decrypt it through its existing onboarding mechanism first.
+
+Host keys must already be verified in the configured `known_hosts` file.
+Unknown or changed host keys fail closed; there is no auto-trust option.
+Paths are relative to `remote_root`; traversal and symlink escapes are rejected.
+The server never uploads or deletes remote files. Downloads are private,
+non-overwriting directories under `KOBIL_SDK_DELIVERY` or `~/.kobil-sdk/delivery`.
+The optional `max_bytes` sets a per-file limit (default 4 GiB, maximum 32 GiB).
+A failed transfer/checksum removes only that call's partial delivery.
 
 ## Review the release before integration
 

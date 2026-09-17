@@ -64,7 +64,7 @@
         "artifact_source": "sftp"
       },
       "dependency": "sftp-artifacts",
-      "status": "external_client_required",
+      "status": "implemented_configured_sftp",
       "mode": "required"
     },
     {

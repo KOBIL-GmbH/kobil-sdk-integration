@@ -33,7 +33,7 @@ class StarterTests(unittest.TestCase):
         self.assertIn('sftp-artifacts', result['required_dependencies'])
         self.assertEqual(result['gaps'], [])
         module = next(m for m in result['required_modules'] if m['id'] == 'sftp-artifacts')
-        self.assertEqual(module['status'], 'external_client_required')
+        self.assertEqual(module['status'], 'implemented_configured_sftp')
         self.assertFalse(result['ready_to_execute'])
 
     def test_grafana_request_does_not_select_distribution(self):
@@ -73,7 +73,7 @@ class StarterTests(unittest.TestCase):
 
     def test_mcp_tools_registered(self):
         names = {tool.name for tool in asyncio.run(mcp.list_tools())}
-        self.assertEqual(names, {"sdk_targets", "sdk_plan", "sdk_artifact_info", "sdk_backend_status", "sdk_app_get", "sdk_app_versions", "sdk_app_ensure", "sdk_app_version_ensure", "sdk_config_write", "sdk_tms_trigger", "sdk_tms_status", "sdk_tms_result", "sdk_tms_cancel",
+        self.assertEqual(names, {"sdk_sftp_list", "sdk_sftp_download", "sdk_targets", "sdk_plan", "sdk_artifact_info", "sdk_backend_status", "sdk_app_get", "sdk_app_versions", "sdk_app_ensure", "sdk_app_version_ensure", "sdk_config_write", "sdk_tms_trigger", "sdk_tms_status", "sdk_tms_result", "sdk_tms_cancel",
             "sdk_docs", "sdk_platforms", "sdk_backend_verify", "sdk_idp_clients",
             "sdk_mc_config", "sdk_activation_user_ensure", "sdk_activation_code_set", "sdk_activation_password_set", "sdk_idp_theme_check", "sdk_activation_user_status", "sdk_trusted_certificate_write", "sdk_artifacts_install", "sdk_artifacts_import", "sdk_artifacts_notes", "sdk_artifacts_list", "sdk_ios_project_integrate",
             "sdk_activation_flow_ensure", "sdk_activation_client_ensure", "sdk_activation_flow_describe", "sdk_idp_journeys", "sdk_activation_step_config"})

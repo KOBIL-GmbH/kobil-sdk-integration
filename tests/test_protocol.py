@@ -20,12 +20,13 @@ class ProtocolTests(unittest.TestCase):
                     'ast_url': 'https://backend.example', 'token_env': 'SDK_TEST_TOKEN'}))
                 params = StdioServerParameters(command=sys.executable,
                     args=['-c', 'from kobil_sdk_integration.server import main; main()'],
-                    env={**os.environ, 'KOBIL_SDK_CONNECTION': str(path), 'SDK_TEST_TOKEN': 'protocol-fixture'})
+                    env={**os.environ, 'KOBIL_SDK_CONNECTION': str(path), 'SDK_TEST_TOKEN': 'protocol-fixture', 'KOBIL_SDK_SFTP_CONNECTION': str(Path(directory) / 'missing-sftp.json')})
                 async with stdio_client(params) as (read, write):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 34)
+                        self.assertEqual(len(names), 36)
+                        self.assertTrue({'sdk_sftp_list', 'sdk_sftp_download'} <= names)
                         self.assertTrue({'sdk_app_get', 'sdk_app_versions'} <= names)
                         # method and environment discovery must be reachable as tools, not only
                         # as a skill file: most MCP clients never load a skill.
@@ -34,6 +35,10 @@ class ProtocolTests(unittest.TestCase):
                                          'sdk_activation_user_ensure', 'sdk_activation_code_set',
                                          'sdk_activation_flow_ensure', 'sdk_activation_client_ensure',
                                          'sdk_activation_flow_describe', 'sdk_activation_step_config'} <= names)
+                        for tool, args in [('sdk_sftp_list', {}), ('sdk_sftp_download', {'relative_path': 'SDK.zip'})]:
+                            response = await session.call_tool(tool, args)
+                            self.assertTrue(response.isError)
+                            self.assertIn('Invalid SFTP configuration', str(response))
                         result = await session.call_tool('sdk_docs', {})
                         self.assertFalse(result.isError)
                         self.assertIn('workflow', str(result))
