@@ -178,3 +178,20 @@ entry reusable and customer-neutral; internal hosts, credentials, test identitie
 JWTs and private logs stay in local evidence. Record build, launch, SDK start,
 activation and return-login separately. Failed or untested steps remain explicitly
 pending; a passed backend request is not a passed SDK integration.
+
+## Server-side test activation identity
+
+When a fresh app reports ActivationRequired, check whether the installed MCP
+exposes `sdk_idp_status`, `sdk_idp_user_get`, `sdk_idp_test_user_create` and
+`sdk_idp_activation_write`. Read [IDP provisioning](../../docs/idp.md) when present.
+Use configured Keystore/age credential references; never ask for secrets in chat.
+The registration user of an app version is not an activation code or necessarily
+the activation user. Creating an app/version and SDK config JWT does not create
+an activation identity. v0.3.3 lacks these IDP tools; report that capability gap
+and the need for an explicit runtime upgrade instead of inventing a tool.
+
+Backend provisioning is independent of Xcode's device-interaction capability.
+Use the authorized backend workflow first; separately report any inability to
+operate the physical phone. Deliver the generated identity file directly to the
+test harness through private file access. Never print activation codes into the
+conversation. A pending/unknown issuance must not be retried automatically.
