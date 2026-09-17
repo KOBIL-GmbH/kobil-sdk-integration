@@ -2,7 +2,7 @@
 
 KSSIDP parses every login page as strict XML. A theme with unbalanced tags, an unclosed
 void element or a raw ampersand is discarded silently: no delegate call, no result, no
-error, and the app waits forever. On gondor-aitrust-dev the working markup lives in a
+error, and the app waits forever. On the verification realm the working markup lives in a
 patch applied inside the idp-core pod, which reverts when the pod restarts, so the only
 way to know whether login still works is to look at the page. This does that.
 """
