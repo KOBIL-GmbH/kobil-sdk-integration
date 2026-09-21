@@ -1,6 +1,6 @@
 # Versioned installation and releases
 
-## Install v0.4.0
+## Install v0.3.3
 
 Requires Git, Python 3.11+ and uv. While this repository is private, Git must
 already be authenticated with an account that has access. Never put an access
@@ -9,8 +9,8 @@ token in the clone URL or MCP configuration. SDK binaries are supplied separatel
 Install each release into its own directory; do not reuse a development checkout:
 
 ```sh
-git clone --branch v0.4.0 --depth 1 https://github.com/KOBIL-GmbH/kobil-sdk-integration.git /absolute/path/kobil-sdk/releases/v0.4.0
-cd /absolute/path/kobil-sdk/releases/v0.4.0
+git clone --branch v0.3.3 --depth 1 https://github.com/KOBIL-GmbH/kobil-sdk-integration.git /absolute/path/kobil-sdk/releases/v0.3.3
+cd /absolute/path/kobil-sdk/releases/v0.3.3
 git describe --tags --exact-match
 uv sync --frozen --python 3.11
 ```
@@ -33,7 +33,7 @@ need the absolute path to the uv executable as well.
     "KOBILSDK": {
       "type": "stdio",
       "command": "/absolute/path/to/uv",
-      "args": ["run", "--frozen", "--directory", "/absolute/path/kobil-sdk/releases/v0.4.0", "kobil-sdk-mcp"],
+      "args": ["run", "--frozen", "--directory", "/absolute/path/kobil-sdk/releases/v0.3.3", "kobil-sdk-mcp"],
       "env": {
         "KOBIL_SDK_CONNECTION": "/absolute/path/private/kobil-sdk/connection.json"
       }
@@ -50,14 +50,14 @@ it must stay outside the source and release checkout, and must not follow `main`
 No account, backend URL, SDK binary or credential is included in a release.
 
 Use the skill from the **same** release:
-`/absolute/path/kobil-sdk/releases/v0.4.0/skills/kobil-sdk/SKILL.md`.
+`/absolute/path/kobil-sdk/releases/v0.3.3/skills/kobil-sdk/SKILL.md`.
 For Copilot, create a personal `~/.copilot/skills/kobil-sdk/SKILL.md` with frontmatter
 `name: kobil-sdk` and a concise integration description. Its body should instruct
 the agent to read that absolute canonical skill path and resolve references from
 there. Custom agents should point at the same canonical path. Do not copy just
 the skill folder: it also references the release's docs directory.
 
-Start KOBILSDK in the MCP server list. Verify discovery of 34 tools and call
+Start KOBILSDK in the MCP server list. Verify discovery of 13 tools and call
 `sdk_targets`. Test backend access separately with authorized read-only operations.
 A running MCP does not prove native activation or login passed.
 
