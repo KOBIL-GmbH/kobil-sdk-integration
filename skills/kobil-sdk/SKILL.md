@@ -17,6 +17,15 @@ External-customer app targets are Android and iOS only. macOS and Windows
 apps are outside this scope; do not offer or plan them as customer SDK targets.
 This is a scope decision, not a claim that desktop SDKs do not exist.
 
+## Source of app-flow logic
+
+Follow [app-flow sources](references/app-flow-sources.md). App behavior comes from
+authorized WLA skills and version-matched GettingStarted apps, not a bundled
+realm-specific recipe. The MCP supplies IDP/AST service operations; it must not
+choose a login journey or create a replacement to fit sample code. Never use
+SuperApp Login V2 for native Android/iOS. Missing discovery is unknown, not absence.
+Use `sdk_service_catalog` to inspect installed operations and explicit gaps.
+
 ## Resolve the customer's request
 
 Inspect the target app's rules, dependency/build files and configuration.
