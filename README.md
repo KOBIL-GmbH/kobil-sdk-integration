@@ -34,7 +34,7 @@ history are included.
 ## Install a fixed release
 
 Use [versioned installation](docs/releases.md) for a fixed MCP and skill version.
-The current release is **v0.3.3**. Upgrades are explicit; do not deploy from `main`.
+The current release is **v0.4.0**. Upgrades are explicit; do not deploy from `main`.
 
 ## Run from a development checkout
 
