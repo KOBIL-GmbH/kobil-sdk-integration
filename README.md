@@ -104,3 +104,7 @@ uv run python -m unittest discover -s tests -v
 ```
 
 The tests do not contact customer services or validate native SDK activation.
+
+## Service interface development
+
+The service-interface feature adds explicit IDP/AST APIs, with [dashboard coverage](docs/service-interfaces.md). App-flow logic comes from authorized WLA skills and version-matched GettingStarted apps. No automatic journey selection is included.
