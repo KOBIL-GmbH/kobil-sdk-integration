@@ -367,5 +367,76 @@
     ],
     "query": [],
     "body_required": true
+  },
+  "idp.v3_user_get": {
+    "method": "GET",
+    "path": "/auth/realms/{realm}/v3_user/{username}",
+    "identifiers": [
+      "username"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "idp.v3_user_search": {
+    "method": "GET",
+    "path": "/auth/realms/{realm}/v3_user/getusers",
+    "identifiers": [],
+    "query": [
+      "search",
+      "max"
+    ],
+    "body_required": false
+  },
+  "idp.v3_user_delete": {
+    "method": "DELETE",
+    "path": "/auth/realms/{realm}/v3_user/{username}",
+    "identifiers": [
+      "username"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "idp.authenticator_providers": {
+    "method": "GET",
+    "path": "/auth/admin/realms/{realm}/authentication/authenticator-providers",
+    "identifiers": [],
+    "query": [],
+    "body_required": false
+  },
+  "idp.flow_execution_create": {
+    "method": "POST",
+    "path": "/auth/admin/realms/{realm}/authentication/flows/{alias}/executions/execution",
+    "identifiers": [
+      "alias"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.execution_config_create": {
+    "method": "POST",
+    "path": "/auth/admin/realms/{realm}/authentication/executions/{execution}/config",
+    "identifiers": [
+      "execution"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.authenticator_config_get": {
+    "method": "GET",
+    "path": "/auth/admin/realms/{realm}/authentication/config/{config}",
+    "identifiers": [
+      "config"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "idp.authenticator_config_update": {
+    "method": "PUT",
+    "path": "/auth/admin/realms/{realm}/authentication/config/{config}",
+    "identifiers": [
+      "config"
+    ],
+    "query": [],
+    "body_required": true
   }
 }

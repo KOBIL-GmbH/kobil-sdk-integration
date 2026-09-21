@@ -30,7 +30,7 @@ Live verification: not performed for this clean service-interface branch.
 
 ### `sdk_idp_user_get`
 
-Read a user by UUID or exact username (exactly one). Requires view-users. Returns profile metadata; use activation_user_status for activation state.
+Read a user by UUID or exact username (exactly one). Requires view-users. Returns profile metadata; inspect credential metadata and device state separately.
 
 Parameters: `expected_environment, user_uuid, username, realm`.
 

@@ -20,3 +20,10 @@ planning, artifact inspection, AST app/version/configuration and foreground TMS.
 Native Android/iOS activation, returning login and selected foreground TMS flows
 have prior version-scoped evidence; complete SDK coverage and Flutter runtime
 verification remain pending. SDK binaries and credentials are not distributed here.
+
+## Audited service additions (unreleased)
+
+- Add eight IDP dispatcher operations and explicit OIDC login-page fetch.
+- Add activation-code generation/set, private AST token export, authentication testing and optional Grafana client correlation.
+- Keep connection selection host-owned and app-flow selection explicit.
+- Validate with 115 local tests and package build; live backend acceptance pending.
