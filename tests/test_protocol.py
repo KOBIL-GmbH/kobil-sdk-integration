@@ -25,7 +25,8 @@ class ProtocolTests(unittest.TestCase):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 36)
+                        self.assertGreaterEqual(len(names), 100)
+                        self.assertTrue({"sdk_app_list", "sdk_idp_user_list", "sdk_idp_client_list", "sdk_backend_capabilities"} <= names)
                         self.assertTrue({'sdk_sftp_list', 'sdk_sftp_download'} <= names)
                         self.assertTrue({'sdk_app_get', 'sdk_app_versions'} <= names)
                         # method and environment discovery must be reachable as tools, not only

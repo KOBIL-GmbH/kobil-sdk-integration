@@ -7,7 +7,7 @@ import stat
 from mcp.server.fastmcp import FastMCP
 from .planner import FRAMEWORKS, plan
 
-mcp = FastMCP("KOBILSDK")
+mcp = FastMCP("KOBILSDK", instructions="Integrate KOBIL SDKs into Android/iOS apps. Discover AST apps, versions and devices; administer IDP users, clients, roles, groups and flows; provision SDK configuration and transactions; download verified SDK deliveries. Use sdk_docs and sdk_backend_capabilities first. Backend success is separate from app runtime verification. Credentials resolve server-side.")
 
 
 @mcp.tool()
@@ -604,3 +604,52 @@ def sdk_sftp_download(relative_path: str, expected_sha512: str | None = None,
     """
     from .sftp import download
     return download(relative_path, expected_sha512, companion_paths)
+
+
+# Domain modules preserve the original tool names and add typed administration.
+from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin
+for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin):
+    _module.register(mcp)
+
+
+@mcp.tool()
+def sdk_connections_list() -> dict:
+    """Show the selected connection's name, tenant and configured domains without secrets.
+
+    This installation selects one connection with KOBIL_SDK_CONNECTION. This tool
+    does not search the machine for other profiles or switch process-global state.
+    No network authentication is performed; use sdk_backend_verify separately.
+    """
+    from .backend import configuration
+    cfg = configuration()
+    return {'connections': [{'environment':cfg['environment'], 'tenant':cfg['tenant'],
+                             'ast_configured':True, 'idp_admin_configured':bool(cfg.get('admin'))}],
+            'selection':'KOBIL_SDK_CONNECTION', 'credentials_verified':False}
+
+
+@mcp.tool()
+async def sdk_backend_capabilities(expected_environment: str, probe_idp_server: bool = False) -> dict:
+    """Discover implemented tools and explicit coverage gaps for the selected connection.
+
+    Local-only by default. Optional probe_idp_server reads IDP server/version metadata
+    using the configured administration identity; this does not prove permissions for
+    every operation. Required rights depend on the resource and tenant. No writes.
+    """
+    from .backend import configuration
+    from .idp_admin import Admin
+    cfg = configuration(expected_environment)
+    result = {'environment':cfg['environment'], 'tenant':cfg['tenant'],
+              'tools':sorted(t.name for t in await mcp.list_tools()),
+              'idp_admin_configured':bool(cfg.get('admin')),
+              'operation_permissions_verified':False, 'live_write_verification':False,
+              'ast_gaps':dict(ast_admin.UNSUPPORTED),
+              'idp_scope_limits':['Mapper writes: typed OIDC user-attribute mapper.',
+                                  'Client writes: core OIDC fields; other protocols need typed adapters.',
+                                  'Federation/component/policy writes: explicitly supported provider types only.'],
+              'next_step':'Read sdk_docs(section="backend-catalog") for the versioned coverage matrix; use resource-specific discovery before writes.'}
+    if probe_idp_server:
+        with Admin(expected_environment) as api:
+            info=api.call_global('GET','/admin/serverinfo')
+            system=info.get('systemInfo',{}) if isinstance(info,dict) else {}
+            result['idp_server']={k:system[k] for k in ('version',) if k in system}
+    return result

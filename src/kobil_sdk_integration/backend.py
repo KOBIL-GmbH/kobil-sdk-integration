@@ -109,7 +109,10 @@ class AST:
                 if response.status_code == 404 and allow_not_found:
                     return None
                 if response.status_code >= 300:
-                    raise BackendError('Backend request failed (HTTP %d)' % response.status_code)
+                    category = {400: 'invalid_request', 401: 'authentication_failed', 403: 'permission_denied',
+                                404: 'resource_or_api_not_found', 405: 'operation_not_supported',
+                                409: 'conflict', 429: 'rate_limited'}.get(response.status_code, 'backend_error')
+                    raise BackendError('Backend request failed (HTTP %d; %s)' % (response.status_code, category))
                 raw = bytearray()
                 for part in response.iter_bytes():
                     raw.extend(part)

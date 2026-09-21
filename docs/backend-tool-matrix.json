@@ -1,0 +1,1364 @@
+{
+  "version": "0.6.0",
+  "registered_tools": 177,
+  "scope": "New backend catalog operations; existing 36 tools retained.",
+  "sources": [
+    "https://www.keycloak.org/docs-api/latest/rest-api/index.html",
+    "https://github.com/keycloak/keycloak/tree/main/services/src/main/java/org/keycloak/authorization/admin"
+  ],
+  "tools": [
+    {
+      "tool": "sdk_app_list",
+      "module": "ast_admin",
+      "description": "List AST app registrations when the app name is unknown. Read-only; requires AST tenant access.\n\n        Optional name substring/category filters; cursor is a decimal offset into a fresh complete\n        collection fetched with backend pagination (not a stable snapshot). Follow next_cursor until null. Returns safe IDs/names/\n        categories, never push credentials. Refuses unknown/incomplete backend paging envelopes.\n        Next call sdk_app_versions for the selected exact app name.\n        ",
+      "schema_verified": true,
+      "live_verified": true,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_app_version_get",
+      "module": "ast_admin",
+      "description": "Find one version ID within the complete version listing for an exact app. Read-only;\n        returns registration user, platform and integrity policy. Missing/ambiguous IDs fail.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_app_version_delete",
+      "module": "ast_admin",
+      "description": "Delete an exact version ID after verifying it belongs to app_name. Destructive;\n        requires AST management permission. Returns affected registration metadata; backend\n        dependency/conflict errors are propagated. Does not delete the app or user.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "b.request('DELETE', '/versions/' + segment(version_id))"
+      ]
+    },
+    {
+      "tool": "sdk_app_update",
+      "module": "ast_admin",
+      "description": "Update app categories while preserving all existing push settings. Requires AST\n        app-update permission. App name is the immutable selector; arbitrary metadata/rename\n        is not supported by this API. Returns changed/reused. No credential values returned.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_app_delete",
+      "module": "ast_admin",
+      "description": "Delete an exact app AND its related versions (backend cascade). Destructive;\n        requires app-delete permission. Reads the app/version inventory first, returns the\n        affected versions. Device effects are backend-defined and not claimed as verified.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "b.request('DELETE', '/apps/' + segment(app_name))"
+      ]
+    },
+    {
+      "tool": "sdk_app_version_update",
+      "module": "ast_admin",
+      "description": "Update selected version integrity/lock/registration-user fields by exact ID.\n        Preserves app/platform/version and unspecified policy fields via read-modify-write.\n        Requires version-update permission. Refuses registration-user replacement on a\n        policy-based version. Returns changed/reused; does not move or rename a version.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "b.request('GET', path)",
+        "body.update(changes)",
+        "b.request('PUT', path, body)"
+      ]
+    },
+    {
+      "tool": "sdk_ast_device_list",
+      "module": "ast_admin",
+      "description": "List a user's AST clients using their IDP UUID, not username. Read-only. Returns\n        safe device identifiers/state and local offset pagination. Unknown partial server\n        pages fail explicitly. Next use sdk_ast_device_get with the chosen client ID.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "b.request('GET', '/astclients?userId=' + segment(user_uuid))"
+      ]
+    },
+    {
+      "tool": "sdk_ast_device_get",
+      "module": "ast_admin",
+      "description": "Read one AST client by exact client ID, with safe state/risk fields if supplied.\n        Does not resolve a username or query an observability service. Requires tenant read access.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "b.request('GET', path)"
+      ]
+    },
+    {
+      "tool": "sdk_ast_device_unlink",
+      "module": "ast_admin",
+      "description": "Remove the exact user UUID/device association via AST unlink. Destructive association\n        change; does not imply deletion of the client record. Requires AST management permission.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "b.request('POST', '/unlink', {'userId': user_uuid, 'astClientId': client_id})"
+      ]
+    },
+    {
+      "tool": "sdk_ast_device_delete",
+      "module": "ast_admin",
+      "description": "Delete the exact AST client/device record. Destructive, requires AST management\n        rights. Backend constraints/errors are propagated; no user account is deleted.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "b.request('DELETE', path)"
+      ]
+    },
+    {
+      "tool": "sdk_ast_push_get",
+      "module": "ast_admin",
+      "description": "Inspect APNs/FCM setup for an exact app. Read-only, returns public identifiers and\n        presence flags only; no certificate, private key, password or service-account payload.\n        Certificate expiry requires sdk_ast_push_validate with local files.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_ast_push_fcm_set",
+      "module": "ast_admin",
+      "description": "Replace only an app's FCM service account using an absolute private JSON file\n        (mode 0600). Reads then preserves APNs/other push fields, writes a flat config.\n        Requires AST management rights; returns changed/reused without any credentials.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "b.request('PUT', '/apps/' + segment(app_name), pnc)"
+      ]
+    },
+    {
+      "tool": "sdk_ast_push_update",
+      "module": "ast_admin",
+      "description": "Update selected modern APNs fields/categories, preserving unspecified push fields.\n        Credential material must be absolute private files (0600); no inline secrets accepted.\n        Uses verified flat PUT config. Requires AST management rights. Older field aliases\n        are not auto-converted; backend schema errors are propagated. No implicit clear/remove.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "pnc.update(changes)",
+        "b.request('PUT', '/apps/' + segment(app_name), pnc)"
+      ]
+    },
+    {
+      "tool": "sdk_tms_display_message",
+      "module": "ast_admin",
+      "description": "Send a real display-only message to an IDP user UUID through AST. This contacts\n        the user's devices; use only for requested messaging. Requires management permission.\n        Acceptance by the API does not prove delivery/read/acknowledgement. No TMS approval inferred.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "b.request('POST', '/display-message', {'userId': user_uuid, 'text': text})"
+      ]
+    },
+    {
+      "tool": "sdk_ast_push_validate",
+      "module": "ast_admin",
+      "description": "Validate a local PEM certificate/private-key pair from private files (0600).\n        Local-only: checks parseability, key match and validity dates; returns SHA-256\n        fingerprint and expiry. Does not prove APNs entitlement, topic or server acceptance.\n        Encrypted keys without an external decryption provider are unsupported.\n        ",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_user_list",
+      "module": "idp_users",
+      "description": "List users in an explicit realm. Read-only; needs query/view-users. Follow next_offset until complete; returns no passwords. Use the returned UUID for device/activation tools.",
+      "schema_verified": true,
+      "live_verified": true,
+      "contract_expressions": [
+        "api.page('/users', first, max_results, {'search': search} if search else {})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_search",
+      "module": "idp_users",
+      "description": "Search users by username/email/enabled state. Exact matching defaults to true. Read-only, paginated; does not create identities or reset passwords.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page('/users', first, max_results, params)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_count",
+      "module": "idp_users",
+      "description": "Count users matching an optional search. Read-only realm admin query; count is not a stable pagination snapshot.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', '/users/count', params={'search': search} if search else {})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_get",
+      "module": "idp_users",
+      "description": "Read a user by UUID or exact username (exactly one). Requires view-users. Returns profile metadata; use activation_user_status for activation state.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', '/users', params={'username': username, 'exact': True, 'max': 2})",
+        "api.call('GET', '/users/' + segment(user_uuid))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_create",
+      "module": "idp_users",
+      "description": "Create an IDP profile without a password. Requires manage-users. Existing-name conflicts are reported, not overwritten. Follow with explicit group/credential setup if needed.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', '/users', data)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_update",
+      "module": "idp_users",
+      "description": "Update only selected profile fields, preserving other fields. Requires manage-users. Never resets a password; attributes supplied replace that attribute map explicitly.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update('/users/' + segment(user_uuid), changes.model_dump(exclude_unset=True), UserProfile.model_fields)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_enable",
+      "module": "idp_users",
+      "description": "Enable an existing user. Changes availability only; no password/group changes. Requires manage-users.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update('/users/' + segment(user_uuid), {'enabled': True}, {'enabled'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_disable",
+      "module": "idp_users",
+      "description": "Disable an existing user without deleting the profile. Requires manage-users; active-session revocation is a separate operation.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update('/users/' + segment(user_uuid), {'enabled': False}, {'enabled'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_delete",
+      "module": "idp_users",
+      "description": "Permanently delete the exact user UUID from the selected realm. Requires manage-users; do not substitute a username or use for routine reuse.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', '/users/' + segment(user_uuid))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_credentials_list",
+      "module": "idp_users",
+      "description": "List credential IDs/types/labels for a user, never credential contents. Read-only; existing passwords cannot be recovered.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', '/users/' + segment(user_uuid) + '/credentials')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_credential_delete",
+      "module": "idp_users",
+      "description": "Remove one credential by its ID from the selected user. Requires manage-users; may prevent login. Does not delete the profile.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', '/users/' + segment(user_uuid) + '/credentials/' + segment(credential_id))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_required_actions_update",
+      "module": "idp_users",
+      "description": "Replace this user's required-action list (empty clears it). Requires manage-users; does not alter realm-wide defaults or send email.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update('/users/' + segment(user_uuid), {'requiredActions': actions}, {'requiredActions'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_verify_email_send",
+      "module": "idp_users",
+      "description": "Send a verification email to the selected user. Communication/write operation requiring explicit user intent and configured realm email; does not mark email verified.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('PUT', '/users/' + segment(user_uuid) + '/send-verify-email')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_actions_email_send",
+      "module": "idp_users",
+      "description": "Send an action email for specified required actions. Communication/write; explicit recipient UUID. Lifespan in seconds (60..86400); SMTP delivery is not proven by backend acceptance.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('PUT', '/users/' + segment(user_uuid) + '/execute-actions-email', actions, {'lifespan': lifespan})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_client_list",
+      "module": "idp_access",
+      "description": "Read a page of IDP clients. client_id filters the public clientId; returned id is the internal UUID used by client tools. Follow next_offset to continue. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": true,
+      "contract_expressions": [
+        "api.page('/clients', first, max_results, params={'clientId': client_id} if client_id else None)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_client_get",
+      "module": "idp_access",
+      "description": "Read one client by internal UUID; credential fields are redacted. Use client_list to resolve a public clientId. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', f'/clients/{segment(client_uuid)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_client_create",
+      "module": "idp_access",
+      "description": "Create an OpenID Connect client with an explicit public clientId. Conflicts are not silently reused. Does not export its secret. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "body.update({'clientId': client_id, 'protocol': 'openid-connect'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_client_update",
+      "module": "idp_access",
+      "description": "Update selected client fields by internal UUID, preserving omitted configuration. Empty URI/origin lists explicitly clear those lists. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(f'/clients/{segment(client_uuid)}', {k: v for k, v in changes.items() if v is not None}, set(changes))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_client_delete",
+      "module": "idp_access",
+      "description": "Delete one client by internal UUID, including its configuration. This is destructive. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_client_service_account_get",
+      "module": "idp_access",
+      "description": "Read the service-account user for an internal client UUID. Service accounts must be enabled on that client. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', f'/clients/{segment(client_uuid)}/service-account-user')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_scope_list",
+      "module": "idp_access",
+      "description": "Read a locally paginated page of realm client scopes; these are OAuth client scopes, not authorization resource scopes. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page('/client-scopes', first, max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_scope_get",
+      "module": "idp_access",
+      "description": "Read a realm client scope by ID. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', f'/client-scopes/{segment(scope_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_scope_create",
+      "module": "idp_access",
+      "description": "Create an OpenID Connect realm client scope. Assign it to a client separately with client_scope_assign. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_scope_update",
+      "module": "idp_access",
+      "description": "Update selected client-scope metadata, preserving mappers and unrelated attributes. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(f'/client-scopes/{segment(scope_id)}', {k: v for k, v in {'name': name, 'description': description}.items() if v is not None}, {'name', 'description'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_scope_delete",
+      "module": "idp_access",
+      "description": "Delete a realm client scope by ID; assignments are affected. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_client_scopes_get",
+      "module": "idp_access",
+      "description": "Read default or optional scope bindings for an internal client UUID. Pagination is local. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(f'/clients/{segment(client_uuid)}/{scope_type}-client-scopes', first, max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_client_scope_assign",
+      "module": "idp_access",
+      "description": "Bind an existing scope as default or optional to a client; idempotent PUT does not create a scope. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_client_scope_remove",
+      "module": "idp_access",
+      "description": "Remove only the selected scope binding, retaining the scope itself. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_mapper_list",
+      "module": "idp_access",
+      "description": "Read protocol mappers on an internal client UUID or client-scope ID. Pagination is local. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(_mapper_path(owner_type, owner_id), first, max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_mapper_create",
+      "module": "idp_access",
+      "description": "Create a typed OIDC user-attribute-to-claim mapper. Other mapper provider types are not supported by this operation. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_mapper_update",
+      "module": "idp_access",
+      "description": "Update an existing OIDC user-attribute mapper. Rejects other provider types and preserves unrelated mapper configuration. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.raw('GET', path)",
+        "api.update(path, body, set(body))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_mapper_delete",
+      "module": "idp_access",
+      "description": "Delete one protocol mapper from its explicitly selected owner. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_role_list",
+      "module": "idp_access",
+      "description": "Read paginated realm roles, or client roles when internal client UUID is supplied. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(_role_path(client_uuid), first, max_results, params={'search': search} if search else None)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_role_get",
+      "module": "idp_access",
+      "description": "Get a realm role, or a role belonging to the explicitly selected internal client UUID. role_name is the exact role name. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', _role_path(client_uuid) + '/' + segment(role_name))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_role_create",
+      "module": "idp_access",
+      "description": "Create a realm role, or a role belonging to the explicitly selected internal client UUID. role_name is the exact role name. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_role_update",
+      "module": "idp_access",
+      "description": "Update a realm role, or a role belonging to the explicitly selected internal client UUID. role_name is the exact role name. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(_role_path(client_uuid) + '/' + segment(role_name), {'description': description}, {'description'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_role_delete",
+      "module": "idp_access",
+      "description": "Delete a realm role, or a role belonging to the explicitly selected internal client UUID. role_name is the exact role name. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_role_composites_get",
+      "module": "idp_access",
+      "description": "Read composite members of a realm/client role. Pagination is local. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(_role_path(client_uuid) + '/' + segment(role_name) + '/composites', first, max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_role_composite_add",
+      "module": "idp_access",
+      "description": "Add composite role membership. Parent and member role scopes are explicit; omit each client UUID for realm scope. Members are resolved before any mutation. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_role_composite_remove",
+      "module": "idp_access",
+      "description": "Remove composite role membership. Parent and member role scopes are explicit; omit each client UUID for realm scope. Members are resolved before any mutation. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_role_members_list",
+      "module": "idp_access",
+      "description": "Read a page of users/groups assigned a realm/client role. Unsupported backend routes return a structured backend error. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(_role_path(client_uuid) + '/' + segment(role_name) + '/' + member_type, first, max_results)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_group_list",
+      "module": "idp_access",
+      "description": "Read a page of top-level groups. Nested subGroups returned by the backend are not a flattened full-realm enumeration. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page('/groups', first, max_results, params={'search': search} if search else None)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_group_get",
+      "module": "idp_access",
+      "description": "Read one group by UUID, including backend-returned hierarchy metadata. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', f'/groups/{segment(group_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_group_count",
+      "module": "idp_access",
+      "description": "Count realm groups, optionally filtered by name and top-level status. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', '/groups/count', params={'search': search, 'top': top_level})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_group_create",
+      "module": "idp_access",
+      "description": "Create a top-level group or a child of the specified parent UUID. Existing name conflicts are reported by the backend. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_group_update",
+      "module": "idp_access",
+      "description": "Rename a group while preserving attributes and unrelated metadata. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(f'/groups/{segment(group_id)}', {'name': name}, {'name'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_group_delete",
+      "module": "idp_access",
+      "description": "Delete one group and its backend-managed hierarchy/memberships. Does not delete member users. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_group_members_list",
+      "module": "idp_access",
+      "description": "Read a page of users in a group using its UUID. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(f'/groups/{segment(group_id)}/members', first, max_results)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_groups_list",
+      "module": "idp_access",
+      "description": "Read a page of group memberships for an exact user UUID. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(f'/users/{segment(user_id)}/groups', first, max_results)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_group_member_add",
+      "module": "idp_access",
+      "description": "Add an existing user UUID in a group UUID. Does not create/delete the user or group. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_group_member_remove",
+      "module": "idp_access",
+      "description": "Remove an existing user UUID in a group UUID. Does not create/delete the user or group. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_role_assignments_get",
+      "module": "idp_access",
+      "description": "Read direct or effective roles assigned to a user/group UUID. Omit client_uuid for realm roles. Pagination is local. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(path, first, max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_role_assign",
+      "module": "idp_access",
+      "description": "Assign direct roles for a user/group UUID. Omit client_uuid for realm roles. Resolves all exact role names before writing; inherited roles are not directly removed. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_role_remove",
+      "module": "idp_access",
+      "description": "Remove direct roles for a user/group UUID. Omit client_uuid for realm roles. Resolves all exact role names before writing; inherited roles are not directly removed. Requires realm admin permissions; backend permission/conflict errors are propagated. Realm defaults to the configured tenant.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_flow_list",
+      "module": "idp_extended",
+      "description": "Read a bounded page of authentication flow metadata. Requires realm admin read permission; follow next_offset until complete. Does not change configuration.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page('/authentication/flows', first=first, max_results=max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_flow_get",
+      "module": "idp_extended",
+      "description": "Inspect authentication flow selected by flow_id. Requires corresponding realm admin permission. Backend constraints and built-in protection are preserved.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', f'/authentication/flows/{segment(flow_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_flow_delete",
+      "module": "idp_extended",
+      "description": "Permanently delete authentication flow selected by flow_id. Requires corresponding realm admin permission. Backend constraints and built-in protection are preserved.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', f'/authentication/flows/{segment(flow_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_required_actions_list",
+      "module": "idp_extended",
+      "description": "Read a bounded page of realm required action metadata. Requires realm admin read permission; follow next_offset until complete. Does not change configuration.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page('/authentication/required-actions', first=first, max_results=max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_required_action_get",
+      "module": "idp_extended",
+      "description": "Inspect realm required action selected by alias. Requires corresponding realm admin permission. Backend constraints and built-in protection are preserved.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', f'/authentication/required-actions/{segment(alias)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_required_action_delete",
+      "module": "idp_extended",
+      "description": "Permanently delete realm required action selected by alias. Requires corresponding realm admin permission. Backend constraints and built-in protection are preserved.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', f'/authentication/required-actions/{segment(alias)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_identity_provider_list",
+      "module": "idp_extended",
+      "description": "Read a bounded page of identity provider metadata. Requires realm admin read permission; follow next_offset until complete. Does not change configuration.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page('/identity-provider/instances', first=first, max_results=max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_identity_provider_get",
+      "module": "idp_extended",
+      "description": "Inspect identity provider selected by alias. Requires corresponding realm admin permission. Backend constraints and built-in protection are preserved.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', f'/identity-provider/instances/{segment(alias)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_identity_provider_delete",
+      "module": "idp_extended",
+      "description": "Permanently delete identity provider selected by alias. Requires corresponding realm admin permission. Backend constraints and built-in protection are preserved.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', f'/identity-provider/instances/{segment(alias)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_component_list",
+      "module": "idp_extended",
+      "description": "Read a bounded page of storage/provider component metadata. Requires realm admin read permission; follow next_offset until complete. Does not change configuration.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page('/components', first=first, max_results=max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_component_get",
+      "module": "idp_extended",
+      "description": "Inspect storage/provider component selected by component_id. Requires corresponding realm admin permission. Backend constraints and built-in protection are preserved.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', f'/components/{segment(component_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_component_delete",
+      "module": "idp_extended",
+      "description": "Permanently delete storage/provider component selected by component_id. Requires corresponding realm admin permission. Backend constraints and built-in protection are preserved.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', f'/components/{segment(component_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_flow_create",
+      "module": "idp_extended",
+      "description": "Create a custom authentication flow. Existing aliases report conflict; built-in flows are never replaced. Requires manage-realm. Add executions separately using supported activation recipe tools.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', '/authentication/flows'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_flow_executions_list",
+      "module": "idp_extended",
+      "description": "List execution IDs and requirements of a flow by alias, not flow UUID. Read-only, locally paginated; use the IDs with execution_update.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(f'/authentication/flows/{segment(flow_alias)}/executions', first=first, max_results=max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_flow_execution_update",
+      "module": "idp_extended",
+      "description": "Change only the selected execution requirement in the named flow. Requires manage-realm. Does not reorder, recreate or configure authenticator secrets.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('PUT', f'/authentication/flows/{segment(flow_alias)}/executions'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_required_action_update",
+      "module": "idp_extended",
+      "description": "Update selected non-secret required action fields, retaining unspecified configuration. Requires realm management permission. Optional provider_config_file supplies allowlisted OIDC settings privately.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(f'/authentication/required-actions/{segment(alias)}', _data(changes), set(RequiredActionChanges.model_fields))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_identity_provider_update",
+      "module": "idp_extended",
+      "description": "Update selected non-secret identity provider fields, retaining unspecified configuration. Requires realm management permission. Optional provider_config_file supplies allowlisted OIDC settings privately.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(f'/identity-provider/instances/{segment(alias)}', data, set(ProviderChanges.model_fields) | {'config'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_sessions_list",
+      "module": "idp_extended",
+      "description": "Read online/offline sessions by user UUID or internal client UUID. Offline user sessions require offline_client_id. Returns pagination metadata; does not authenticate or end sessions.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(path, first=first, max_results=max_results, paginated=paginated)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_session_logout",
+      "module": "idp_extended",
+      "description": "End exactly one realm session by session ID. Set offline only for an offline session. Requires manage-users; destructive session termination, not account deletion.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', f'/sessions/{segment(session_id)}', params={'isOffline': str(offline).lower()})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_logout",
+      "module": "idp_extended",
+      "description": "End all sessions for the explicitly selected user UUID. Requires manage-users. Does not delete the user or credentials.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', f'/users/{segment(user_id)}/logout')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_consents_revoke",
+      "module": "idp_extended",
+      "description": "Revoke a user consent for a public client ID (not its internal UUID). May terminate associated sessions. Requires manage-users; no implicit bulk revocation.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', f'/users/{segment(user_id)}/consents/{segment(client_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_events_list",
+      "module": "idp_extended",
+      "description": "Read a bounded page of authentication or admin audit events. Date filters use backend-supported date format. Requires view-events; logging must be enabled separately. Sensitive representations are redacted.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "params.update({'authUser': user_id, 'authClient': client_id})",
+        "params.update({'user': user_id, 'client': client_id})",
+        "api.page(path, first=first, max_results=max_results, params={k: v for k, v in params.items() if v is not None})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_bruteforce_get",
+      "module": "idp_extended",
+      "description": "Inspect brute-force lockout state for one user UUID. Requires realm/user administration permission. Does not change the realm security policy.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', f'/attack-detection/brute-force/users/{segment(user_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_bruteforce_clear",
+      "module": "idp_extended",
+      "description": "Clear brute-force lockout state for one user UUID. Requires realm/user administration permission. Does not change the realm security policy.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', f'/attack-detection/brute-force/users/{segment(user_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_realms_list",
+      "module": "idp_extended",
+      "description": "Read a locally paginated page of realms visible to the configured administrator. Follow next_offset; excludes secrets. Cross-realm visibility is permission-dependent.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call_global('GET', '/admin/realms')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_realm_get",
+      "module": "idp_extended",
+      "description": "Inspect the explicit or configured realm with secret fields redacted. Requires view-realm. Does not test SDK runtime compatibility.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', '')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_realm_create",
+      "module": "idp_extended",
+      "description": "Create a generic Keycloak realm (disabled by default). Requires server-level create-realm permission. This does not provision KOBIL AST services or tenants.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call_global('POST', '/admin/realms'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_realm_update",
+      "module": "idp_extended",
+      "description": "Update selected realm settings, preserving unspecified properties. Requires manage-realm. Security policy changes are explicit fields; no implicit password or session reset.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update('', _data(changes), set(RealmChanges.model_fields))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_realm_delete",
+      "module": "idp_extended",
+      "description": "Permanently delete the explicitly named realm and its users/clients. Requires server administrator permission. Never inferred from the configured default realm.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', '')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_server_info",
+      "module": "idp_extended",
+      "description": "Read server version and provider metadata using the configured admin connection. Requires server-info permission; does not infer AST version or operation permissions.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call_global('GET', '/admin/serverinfo')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_cache_clear",
+      "module": "idp_extended",
+      "description": "Invalidate exactly one selected realm, user or key cache. Requires manage-realm and may affect authentication performance. Does not delete persisted data.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', {'realm': '/clear-realm-cache', 'user': '/clear-user-cache', 'keys': '/clear-keys-cache'}[cache])"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_federation_list",
+      "module": "idp_extended",
+      "description": "Read linked external identities for a user UUID; locally bounded pagination. Does not retrieve provider access tokens.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(f'/users/{segment(user_id)}/federated-identity', first=first, max_results=max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_federation_link",
+      "module": "idp_extended",
+      "description": "Link a verified external identity to a user UUID. Requires manage-users. Caller must establish external account ownership; this does not perform an external login.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', f'/users/{segment(user_id)}/federated-identity/{segment(provider_alias)}'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_federation_unlink",
+      "module": "idp_extended",
+      "description": "Remove one external identity link from a user. Requires manage-users. Does not delete the local or external account.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', f'/users/{segment(user_id)}/federated-identity/{segment(provider_alias)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_resource_list",
+      "module": "idp_extended",
+      "description": "Read paginated authorization resources for an internal client UUID. Requires authorization-enabled client and view-clients. Distinct from OAuth client scopes.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(_auth(client_id) + '/resource', first=first, max_results=max_results, params={'name': name} if name else None)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_resource_get",
+      "module": "idp_extended",
+      "description": "Inspect one authorization resource by stable ID under an internal client UUID. Requires corresponding authorization administration rights.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', _auth(client_id) + f'/resource/{segment(resource_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_resource_delete",
+      "module": "idp_extended",
+      "description": "Delete one authorization resource by stable ID under an internal client UUID. Requires corresponding authorization administration rights.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', _auth(client_id) + f'/resource/{segment(resource_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_resource_create",
+      "module": "idp_extended",
+      "description": "Create an authorization resource under an internal client UUID. Existing-name conflicts are reported. Requires manage-authorization; no implicit permission grants.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', _auth(client_id) + '/resource'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_resource_update",
+      "module": "idp_extended",
+      "description": "Update selected authorization resource metadata by stable ID, preserving scopes and other unspecified fields. Requires manage-authorization.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(_auth(client_id) + f'/resource/{segment(resource_id)}', _data(changes), set(ResourceChanges.model_fields))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_scope_list",
+      "module": "idp_extended",
+      "description": "Read paginated authorization scopes for an internal client UUID. Requires authorization-enabled client and view-clients. Distinct from OAuth client scopes.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(_auth(client_id) + '/scope', first=first, max_results=max_results, params={'name': name} if name else None)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_scope_get",
+      "module": "idp_extended",
+      "description": "Inspect one authorization scope by stable ID under an internal client UUID. Requires corresponding authorization administration rights.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', _auth(client_id) + f'/scope/{segment(scope_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_scope_delete",
+      "module": "idp_extended",
+      "description": "Delete one authorization scope by stable ID under an internal client UUID. Requires corresponding authorization administration rights.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', _auth(client_id) + f'/scope/{segment(scope_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_scope_create",
+      "module": "idp_extended",
+      "description": "Create an authorization scope under an internal client UUID. Existing-name conflicts are reported. Requires manage-authorization; no implicit permission grants.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', _auth(client_id) + '/scope'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_scope_update",
+      "module": "idp_extended",
+      "description": "Update selected authorization scope metadata by stable ID, preserving scopes and other unspecified fields. Requires manage-authorization.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(_auth(client_id) + f'/scope/{segment(scope_id)}', _data(changes), set(ScopeChanges.model_fields))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_resource_server_get",
+      "module": "idp_extended",
+      "description": "Inspect authorization resource-server settings for an internal client UUID. Requires an authorization-enabled client and view-clients permission.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', _auth(client_id))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_authorization_enable",
+      "module": "idp_extended",
+      "description": "Enable authorization services on an existing confidential client by internal UUID, preserving other client settings. Requires manage-clients; backend rejects incompatible client types.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(f'/clients/{segment(client_id)}', {'authorizationServicesEnabled': True}, {'authorizationServicesEnabled'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_identity_provider_create",
+      "module": "idp_extended",
+      "description": "Create an OIDC identity provider from a private mode-0600 JSON configuration reference. Disabled by default. Allowlisted OIDC configuration only; credentials never returned. Requires manage-identity-providers.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', '/identity-provider/instances'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_component_create",
+      "module": "idp_extended",
+      "description": "Create an LDAP user-storage component under an explicit parent realm ID using allowlisted configuration in a private JSON file. Requires manage-realm. Other provider types are not implemented.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', '/components'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_component_update",
+      "module": "idp_extended",
+      "description": "Rename a component or update allowlisted LDAP configuration from a private JSON file. Requires manage-realm. Unspecified settings and credentials are preserved; other component configuration types are unsupported.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(path, data, {'name', 'config'})",
+        "api.call('GET', path)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_identity_provider_mapper_list",
+      "module": "idp_extended",
+      "description": "Read locally paginated identity-provider mapper metadata for an alias. Requires view-identity-providers. Does not change user attributes.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(f'/identity-provider/instances/{segment(provider_alias)}/mappers', first=first, max_results=max_results, paginated=False)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_identity_provider_mapper_create",
+      "module": "idp_extended",
+      "description": "Create an OIDC user-attribute importer mapper with explicit claim, attribute and sync mode. Requires manage-identity-providers. Other mapper types are not supported.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('POST', f'/identity-provider/instances/{segment(provider_alias)}/mappers'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_identity_provider_mapper_update",
+      "module": "idp_extended",
+      "description": "Rename one identity-provider mapper, preserving provider type, configuration and mapping semantics. Requires manage-identity-providers.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.update(f'/identity-provider/instances/{segment(provider_alias)}/mappers/{segment(mapper_id)}', {'name': name}, {'name'})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_identity_provider_mapper_delete",
+      "module": "idp_extended",
+      "description": "Delete one identity-provider mapper by ID. Requires manage-identity-providers. Does not delete existing imported user attributes.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', f'/identity-provider/instances/{segment(provider_alias)}/mappers/{segment(mapper_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_policy_list",
+      "module": "idp_extended",
+      "description": "List authorization policy metadata with server pagination. Uses internal client UUID and requires authorization read permission. Use stable IDs for changes.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(_auth(client_id) + '/policy', first=first, max_results=max_results, params={'name': name} if name else None)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_policy_get",
+      "module": "idp_extended",
+      "description": "Inspect authorization policy by stable ID. Requires authorization administration permission; deleting may affect access decisions.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', _auth(client_id) + f'/policy/{segment(policy_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_policy_delete",
+      "module": "idp_extended",
+      "description": "Delete authorization policy by stable ID. Requires authorization administration permission; deleting may affect access decisions.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', _auth(client_id) + f'/policy/{segment(policy_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_policy_create",
+      "module": "idp_extended",
+      "description": "Create typed authorization policy. Explicit membership IDs only; no scripts or arbitrary policy configuration accepted. Requires manage-authorization. Existing objects report backend conflicts.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "data.update({'name': name, 'type': policy_type})",
+        "api.call('POST', _auth(client_id) + f'/policy/{segment(policy_type)}'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_policy_update",
+      "module": "idp_extended",
+      "description": "Update a typed authorization policy by stable ID, preserving unspecified fields. Type must match the existing backend object; no arbitrary configuration or scripts accepted.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', path)",
+        "api.update(path, data, set(PolicyChanges.model_fields))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_permission_list",
+      "module": "idp_extended",
+      "description": "List authorization permission metadata with server pagination. Uses internal client UUID and requires authorization read permission. Use stable IDs for changes.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.page(_auth(client_id) + '/permission', first=first, max_results=max_results, params={'name': name} if name else None)"
+      ]
+    },
+    {
+      "tool": "sdk_idp_permission_get",
+      "module": "idp_extended",
+      "description": "Inspect authorization permission by stable ID. Requires authorization administration permission; deleting may affect access decisions.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', _auth(client_id) + f'/permission/{segment(permission_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_permission_delete",
+      "module": "idp_extended",
+      "description": "Delete authorization permission by stable ID. Requires authorization administration permission; deleting may affect access decisions.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('DELETE', _auth(client_id) + f'/permission/{segment(permission_id)}')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_permission_create",
+      "module": "idp_extended",
+      "description": "Create typed authorization permission. Explicit membership IDs only; no scripts or arbitrary policy configuration accepted. Requires manage-authorization. Existing objects report backend conflicts.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "data.update({'name': name, 'type': permission_type})",
+        "api.call('POST', _auth(client_id) + f'/permission/{segment(permission_type)}'"
+      ]
+    },
+    {
+      "tool": "sdk_idp_permission_update",
+      "module": "idp_extended",
+      "description": "Update a typed authorization permission by stable ID, preserving unspecified fields. Type must match the existing backend object; no arbitrary configuration or scripts accepted.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('GET', path)",
+        "api.update(path, data, set(PermissionChanges.model_fields))"
+      ]
+    },
+    {
+      "tool": "sdk_idp_user_password_set",
+      "module": "idp_secrets",
+      "description": "Explicitly reset a user's password from an env/keyring/private-file reference. Requires manage-users; temporary defaults true. No password appears in arguments/results; account reuse never invokes this implicitly.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.call('PUT', '/users/' + segment(user_uuid) + '/reset-password', {'type': 'password', 'value': secret, 'temporary': temporary})"
+      ]
+    },
+    {
+      "tool": "sdk_idp_client_secret_write",
+      "module": "idp_secrets",
+      "description": "Read a confidential client's existing secret into a NEW private JSON file. Requires client administration; does not rotate it. Use internal client UUID, not public clientId. Returns file metadata only.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.raw('GET', '/clients/' + segment(client_uuid) + '/client-secret')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_client_secret_rotate",
+      "module": "idp_secrets",
+      "description": "Rotate one confidential client's secret and save the new value to a NEW private JSON file. Changes authentication for consumers. Never automatically retry an uncertain rotation; inspect server state first.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": [
+        "api.raw('POST', '/clients/' + segment(client_uuid) + '/client-secret')"
+      ]
+    },
+    {
+      "tool": "sdk_idp_source_token_write",
+      "module": "idp_secrets",
+      "description": "Request a user token using an explicitly configured direct-grant client and credential references; save response privately. Requires that realm/client to allow direct grant. No browser/SSO bypass or automatic retry.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_token_exchange",
+      "module": "idp_secrets",
+      "description": "Exchange an authorized subject access token for the requested audience and save the response privately. Realm/client must permit token exchange. Subject reference must resolve to raw token text, not a JSON response file.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_tenant_create",
+      "module": "idp_secrets",
+      "description": "Create a KOBIL tenant via v4_realm. Requires tenant-provisioning rights and explicitly chosen provisioning realm/themes. This is not generic Keycloak realm creation; unsupported deployments report an API error.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    },
+    {
+      "tool": "sdk_idp_tms_trigger",
+      "module": "idp_secrets",
+      "description": "Trigger a KOBIL v3_user TMS transaction through the IDP route. Separate from AST sdk_tms_trigger; requires IDP TMS rights. Returns transaction metadata, not proof of device confirmation.",
+      "schema_verified": true,
+      "live_verified": false,
+      "contract_expressions": []
+    }
+  ],
+  "gaps": {
+    "sdk_ast_client_resolve": "Optional observability adapter not implemented; no verified portable AST cross-user/activity endpoint."
+  }
+}
