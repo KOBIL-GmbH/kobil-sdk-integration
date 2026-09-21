@@ -17,6 +17,11 @@ External-customer app targets are Android and iOS only. macOS and Windows
 apps are outside this scope; do not offer or plan them as customer SDK targets.
 This is a scope decision, not a claim that desktop SDKs do not exist.
 
+## Xcode permission setup
+
+For repeated editor approval prompts, follow [Xcode permissions](references/xcode-permissions.md).
+Remembered approvals belong to Xcode; importing this skill does not grant them.
+
 ## Resolve the customer's request
 
 Inspect the target app's rules, dependency/build files and configuration.
