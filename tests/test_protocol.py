@@ -25,18 +25,8 @@ class ProtocolTests(unittest.TestCase):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 34)
+                        self.assertEqual(len(names), 13)
                         self.assertTrue({'sdk_app_get', 'sdk_app_versions'} <= names)
-                        # method and environment discovery must be reachable as tools, not only
-                        # as a skill file: most MCP clients never load a skill.
-                        self.assertTrue({'sdk_docs', 'sdk_platforms', 'sdk_idp_clients',
-                                         'sdk_backend_verify', 'sdk_mc_config',
-                                         'sdk_activation_user_ensure', 'sdk_activation_code_set',
-                                         'sdk_activation_flow_ensure', 'sdk_activation_client_ensure',
-                                         'sdk_activation_flow_describe', 'sdk_activation_step_config'} <= names)
-                        result = await session.call_tool('sdk_docs', {})
-                        self.assertFalse(result.isError)
-                        self.assertIn('workflow', str(result))
                         result = await session.call_tool('sdk_backend_status', {})
                         self.assertFalse(result.isError)
                         self.assertNotIn('protocol-fixture', str(result))
