@@ -33,7 +33,7 @@ def configuration(expected_environment=None):
     try:
         path = Path(os.environ['KOBIL_SDK_CONNECTION']).expanduser()
         cfg = json.loads(path.read_text())
-        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services'}:
+        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services', 'admin'}:
             raise ValueError()
         segment(cfg['environment'])
         segment(cfg['tenant'])
@@ -42,10 +42,30 @@ def configuration(expected_environment=None):
             raise ValueError()
         if cfg.get('oauth'):
             oauth = cfg['oauth']
-            if set(oauth) != {'token_url', 'client_id', 'client_secret_env'}:
+            if set(oauth) - {'token_url', 'client_id', 'client_secret_env', 'scope'} or \
+                    not {'token_url', 'client_id', 'client_secret_env'} <= set(oauth):
                 raise ValueError()
             https_url(oauth['token_url'])
             segment(oauth['client_id'])
+            if 'scope' in oauth:
+                # Optional client scopes are only included when the token request asks for them.
+                # The ks-management role needed by AST rides on such a scope; without this the
+                # token carries no roles and AST answers 403.
+                if not isinstance(oauth['scope'], str) or not re.fullmatch(r'[A-Za-z0-9 _:.-]{1,200}', oauth['scope']):
+                    raise ValueError()
+        if 'admin' in cfg:
+            # Activation codes are issued by the IDP, not by AST, and need administrative
+            # rights the AST service account does not carry. Optional: every other tool
+            # works without it.
+            admin = cfg['admin']
+            if set(admin) != {'idp_url', 'realm', 'client_id', 'username', 'password_env'}:
+                raise ValueError()
+            https_url(admin['idp_url'])
+            segment(admin['realm'])
+            segment(admin['client_id'])
+            if not re.fullmatch(r'[A-Za-z0-9._@+-]{1,120}', admin['username']) or \
+                    not re.fullmatch(r'[A-Z][A-Z0-9_]*', admin['password_env']):
+                raise ValueError()
         secret_ref = cfg.get('token_env') or cfg['oauth']['client_secret_env']
         if not isinstance(secret_ref, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]*', secret_ref):
             raise ValueError()
@@ -73,9 +93,11 @@ class AST:
         if self.cfg.get('token_env'):
             return secret
         oauth = self.cfg['oauth']
-        result = self.send('POST', oauth['token_url'], data={
-            'grant_type': 'client_credentials', 'client_id': oauth['client_id'],
-            'client_secret': secret})
+        form = {'grant_type': 'client_credentials', 'client_id': oauth['client_id'],
+                'client_secret': secret}
+        if oauth.get('scope'):
+            form['scope'] = oauth['scope']
+        result = self.send('POST', oauth['token_url'], data=form)
         token = result.get('access_token') if isinstance(result, dict) else None
         if not isinstance(token, str) or not token:
             raise BackendError('Backend authentication did not return an access token')
@@ -94,6 +116,25 @@ class AST:
                     if len(raw) > 4 * 1024 * 1024:
                         raise BackendError('Backend response exceeds size limit')
                 return json.loads(raw) if raw else {}
+        except BackendError:
+            raise
+        except Exception:
+            raise BackendError('Backend transport or response failure; inspect server-side diagnostics') from None
+
+    def fetch_text(self, url, headers=None):
+        """GET a page as text with its status code, for diagnostics that read HTML.
+
+        No status is an error here: the caller interprets it. The size limit is the same
+        as for JSON responses.
+        """
+        try:
+            with self.client.stream('GET', url, headers=headers or {}) as response:
+                raw = bytearray()
+                for part in response.iter_bytes():
+                    raw.extend(part)
+                    if len(raw) > 4 * 1024 * 1024:
+                        raise BackendError('Backend response exceeds size limit')
+                return response.status_code, raw.decode('utf-8', errors='replace')
         except BackendError:
             raise
         except Exception:
@@ -118,10 +159,29 @@ class AST:
     def get_app(self, name):
         value = self.request('GET', '/apps/' + segment(name), allow_not_found=True)
         if value is None:
-            return {'app_name': name, 'exists': False}
+            return {'app_name': name, 'exists': False, 'categories_in_use': self.categories_in_use()}
         if not isinstance(value, dict) or value.get('appName') != name:
             raise BackendError('Unrecognized app response')
-        return {'app_name': name, 'exists': True}
+        categories = ((value.get('pushNotificationConfig') or {}).get('categories') or [])
+        return {'app_name': name, 'exists': True,
+                'categories': sorted(c for c in categories if isinstance(c, str))}
+
+    def categories_in_use(self):
+        """The push-notification categories other apps of this tenant already use.
+
+        Values only, never app names: enough to choose a valid category without knowing
+        anything else about the tenant. Empty when the listing is unavailable.
+        """
+        apps = self.request('GET', '/apps', allow_not_found=True)
+        if not isinstance(apps, list):
+            return []
+        found = set()
+        for app in apps:
+            if isinstance(app, dict):
+                for c in (app.get('pushNotificationConfig') or {}).get('categories') or []:
+                    if isinstance(c, str):
+                        found.add(c)
+        return sorted(found)
 
     def _version_rows(self, app_name):
         segment(app_name)
