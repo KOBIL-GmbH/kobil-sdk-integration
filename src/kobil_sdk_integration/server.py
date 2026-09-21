@@ -60,8 +60,8 @@ def sdk_artifact_info(path: str) -> dict:
 
 
 # Explicit service operations only; app orchestration belongs to app reference sources.
-from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api
-for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api):
+from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers
+for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers):
     _module.register(mcp)
 
 
@@ -71,7 +71,7 @@ async def sdk_service_catalog() -> dict:
     names = sorted(t.name for t in await mcp.list_tools())
     return {'tools': names, 'tool_count': len(names),
             'app_flow_source': 'Use authorized WLA skills and version-matched GettingStarted apps.',
-            'coverage': 'Typed operations plus 41 explicit HTTP contracts cover 45 inspected dashboard IDP/AST routes; not every vendor endpoint.',
+            'coverage': 'Typed operations plus 49 explicit HTTP contracts cover 45 inspected dashboard IDP/AST routes; not every vendor endpoint.',
             'gaps': ['Arbitrary custom IDP providers', 'Observability-based cross-user client lookup'],
             'flow_selection': 'Caller selects explicit resources; service tools do not select or provision app journeys.'}
 

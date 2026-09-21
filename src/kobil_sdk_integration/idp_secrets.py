@@ -75,7 +75,7 @@ def register(mcp):
     @mcp.tool()
     def sdk_idp_activation_code_generate(expected_environment: str, user_uuid: str,
                                          valid_for: str = '60d', digits: int = 8,
-                                         realm: str | None = None) -> dict:
+                                         realm: str | None = None, code_reference: CredentialRef | None = None) -> dict:
         """Generate and store a numeric KOBIL ACTIVATION_CODE for an existing user UUID. Requires manage-users and server support for this credential type. Returns the generated secret once for app activation; never log or commit it. May replace an existing activation code. Does not create users, choose flows or activate devices. Credential-type readback cannot prove the exact new value was stored. Never automatically retry an uncertain write."""
         try:
             UUID(user_uuid)
@@ -92,7 +92,9 @@ def register(mcp):
                 user = api.raw('GET', path)
                 if not isinstance(user, dict) or user.get('id') != user_uuid:
                     raise BackendError('The selected user could not be verified')
-                code = ''.join(secrets.choice('0123456789') for _ in range(digits))
+                code = resolve(code_reference) if code_reference else ''.join(secrets.choice('0123456789') for _ in range(digits))
+                if not re.fullmatch(r'[0-9]{6,12}', code):
+                    raise ValueError('Activation code reference must contain 6..12 digits')
                 # Only submit the credential field; do not overwrite profile attributes.
                 body = {'credentials': [{'type': 'ACTIVATION_CODE',
                         'credentialData': json.dumps({'period': valid_for}),
@@ -111,6 +113,15 @@ def register(mcp):
             if dispatched:
                 raise BackendError('Activation code write may have succeeded, but confirmation failed. Do not automatically retry; inspect user credential state first.') from None
             raise
+
+    @mcp.tool()
+    def sdk_idp_activation_code_set(expected_environment: str, user_uuid: str,
+                                     code: CredentialRef, valid_for: str = '60d',
+                                     realm: str | None = None) -> dict:
+        """Store an explicitly supplied activation code from an env/keyring/private-file reference. Same existing-user and readback checks as generation; no default code or automatic retry. Returns metadata only. May replace a previous activation code."""
+        result=sdk_idp_activation_code_generate(expected_environment,user_uuid,valid_for,realm=realm,code_reference=code)
+        result.pop('activation_code',None)
+        return result
 
     @mcp.tool()
     def sdk_idp_user_password_set(expected_environment: str, user_uuid: str, credential: CredentialRef,

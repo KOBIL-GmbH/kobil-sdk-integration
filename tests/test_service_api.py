@@ -70,7 +70,7 @@ class ServiceTests(unittest.TestCase):
 
     def test_every_route_is_fixed_relative_and_has_exact_identifiers(self):
         import string
-        self.assertEqual(len(api.ROUTES),41)
+        self.assertEqual(len(api.ROUTES),49)
         for name,spec in api.ROUTES.items():
             placeholders={v for _,v,_,_ in string.Formatter().parse(spec['path']) if v}
             self.assertEqual(placeholders,set(spec['identifiers'])|({'realm'} if name.startswith('idp.') else set()))
