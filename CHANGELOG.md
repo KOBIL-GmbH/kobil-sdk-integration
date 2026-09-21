@@ -1,3 +1,9 @@
+## Unreleased — service interfaces
+
+- Add typed IDP/AST operations and 41 explicit HTTP contracts covering all 45 inspected dashboard service routes.
+- Add private request-payload files, token refresh, bounded device inventory and contract tests.
+- Separate service transport from app-flow guidance; WLA skills and GettingStarted apps supply app behavior. No reverted journey-selection/provisioning recipes are imported.
+
 # Changelog
 
 ## 0.3.3

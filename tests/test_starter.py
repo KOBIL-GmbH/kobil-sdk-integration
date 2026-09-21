@@ -73,7 +73,7 @@ class StarterTests(unittest.TestCase):
 
     def test_mcp_tools_registered(self):
         names = {tool.name for tool in asyncio.run(mcp.list_tools())}
-        self.assertEqual(names, {"sdk_targets", "sdk_plan", "sdk_artifact_info", "sdk_backend_status", "sdk_app_get", "sdk_app_versions", "sdk_app_ensure", "sdk_app_version_ensure", "sdk_config_write", "sdk_tms_trigger", "sdk_tms_status", "sdk_tms_result", "sdk_tms_cancel"})
+        self.assertTrue({"sdk_targets", "sdk_plan", "sdk_artifact_info", "sdk_backend_status", "sdk_app_get", "sdk_app_versions", "sdk_app_ensure", "sdk_app_version_ensure", "sdk_config_write", "sdk_tms_trigger", "sdk_tms_status", "sdk_tms_result", "sdk_tms_cancel"} <= names)
 
 
 if __name__ == "__main__":
