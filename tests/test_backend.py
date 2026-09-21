@@ -38,7 +38,7 @@ class BackendTests(unittest.TestCase):
             page = req.url.params['page']
             return httpx.Response(200, json={'data': [row | {'versionStr': '1.0.' + page}], 'totalCount': 2})
         backend = self.client(handler)
-        self.assertEqual(backend.get_app('sample'), {'app_name': 'sample', 'exists': True, 'categories': []})
+        self.assertEqual(backend.get_app('sample'), {'app_name': 'sample', 'exists': True})
         result = backend.list_versions('sample')
         self.assertEqual(len(result['versions']), 2)
         self.assertEqual(result['versions'][0]['register_user_id'], 'registration-user')
