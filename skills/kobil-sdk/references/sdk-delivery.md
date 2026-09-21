@@ -1,5 +1,12 @@
 # SDK delivery through customer SFTP access
 
+**Bundled delivery (2026-09-17).** A plug-in build for a customer can ship the delivered
+zips, their `.sha512` sidecars and release notes in `sdk-delivery/<release>/<platform>/`
+next to the MCP package. `sdk_artifacts_import` installs them into the local store, verified,
+and `sdk_ios_project_integrate` does that by itself on first use. `sdk_artifacts_notes`
+serves the changelog the recipe below asks you to show. The SFTP route stays for deliveries
+that are not bundled.
+
 Customers generally receive SDK binaries through a separately provisioned SFTP
 account. This is an artifact delivery channel, independent of AST/IDP backend
 credentials. The SDK binaries remain outside this repository.
