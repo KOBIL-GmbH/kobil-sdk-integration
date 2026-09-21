@@ -1,0 +1,371 @@
+{
+  "ast.platform_list": {
+    "method": "GET",
+    "path": "/platforms",
+    "identifiers": [],
+    "query": [],
+    "body_required": false
+  },
+  "ast.architecture_list": {
+    "method": "GET",
+    "path": "/platforms/{platform}/architectures",
+    "identifiers": [
+      "platform"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "ast.app_list": {
+    "method": "GET",
+    "path": "/apps",
+    "identifiers": [],
+    "query": [
+      "page",
+      "pageSize"
+    ],
+    "body_required": false
+  },
+  "ast.app_get": {
+    "method": "GET",
+    "path": "/apps/{app}",
+    "identifiers": [
+      "app"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "ast.app_create": {
+    "method": "POST",
+    "path": "/apps/{app}",
+    "identifiers": [
+      "app"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "ast.app_update": {
+    "method": "PUT",
+    "path": "/apps/{app}",
+    "identifiers": [
+      "app"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "ast.version_list": {
+    "method": "GET",
+    "path": "/versions",
+    "identifiers": [],
+    "query": [
+      "page",
+      "pageSize",
+      "appName"
+    ],
+    "body_required": false
+  },
+  "ast.version_get": {
+    "method": "GET",
+    "path": "/versions/{version}",
+    "identifiers": [
+      "version"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "ast.version_create": {
+    "method": "POST",
+    "path": "/versions",
+    "identifiers": [],
+    "query": [],
+    "body_required": true
+  },
+  "ast.version_update": {
+    "method": "PUT",
+    "path": "/versions/{version}",
+    "identifiers": [
+      "version"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "ast.version_delete": {
+    "method": "DELETE",
+    "path": "/versions/{version}",
+    "identifiers": [
+      "version"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "ast.version_unregister": {
+    "method": "DELETE",
+    "path": "/versions/{version}/register",
+    "identifiers": [
+      "version"
+    ],
+    "query": [
+      "architectureName"
+    ],
+    "body_required": false,
+    "required_query": [
+      "architectureName"
+    ]
+  },
+  "ast.device_list": {
+    "method": "GET",
+    "path": "/astclients",
+    "identifiers": [],
+    "query": [
+      "userId"
+    ],
+    "body_required": false,
+    "required_query": [
+      "userId"
+    ]
+  },
+  "ast.device_get": {
+    "method": "GET",
+    "path": "/astclients/{device}",
+    "identifiers": [
+      "device"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "ast.device_unlink": {
+    "method": "POST",
+    "path": "/unlink",
+    "identifiers": [],
+    "query": [],
+    "body_required": true
+  },
+  "ast.device_delete": {
+    "method": "DELETE",
+    "path": "/astclients/{device}",
+    "identifiers": [
+      "device"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "ast.tms_create": {
+    "method": "POST",
+    "path": "/tms",
+    "identifiers": [],
+    "query": [],
+    "body_required": true
+  },
+  "ast.tms_status": {
+    "method": "GET",
+    "path": "/tms/{transaction}/status",
+    "identifiers": [
+      "transaction"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "ast.tms_result": {
+    "method": "GET",
+    "path": "/tms/{transaction}/result",
+    "identifiers": [
+      "transaction"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "ast.tms_cancel": {
+    "method": "DELETE",
+    "path": "/tms/{transaction}",
+    "identifiers": [
+      "transaction"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "ast.display_message": {
+    "method": "POST",
+    "path": "/display-message",
+    "identifiers": [],
+    "query": [],
+    "body_required": true
+  },
+  "idp.user_count": {
+    "method": "GET",
+    "path": "/realms/{realm}/users/count",
+    "identifiers": [],
+    "query": [],
+    "body_required": false
+  },
+  "idp.user_list": {
+    "method": "GET",
+    "path": "/auth/admin/realms/{realm}/users",
+    "identifiers": [],
+    "query": [
+      "username",
+      "exact",
+      "first",
+      "max",
+      "search"
+    ],
+    "body_required": false
+  },
+  "idp.user_get": {
+    "method": "GET",
+    "path": "/auth/admin/realms/{realm}/users/{user}",
+    "identifiers": [
+      "user"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "idp.user_update": {
+    "method": "PUT",
+    "path": "/auth/admin/realms/{realm}/users/{user}",
+    "identifiers": [
+      "user"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.user_delete": {
+    "method": "DELETE",
+    "path": "/auth/admin/realms/{realm}/users/{user}",
+    "identifiers": [
+      "user"
+    ],
+    "query": [],
+    "body_required": false
+  },
+  "idp.password_reset": {
+    "method": "PUT",
+    "path": "/auth/admin/realms/{realm}/users/{user}/reset-password",
+    "identifiers": [
+      "user"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.v3_user_create": {
+    "method": "POST",
+    "path": "/auth/realms/{realm}/v3_user",
+    "identifiers": [],
+    "query": [],
+    "body_required": true
+  },
+  "idp.v3_user_update": {
+    "method": "PUT",
+    "path": "/auth/realms/{realm}/v3_user/{username}/update",
+    "identifiers": [
+      "username"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.v3_user_enable": {
+    "method": "PUT",
+    "path": "/auth/realms/{realm}/v3_user/{username}/enable",
+    "identifiers": [
+      "username"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.v3_user_disable": {
+    "method": "PUT",
+    "path": "/auth/realms/{realm}/v3_user/{username}/disable",
+    "identifiers": [
+      "username"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.realm_get": {
+    "method": "GET",
+    "path": "/auth/admin/realms/{realm}",
+    "identifiers": [],
+    "query": [],
+    "body_required": false
+  },
+  "idp.realm_update": {
+    "method": "PUT",
+    "path": "/auth/admin/realms/{realm}",
+    "identifiers": [],
+    "query": [],
+    "body_required": true
+  },
+  "idp.client_create": {
+    "method": "POST",
+    "path": "/auth/admin/realms/{realm}/clients",
+    "identifiers": [],
+    "query": [],
+    "body_required": true
+  },
+  "idp.client_list": {
+    "method": "GET",
+    "path": "/auth/admin/realms/{realm}/clients",
+    "identifiers": [],
+    "query": [
+      "clientId",
+      "first",
+      "max"
+    ],
+    "body_required": false
+  },
+  "idp.client_management_permissions": {
+    "method": "PUT",
+    "path": "/auth/admin/realms/{realm}/clients/{client}/management/permissions",
+    "identifiers": [
+      "client"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.policy_create": {
+    "method": "POST",
+    "path": "/auth/admin/realms/{realm}/clients/{client}/authz/resource-server/policy",
+    "identifiers": [
+      "client"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.scope_list": {
+    "method": "GET",
+    "path": "/auth/admin/realms/{realm}/clients/{client}/authz/resource-server/scope",
+    "identifiers": [
+      "client"
+    ],
+    "query": [
+      "first",
+      "max",
+      "name"
+    ],
+    "body_required": false
+  },
+  "idp.scope_permission_update": {
+    "method": "PUT",
+    "path": "/auth/admin/realms/{realm}/clients/{client}/authz/resource-server/permission/scope/{permission}",
+    "identifiers": [
+      "client",
+      "permission"
+    ],
+    "query": [],
+    "body_required": true
+  },
+  "idp.tenant_create": {
+    "method": "POST",
+    "path": "/auth/realms/{realm}/v4_realm",
+    "identifiers": [],
+    "query": [],
+    "body_required": true
+  },
+  "idp.tms_create": {
+    "method": "POST",
+    "path": "/auth/realms/{realm}/v3_user/{user}/tms",
+    "identifiers": [
+      "user"
+    ],
+    "query": [],
+    "body_required": true
+  }
+}

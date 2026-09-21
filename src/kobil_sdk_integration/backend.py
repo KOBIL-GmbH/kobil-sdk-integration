@@ -33,7 +33,7 @@ def configuration(expected_environment=None):
     try:
         path = Path(os.environ['KOBIL_SDK_CONNECTION']).expanduser()
         cfg = json.loads(path.read_text())
-        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services'}:
+        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services', 'admin'}:
             raise ValueError()
         segment(cfg['environment'])
         segment(cfg['tenant'])
@@ -42,10 +42,28 @@ def configuration(expected_environment=None):
             raise ValueError()
         if cfg.get('oauth'):
             oauth = cfg['oauth']
-            if set(oauth) != {'token_url', 'client_id', 'client_secret_env'}:
+            if set(oauth) - {'token_url', 'client_id', 'client_secret_env', 'scope'} or \
+                    not {'token_url', 'client_id', 'client_secret_env'} <= set(oauth):
                 raise ValueError()
             https_url(oauth['token_url'])
             segment(oauth['client_id'])
+            if 'scope' in oauth:
+                # Optional client scopes are only included when the token request asks for them.
+                # The ks-management role needed by AST rides on such a scope; without this the
+                # token carries no roles and AST answers 403.
+                if not isinstance(oauth['scope'], str) or not re.fullmatch(r'[A-Za-z0-9 _:.-]{1,200}', oauth['scope']):
+                    raise ValueError()
+        if 'admin' in cfg:
+            # IDP administration is optional and independent of AST authentication.
+            admin = cfg['admin']
+            if set(admin) != {'idp_url', 'realm', 'client_id', 'username', 'password_env'}:
+                raise ValueError()
+            https_url(admin['idp_url'])
+            segment(admin['realm'])
+            segment(admin['client_id'])
+            if not re.fullmatch(r'[A-Za-z0-9._@+-]{1,120}', admin['username']) or \
+                    not re.fullmatch(r'[A-Z][A-Z0-9_]*', admin['password_env']):
+                raise ValueError()
         secret_ref = cfg.get('token_env') or cfg['oauth']['client_secret_env']
         if not isinstance(secret_ref, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]*', secret_ref):
             raise ValueError()
@@ -73,9 +91,11 @@ class AST:
         if self.cfg.get('token_env'):
             return secret
         oauth = self.cfg['oauth']
-        result = self.send('POST', oauth['token_url'], data={
-            'grant_type': 'client_credentials', 'client_id': oauth['client_id'],
-            'client_secret': secret})
+        form = {'grant_type': 'client_credentials', 'client_id': oauth['client_id'],
+                'client_secret': secret}
+        if oauth.get('scope'):
+            form['scope'] = oauth['scope']
+        result = self.send('POST', oauth['token_url'], data=form)
         token = result.get('access_token') if isinstance(result, dict) else None
         if not isinstance(token, str) or not token:
             raise BackendError('Backend authentication did not return an access token')
@@ -87,7 +107,10 @@ class AST:
                 if response.status_code == 404 and allow_not_found:
                     return None
                 if response.status_code >= 300:
-                    raise BackendError('Backend request failed (HTTP %d)' % response.status_code)
+                    category = {400: 'invalid_request', 401: 'authentication_failed', 403: 'permission_denied',
+                                404: 'resource_or_api_not_found', 405: 'operation_not_supported',
+                                409: 'conflict', 429: 'rate_limited'}.get(response.status_code, 'backend_error')
+                    raise BackendError('Backend request failed (HTTP %d; %s)' % (response.status_code, category))
                 raw = bytearray()
                 for part in response.iter_bytes():
                     raw.extend(part)

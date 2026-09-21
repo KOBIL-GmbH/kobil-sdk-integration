@@ -1,0 +1,380 @@
+{
+  "source_revision": "750c501",
+  "routes": [
+    {
+      "source": "security.js",
+      "method": "POST",
+      "route": "/:tenant/clients",
+      "line": 15,
+      "mcp_operation": "idp.client_create",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "security.js",
+      "method": "GET",
+      "route": "/:tenant/clients",
+      "line": 38,
+      "mcp_operation": "idp.client_list",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "security.js",
+      "method": "POST",
+      "route": "/:tenant/clients/:realmMgmtUuid/policy",
+      "line": 67,
+      "mcp_operation": "idp.policy_create",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "security.js",
+      "method": "PUT",
+      "route": "/:tenant/clients/:targetUuid/permissions",
+      "line": 90,
+      "mcp_operation": "idp.client_management_permissions",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "security.js",
+      "method": "GET",
+      "route": "/:tenant/clients/:realmMgmtUuid/scopes",
+      "line": 113,
+      "mcp_operation": "idp.scope_list",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "security.js",
+      "method": "PUT",
+      "route": "/:tenant/clients/:realmMgmtUuid/permission/:permissionId",
+      "line": 136,
+      "mcp_operation": "idp.scope_permission_update",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "security.js",
+      "method": "POST",
+      "route": "/:tenant/token-exchange",
+      "line": 159,
+      "mcp_operation": "sdk_idp_token_exchange",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "security.js",
+      "method": "POST",
+      "route": "/:tenant/source-token",
+      "line": 193,
+      "mcp_operation": "sdk_idp_source_token_write",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "GET",
+      "route": "/count/:tenant",
+      "line": 30,
+      "mcp_operation": "idp.user_count",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "GET",
+      "route": "/by-username/:tenant/:username",
+      "line": 55,
+      "mcp_operation": "idp.user_list",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "GET",
+      "route": "/by-uuid/:tenant/:uuid",
+      "line": 87,
+      "mcp_operation": "idp.user_get",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "GET",
+      "route": "/list/:tenant",
+      "line": 115,
+      "mcp_operation": "idp.user_list",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "POST",
+      "route": "/:tenant",
+      "line": 170,
+      "mcp_operation": "idp.v3_user_create",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "PUT",
+      "route": "/:tenant/:username/status",
+      "line": 194,
+      "mcp_operation": "idp.v3_user_enable / idp.v3_user_disable",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "PUT",
+      "route": "/:tenant/:username/enable",
+      "line": 225,
+      "mcp_operation": "sdk_idp_user_get + idp.user_update",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "PUT",
+      "route": "/:tenant/:username/disable",
+      "line": 244,
+      "mcp_operation": "sdk_idp_user_get + idp.user_update",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "PUT",
+      "route": "/:tenant/:username/update",
+      "line": 262,
+      "mcp_operation": "sdk_idp_user_get + idp.user_update + idp.password_reset",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "PUT",
+      "route": "/:tenant/:username/activation-code",
+      "line": 294,
+      "mcp_operation": "idp.v3_user_update",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "users.js",
+      "method": "DELETE",
+      "route": "/:tenant/:userKey",
+      "line": 333,
+      "mcp_operation": "sdk_idp_user_get + idp.user_delete",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "GET",
+      "route": "/:tenant",
+      "line": 17,
+      "mcp_operation": "ast.platform_list",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "GET",
+      "route": "/:tenant/:platformName/architectures",
+      "line": 40,
+      "mcp_operation": "ast.architecture_list",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "GET",
+      "route": "/:tenant/apps",
+      "line": 65,
+      "mcp_operation": "ast.app_list",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "POST",
+      "route": "/:tenant/apps/:appName",
+      "line": 88,
+      "mcp_operation": "ast.app_create",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "PUT",
+      "route": "/:tenant/apps/:appName",
+      "line": 114,
+      "mcp_operation": "ast.app_update",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "GET",
+      "route": "/:tenant/apps/:appName",
+      "line": 157,
+      "mcp_operation": "ast.app_get",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "GET",
+      "route": "/:tenant/versions",
+      "line": 183,
+      "mcp_operation": "ast.version_list",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "POST",
+      "route": "/:tenant/versions",
+      "line": 210,
+      "mcp_operation": "ast.version_create",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "GET",
+      "route": "/:tenant/versions/:versionId",
+      "line": 233,
+      "mcp_operation": "ast.version_get",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "PUT",
+      "route": "/:tenant/versions/:versionId",
+      "line": 256,
+      "mcp_operation": "ast.version_update",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "DELETE",
+      "route": "/:tenant/versions/:versionId",
+      "line": 279,
+      "mcp_operation": "ast.version_delete",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "platforms.js",
+      "method": "DELETE",
+      "route": "/:tenant/versions/:versionId/register",
+      "line": 302,
+      "mcp_operation": "ast.version_unregister",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "tenant.js",
+      "method": "POST",
+      "route": "/",
+      "line": 13,
+      "mcp_operation": "idp.tenant_create",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "realm.js",
+      "method": "GET",
+      "route": "/:tenant/smtp-mode",
+      "line": 55,
+      "mcp_operation": "idp.realm_get",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "realm.js",
+      "method": "PUT",
+      "route": "/:tenant/smtp-mode",
+      "line": 77,
+      "mcp_operation": "idp.realm_update",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "devices.js",
+      "method": "GET",
+      "route": "/:tenant/list",
+      "line": 16,
+      "mcp_operation": "sdk_ast_device_inventory",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "devices.js",
+      "method": "GET",
+      "route": "/:tenant/by-user/:userId",
+      "line": 53,
+      "mcp_operation": "ast.device_list",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "devices.js",
+      "method": "GET",
+      "route": "/:tenant/:astClientId",
+      "line": 82,
+      "mcp_operation": "ast.device_get",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "devices.js",
+      "method": "POST",
+      "route": "/:tenant/unlink",
+      "line": 105,
+      "mcp_operation": "ast.device_unlink",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "devices.js",
+      "method": "DELETE",
+      "route": "/:tenant/:astClientId",
+      "line": 134,
+      "mcp_operation": "ast.device_delete",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "tms.js",
+      "method": "POST",
+      "route": "/:tenant/display-message",
+      "line": 15,
+      "mcp_operation": "ast.display_message",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "tms.js",
+      "method": "POST",
+      "route": "/:tenant/trigger",
+      "line": 40,
+      "mcp_operation": "ast.tms_create / idp.tms_create",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "tms.js",
+      "method": "POST",
+      "route": "/:tenant/trigger-idp/:userUuid",
+      "line": 83,
+      "mcp_operation": "idp.tms_create",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "tms.js",
+      "method": "GET",
+      "route": "/:tenant/:tmsId/status",
+      "line": 106,
+      "mcp_operation": "ast.tms_status",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "tms.js",
+      "method": "GET",
+      "route": "/:tenant/:tmsId/result",
+      "line": 129,
+      "mcp_operation": "ast.tms_result",
+      "verification": "contract-tested; live verification pending"
+    },
+    {
+      "source": "tms.js",
+      "method": "DELETE",
+      "route": "/:tenant/:tmsId",
+      "line": 152,
+      "mcp_operation": "ast.tms_cancel",
+      "verification": "contract-tested; live verification pending"
+    }
+  ],
+  "excluded_ui_routes": [
+    "auth/environments: local connection metadata",
+    "grafana: separate service, not IDP/AST"
+  ],
+  "authentication": [
+    "sdk_idp_source_token_write",
+    "sdk_idp_refresh_token_write",
+    "sdk_idp_token_exchange"
+  ],
+  "notes": [
+    "All 45 dashboard IDP/AST routes mapped; not a claim of full vendor API coverage.",
+    "SMTP configuration is explicit; no internal delivery presets are copied.",
+    "Resolve username to UUID explicitly when using Admin REST.",
+    "Device inventory paginates users and reports failed lookups."
+  ]
+}
