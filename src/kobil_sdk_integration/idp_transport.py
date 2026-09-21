@@ -36,5 +36,3 @@ def _call(backend, token, method, path, body=None, params=None, allow_not_found=
     if params is not None:
         kwargs['params'] = params
     return backend.send(method, url, **kwargs)
-
-
