@@ -40,6 +40,25 @@ SDK/wrapper versions, platform architectures, artifact checksums, identifiers,
 backend prerequisites, chosen modules and verification outcomes in the app's
 integration record. Exclude tokens, passwords, PINs and activation codes.
 
+## Backend discovery and administration
+
+Use `sdk_backend_capabilities` and [backend catalog](references/backend-catalog.md)
+for the installed operation set and coverage limits. If the AST app name is unknown,
+call `sdk_app_list` and follow `next_cursor` until complete. For IDP users/clients,
+use `sdk_idp_user_list` / `sdk_idp_client_list` and follow `next_offset`.
+The older `sdk_idp_clients` probes selected names; it is not admin enumeration.
+App names, public IDP client IDs, internal client UUIDs and user UUIDs are different.
+
+Use the current environment explicitly for every backend operation. Query before
+creating, preserve existing app registration users and policies, and never reset
+credentials as a side effect of reuse. New typed administration functions cover
+users, clients, scopes, roles/groups, flows, sessions, realms, supported federation
+and authorization providers. Secret-bearing operations accept private references
+and return private output paths; existing generated test-credential behavior stays
+unchanged. Capability discovery does not prove every operation's permission or
+API compatibility. Read-only diagnostics are separate from backend mutations and
+real app activation/login evidence. Do not automatically retry uncertain writes.
+
 ## Feature recipes
 
 For transaction confirmation or display messages, read [TMS](references/tms.md).

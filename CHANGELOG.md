@@ -1,3 +1,11 @@
+# 0.6.0
+
+- Add AST app discovery with backend pagination, app/version lifecycle, devices, push validation/configuration and display messages.
+- Add typed IDP user/client/scope/role/group/flow/session/realm/federation/authorization operations with explicit realm selection.
+- Add private credential/token operations and conservative recovery reporting after uncertain secret rotation.
+- Add connection/capability discovery and domain documentation. Preserve the original SDK tool names.
+- Selected typed provider coverage only; optional observability client resolution is not implemented. New writes are contract-tested, not all live-verified.
+
 # 0.5.0
 
 - Add configured SFTP listing and downloads with server-side Keychain/environment/private-file/SSH-key authentication.
