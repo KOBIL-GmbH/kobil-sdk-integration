@@ -236,3 +236,13 @@ labels should distinguish environment and purpose, such as `server-a/idp` and
 in recipient profiles. Never target unrelated local services, copy sender paths,
 or replace an existing import unless explicitly requested. Profile-based imports
 must already select the import namespace; existing legacy references stay readable.
+
+
+For a complete server transfer, use `sdk_age_server_bundle_export` with explicit
+private profile files and recipient public keys. On the recipient, list encrypted
+environment names and call `sdk_age_server_bundle_import` with the selected names
+and a local namespace. It imports credentials into the dedicated namespace and
+writes encrypted profiles with local references. Create an environment selector
+next; switching the active connection requires explicit setup/restart. Do not
+carry sender filesystem paths to the recipient or claim backend verification
+from a successful import. See the complete workflow in docs/credentials.md.

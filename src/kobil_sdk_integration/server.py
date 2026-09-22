@@ -60,8 +60,8 @@ def sdk_artifact_info(path: str) -> dict:
 
 
 # Explicit service operations only; app orchestration belongs to app reference sources.
-from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy
-for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy):
+from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, environment_transfer
+for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, environment_transfer):
     _module.register(mcp)
 
 
