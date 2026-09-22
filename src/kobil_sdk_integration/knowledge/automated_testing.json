@@ -1,0 +1,143 @@
+{
+  "id": "automated_testing",
+  "title": "GSA-derived automated native SDK testing",
+  "sdk_family": "shift",
+  "integration_generation": "Classic MCSDK with KSSIDP. Adapt to the supplied artifact; not standalone IDPSDK, SuperApp or Flutter test qualification.",
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "GSA source patterns reviewed; this test recipe and runner templates have not been executed against customer apps. Earlier activation/login acceptance does not qualify these suites."
+  },
+  "prerequisites": [
+    "Select native platform, exact SDK artifact, app build, dedicated test app ID, device and explicit customer-configured backend/client flow. Never recommend SuperApp Login V2 for native Android/iOS.",
+    "Register app/version with an existing registration user and package valid SDK config JWT and certificate assets before attempting activation.",
+    "Provision unique test users and one-time activation codes through MCP IDP/AST tools. Keep backend administrative credentials in the configured credential provider, outside app/test binaries.",
+    "Identify destructive reset behavior before running: use a dedicated app/container and fixtures owned by this run. Preserve existing app users and device settings."
+  ],
+  "sequence": [
+    "Separate model/unit checks (no real backend), SDK event integration checks on supported devices, and UI/backend end-to-end checks. Report each layer independently.",
+    "Prepare a run manifest with artifact checksum/version, app revision, platform/OS, selected test cases, non-secret fixture identifiers and cleanup ownership. Discover actual runner tasks/schemes in the target app.",
+    "Create fixtures before the UI action and verify backend calls succeeded. Register listeners before dispatch; use bounded event/predicate waits and fail on timeout. Never substitute fixed sleeps or an unbounded latch for completion.",
+    "For fresh activation assert Start success, activation-required and no users; submit fixture inputs through a private test channel; assert SDK activation result and the intended user/device association.",
+    "Preserve the activated app data within the same test, terminate/relaunch the process, assert login-required with the same stored user and successful returning login. A successful activation dialog alone is insufficient.",
+    "For TMS assert transaction identity, payload, UI action, SDK terminal result and backend terminal status. A request being accepted or a dialog appearing does not establish completion.",
+    "Add wrong/expired activation-code and wrong-PIN tests only for dedicated fixtures with known lockout/reset policy; assert failure and absence of an unintended state transition. Keep skipped/disabled cases visible.",
+    "Extend the selected feature matrix with property set/get round trips, change-PIN old/new credential behavior, reactivation, add/delete users and queued/background/multiple TMS delivery. Use exact result/status assertions, expected counts and correlated transaction IDs; do not infer that a skipped plan entry ran.",
+    "On every failure retain Warning, RuntimeError and FatalError errorType, errorDescription and unsigned errorCode with timestamps and last SDK state; attach runner results and SDK log archive before reset. Do not log secrets.",
+    "In finally/teardown unregister listeners, close helpers and remove only run-owned fixtures; record cleanup failures separately so they do not hide the original failure. Restore any changed device settings."
+  ],
+  "expected_result": "A per-case report distinguishes passed, failed, skipped and not_run, with bounded waits, SDK/backend state assertions and cleanup evidence. Test names and source presence are not evidence of execution.",
+  "failure_handling": [
+    "Android positiveflowtest activationLoginTransactionTest asserts activation UI success and submits/confirms a transaction; it does not explicitly verify cold returning login or backend terminal TMS status. Add those assertions.",
+    "Android integratedUnitTest contains an ignored test with unbounded CountDownLatch.await. The inspected adapter dispatches TriggerBannerEvent but only logs TransactionEndEvent; do not copy it as a complete transaction observer.",
+    "Some multiflow negative cases are commented out. Count them as missing coverage, not passing tests.",
+    "Android Orchestrator clearPackageData and explicit clearAppData erase activation state. Keep activation plus cold login in one test, or use an explicitly controlled persistent fixture.",
+    "GSA helper credentials, fixed activation codes, server constants and customer-specific scenarios are not portable test fixtures. Replace them with customer configuration and run-owned inputs.",
+    "Treat simulator/hardening incompatibility as a prerequisite failure, not an SDK login defect. Retest with an artifact-supported destination.",
+    "Never recommend SuperApp Login V2 for native Android/iOS; test the selected native journey.",
+    "iOS FlowTests resetMasterController has no active reset implementation; resetApp/shutdown are commented and UI teardown is empty. Define an explicit owned-fixture reset rather than assuming setUp/tearDown isolates runs.",
+    "iOS checked-continuation error paths can call XCTFail without resuming. Resolve every success/error path exactly once and provide an overall timeout; failing an assertion alone does not unblock the await.",
+    "iOS nonoptional-result XCTAssertNotNil and transaction-finished expectation fulfillment do not verify SDK success. Assert concrete result type/status and transaction identity.",
+    "iOS wrong-activation-code helper checks contents only if an alert exists. Require a bounded wait with mandatory failure when the expected error UI is absent.",
+    "Do not copy broad keychain/sandbox deletion helpers or an unbounded SpringBoard uninstall loop. Scope reset to the dedicated app/test-owned records and bound its duration."
+  ],
+  "platform_notes": {
+    "android": "GSA uses app/src/testShift model tests; integratedUnitTest for SDK-event tests; integratedUiTest with Espresso/Kaspresso/UIAutomator and sharedintegrationtestsources; positiveflowtest for combined UI/backend flows. integratedUiTest targets :app, AndroidJUnitRunner and AndroidX Test Orchestrator with clearPackageData=true. Its connected-test hooks disable device animations persistently: record and restore original settings. Discover actual tasks using ./gradlew :integratedUiTest:tasks --all; do not assume GSA module names exist in a fresh customer app.",
+    "ios": "GSA workspace GettingStarted_UI_Tests.xcworkspace has GettingStarted_FlowTests (direct real-SDK XCTest integration, not pure unit tests), GettingStarted_ShiftUITests (XCUITest) and GettingStarted_DigitaniumUITests (separate family; do not substitute). FlowTests uses TestPlanFlowTests and Shift UI uses TestPlanShiftUITests. Shared helpers provide bounded UI predicates and kept screenshot attachments. Properties tests check typed results/exact status and set/get round trips. Shift scenario sources cover activation, invalid code, login, wrong PIN, change PIN, reactivation, registration keystore variants, user deletion, transaction approve/decline, delivery while logged out, multiple transactions, background/resume and WebView mode. Source presence is not run coverage. Default Shift plan skips add-many-users and wrong-PIN-until-blocked. Serialize unless SDK singleton, app container and backend fixtures are isolated per worker."
+  },
+  "examples": {
+    "android": {
+      "language": "text",
+      "kind": "runner_template",
+      "compile_ready": false,
+      "code": "# Discover tasks before selecting a Shift test variant.\n./gradlew :integratedUiTest:tasks --all\n# In the GSA layout, after confirming this task and selecting a dedicated device:\nANDROID_SERIAL=\"$TEST_DEVICE_SERIAL\" ./gradlew :integratedUiTest:connectedShiftDebugAndroidTest\n# For a fresh app, replace the module/variant with its discovered instrumentation task.\n# Collect runner XML/HTML results and SDK events/logs before clearing test data.",
+      "validation": {
+        "kind": "source_review_only",
+        "executed": false
+      }
+    },
+    "ios": {
+      "language": "text",
+      "kind": "runner_template",
+      "compile_ready": false,
+      "code": "# From the GSA test workspace directory; first discover supported schemes/destinations.\nxcodebuild -list -workspace GettingStarted_UI_Tests.xcworkspace\nxcodebuild -showdestinations -workspace GettingStarted_UI_Tests.xcworkspace -scheme GettingStarted_ShiftUITests\n# Set TEST_DESTINATION to the caller-selected, artifact-supported device;\n# TEST_RESULT_BUNDLE must be a fresh output path.\nxcodebuild test -workspace GettingStarted_UI_Tests.xcworkspace \\\n  -scheme GettingStarted_ShiftUITests -testPlan TestPlanShiftUITests \\\n  -destination \"$TEST_DESTINATION\" -parallel-testing-enabled NO \\\n  -resultBundlePath \"$TEST_RESULT_BUNDLE\"\n# Direct SDK integration uses scheme GettingStarted_FlowTests / plan TestPlanFlowTests.\n# In a fresh customer app, discover and substitute its own UI-test scheme/plan.\n# Collect .xcresult, redacted SDK event evidence and encrypted SDK logs before reset.",
+      "validation": {
+        "kind": "source_review_only",
+        "executed": false
+      }
+    }
+  },
+  "checklist": [
+    "Test manifest identifies SDK artifact, app revision, destination and selected native flow without secrets.",
+    "Unit, SDK integration and UI/backend test results are reported separately; skipped/ignored cases are visible.",
+    "Fresh Start and activation verify SDK state/result and owned backend device association.",
+    "Cold returning login preserves activated data across process restart and verifies the same user.",
+    "TMS checks both SDK and backend terminal state for the same transaction.",
+    "Negative cases have isolated fixtures and assert no unintended activation/login transition.",
+    "All asynchronous waits are bounded and listeners observe both success and failure events.",
+    "Failure evidence contains errorType, errorDescription, unsigned errorCode and SDK archive before reset.",
+    "Cleanup runs on failure, affects only owned fixtures and restores changed device settings."
+  ],
+  "source_evidence": {
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e884fb1a9827a1b2f32306b7279ffd8ffb",
+      "working_tree_changes_present": true,
+      "files": [
+        "integratedUiTest/build.gradle.kts",
+        "positiveflowtest/src/shift/java/com/kobil/positiveflowtest/PositiveFlowTest.kt",
+        "integratedUnitTest/src/shift/java/com/kobil/integratedunittest/2_IBMTestCase.kt",
+        "integratedUnitTest/src/shift/java/utils/TestMasterControllerAdapter.kt",
+        "integratedUiTest/src/shift/java/com/kobil/integratedUiTest/MultiflowLoginTest.kt"
+      ],
+      "file_sha256": {
+        "integratedUiTest/build.gradle.kts": "3348b537aa655af67ac8f03796f7087f5b1de87abfea8951c28348a7aa6634c9",
+        "positiveflowtest/src/shift/java/com/kobil/positiveflowtest/PositiveFlowTest.kt": "f1d30c2f3c77b1cb8a06374a7ad27dfdd826659c25129de1ceb42e9009386729",
+        "integratedUnitTest/src/shift/java/com/kobil/integratedunittest/2_IBMTestCase.kt": "515638703deab7fc7e1c6a6687254de6c87e4b5e7826e2b7b7012efd638f153b",
+        "integratedUnitTest/src/shift/java/utils/TestMasterControllerAdapter.kt": "91543655b8fbc04d5343c7c2b0dd9c7fb5cd10cc1e8142517c207a8dc854c5b8",
+        "integratedUiTest/src/shift/java/com/kobil/integratedUiTest/MultiflowLoginTest.kt": "e828e95b314738899727b25a5c61ccf6a873ebc532e20633b8a4db3a91b37b0a"
+      }
+    },
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d6170f4beb9008870d0f7fa8d14df065f",
+      "working_tree_changes_present": true,
+      "files": [
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/GettingStarted_FlowTests.swift",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/MasterControllerAdatper/MasterControllerAdapter.swift",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/MasterControllerAdatper/MasterControllerAdapter_Properties.swift",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/MasterControllerAdatper/MasterControllerAdapter_Transaction.swift",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_ShiftUITests/Transactions/GettingStarted_Shift_TransactionTests.swift",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_ShiftUITests/Property/GettingStarted_PropertyTests.swift",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/UITestBaseFunctions/SharedTestsFunctions.swift",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_ShiftUITests/TestPlanShiftUITests.xctestplan",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_ShiftUITests/Activation/GettingStarted_ShiftActivationUITests_Extensions.swift",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/GettingStarted_FlowTest_Extensions.swift"
+      ],
+      "file_sha256": {
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/GettingStarted_FlowTests.swift": "d9fa5e7dcc2ffe781db7ec58a7247c4886ac40290171804a10f7aacc9e6e38b7",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/MasterControllerAdatper/MasterControllerAdapter.swift": "06ff31d99b37e7d2e56d21c1946672f471b3ca891438818b31693266086e39ca",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/MasterControllerAdatper/MasterControllerAdapter_Properties.swift": "fb1c78a4cc432b4554180b24e17faefd1f335a2389b20b456266926fe635e9ec",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/MasterControllerAdatper/MasterControllerAdapter_Transaction.swift": "93c1a1137bb4e8f8a6bd25e0462e2ba93523aa6f2dc5db5d440424ea7adf3757",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_ShiftUITests/Transactions/GettingStarted_Shift_TransactionTests.swift": "adb8f0bfd4571a1072925f83b07ea73b56fa680752f0d38b56cffebda3a76069",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_ShiftUITests/Property/GettingStarted_PropertyTests.swift": "8bb8ea89d9fe1a9f31261cde40beddca0b6885c0bd7a63a0fa0d795d9b440bfa",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/UITestBaseFunctions/SharedTestsFunctions.swift": "b4daecd1ff3ed23a12e0823aae6b4bc02c964ecc5a530b0909c57a4ad5a45e73",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_ShiftUITests/TestPlanShiftUITests.xctestplan": "d6adcc6051fe5aeeecf0e49e5873bdf8c0760d379d238c57052b29b3c2ebf1fc",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_ShiftUITests/Activation/GettingStarted_ShiftActivationUITests_Extensions.swift": "503d75d4704789f0ab7d0fc5efeb16178bd9b50e9b3ba4e591d2fc9e65af8180",
+        "GettingStartedAppUITests/GettingStarted_UI_Tests/GettingStarted_FlowTests/GettingStarted_FlowTest_Extensions.swift": "7c3e71c7dcdbb62825bb980078426162394d1addd357511b392094fb8cee55d3"
+      }
+    }
+  },
+  "backend_tools": [
+    "sdk_app_version_ensure",
+    "sdk_config_write",
+    "sdk_idp_user_create",
+    "sdk_idp_activation_code_generate",
+    "sdk_ast_device_list",
+    "sdk_tms_trigger",
+    "sdk_tms_status",
+    "sdk_idp_user_delete"
+  ]
+}
