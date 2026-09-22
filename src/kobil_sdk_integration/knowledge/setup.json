@@ -3,6 +3,7 @@
   "title": "SDK assets and configuration",
   "sdk_family": "shift",
   "prerequisites": [
+    "Required: run sdk_native_preflight against the selected environment before building or activation. Native KSSIDP uses BDDKEnrollment/BDDKLogin, useTokenBasedLogin=true, astServerBackend=maverick and login header X-KOBIL-ASTUSERID. The WebView alternative is KSTrustedWebView with explicit deployment clients. Missing clients or incompatible bindings block progress; never create substitute flows.",
     "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
     "Select Shift SDK family, mobile SDK artifact version and native platform.",
     "Obtain authorized SDK binaries and a matching server application/version with registration user selected.",
@@ -22,7 +23,9 @@
   ],
   "failure_handling": [
     "Do not invent fixed asset filenames or copy a customer endpoint from an example.",
-    "Missing or mismatched SDK configuration can fail before activation; record start result and error events."
+    "Missing or mismatched SDK configuration can fail before activation; record start result and error events.",
+    "Never disable useTokenBasedLogin to work around ast_login_with_unactivated_client; this skips IAM setup and can cause CannotAcquireTokenData(50). Investigate the selected native backend flow instead.",
+    "Swift: switch on KssIdpStatus.success/eventFailed/requestFailed; never infer success from text containing accept. Preserve detailed callback status, errorCode and underlying event without logging tokens or credentials."
   ],
   "platform_notes": {
     "android": "Android AssetReader is used to load mc configuration and SDK configuration bytes. Constructor signatures and filenames must match the supplied release. If a bundled AAR declares application@label, resolve the manifest merger conflict explicitly (for example tools:replace=\"android:label\" on your app label).",

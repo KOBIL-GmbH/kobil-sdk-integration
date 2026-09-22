@@ -29,6 +29,29 @@ SuperApp Login V2 for native Android/iOS. Missing discovery is unknown, not abse
 Use `sdk_service_catalog` to inspect installed operations and explicit gaps.
 For a fresh native app, follow the [integration handoff](references/native-integration.md).
 
+## Mandatory native flow gate
+
+For native Android/iOS select exactly one path:
+
+- KSTrustedWebView for a login journey inside the trusted WebView. Select its
+  deployment clients explicitly; do not substitute the native KSSIDP clients.
+- KSSIDP: activation **BDDKEnrollment**, login **BDDKLogin**,
+  **useTokenBasedLogin=true**, **astServerBackend=maverick**, login header
+  **X-KOBIL-ASTUSERID** containing the selected user ID.
+
+Run `sdk_native_preflight` against the actual backend before building or testing.
+Proceed only on `configuration_checked`; missing clients, unknown bindings,
+SuperApp Login V2 or errors are blockers. Do not create/rebind backend flows or
+reuse similarly named test clients. If the installed MCP lacks this tool, stop
+and install the matching release. A checked binding is not runtime acceptance.
+
+Never set useTokenBasedLogin=false as an activation workaround: it can prevent
+IAM setup and produce CannotAcquireTokenData(50) before token exchange. Preserve
+backend errors for investigation. Select PIN hashing/authentication policy
+consistently with the existing native flow; do not change it for existing users.
+On Swift match `.success`, `.eventFailed` and `.requestFailed` explicitly. Keep
+the detailed event's status/code/description; never match success using strings.
+
 ## Resolve the customer's request
 
 Inspect the target app's rules, dependency/build files and configuration.
