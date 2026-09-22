@@ -1,11 +1,11 @@
-# Test the native knowledge candidate
+# Test v0.5.0 native integration
 
-This change is on `feature/AK-539-native-knowledge` (PR #6 against `develop`).
+This change is released as `v0.5.0` from `develop`.
 It is not installed by updating an unrelated release checkout. Keep the current
 installation available for rollback and use a separate candidate directory.
 
 ```sh
-git clone --branch feature/AK-539-native-knowledge \
+git clone --branch v0.5.0 --depth 1 \
   https://github.com/KOBIL-GmbH/kobil-sdk-integration.git kobil-sdk-candidate
 cd kobil-sdk-candidate
 git rev-parse HEAD
@@ -36,7 +36,7 @@ Expected discovery: **179 tools**, including `sdk_knowledge_topics`,
 `sdk_knowledge_get` and `sdk_integration_checklist`. Each retrieved topic identifies
 `classic_mcsdk_kssidp`; examples include exact artifact/build evidence. Flutter
 and other unsupported recipe families report a gap rather than substituting a
-native recipe. This candidate's package version is 0.4.1.dev0, separate from SDK
+native recipe. This release's package version is 0.5.0, separate from SDK
 15.16 and any older editor installation.
 
 The complete acceptance list is in the
