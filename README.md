@@ -34,7 +34,7 @@ history are included.
 ## Install a fixed release
 
 Use [versioned installation](docs/releases.md) for a fixed MCP and skill version.
-The current release is **v0.3.3**. Upgrades are explicit; do not deploy from `main`.
+The current release is **v0.5.0**. Upgrades are explicit; install a tag rather than a moving branch.
 
 ## Run from a development checkout
 
@@ -121,6 +121,6 @@ retrieved with `sdk_knowledge_topics`, `sdk_knowledge_get` and
 Kotlin/Swift snippets. No external skills or repositories are required. Runtime
 qualification and unsupported-platform gaps are reported explicitly.
 
-The current development knowledge pack has 16 compile-checked native examples
+The bundled knowledge pack has 16 compile-checked native examples
 for classic MCSDK 15.16; see the [native integration handoff](skills/kobil-sdk/references/native-integration.md).
 Full live-flow acceptance remains separate from these checks.
