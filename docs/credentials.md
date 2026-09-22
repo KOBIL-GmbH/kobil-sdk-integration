@@ -110,3 +110,57 @@ fallback policy and MCP discovery. Disposable native Keychain and real age
 round-trips were tested on macOS. Windows/Linux native providers need platform
 acceptance. Live customer authentication and editor installation are separate
 steps; no customer credential is enrolled by installing the package.
+
+## Create and maintain encrypted stores through MCP
+
+These tools require both `age` and `age-keygen` on PATH:
+
+1. `sdk_age_identity_create(identity_path)` creates a new owner-only private
+   identity; only the public recipient is returned. Provision/backup this
+   identity separately from the store. Existing identities are never replaced.
+2. `sdk_age_store_create(store_path, identity_path)` creates an empty encrypted
+   store. Existing files are never overwritten by creation.
+3. `sdk_age_credential_put(store_path, identity_path, service, account, source)`
+   resolves a credential reference internally and encrypts the value into the
+   selected entry. Use explicit `replace=true` to replace an existing entry.
+   This supports SFTP/SCP passwords as well as AST/IDP secrets. Source references
+   use the same env/file/keyring/age schema; passwords never appear in arguments.
+4. `sdk_age_environment_put(..., environment, profile_file)` reads a private
+   reference-only AST/IDP connection profile and stores the entire named profile
+   encrypted. Environment name must match; replacement is explicit.
+5. `sdk_age_store_list(store_path, identity_path)` lists names/labels only.
+6. `sdk_age_environment_selector_write(..., environment, output_path)` writes
+   a new private selector for `KOBIL_SDK_CONNECTION`. The selector contains only
+   store/identity paths and the environment name. Server settings are decrypted
+   in memory by the backend; credentials are resolved separately when needed.
+7. `sdk_age_environment_export(..., environment, output_path)` is an optional
+   explicit export of the reference-only server profile to a new private file.
+   Prefer the selector when server settings should remain encrypted on disk.
+
+An SFTP/SCP password stored as service `customer-transfer`, account `sdk-user`
+can be read by a credential consumer using:
+
+```json
+{
+  "provider": "age",
+  "store": "/private/customer.age",
+  "identity": "/private/customer-identity.txt",
+  "service": "customer-transfer",
+  "account": "sdk-user"
+}
+```
+
+This feature stores the password; it does not add an SCP/SFTP transport or run
+transfers. A transfer client must support the reference resolver. Backend
+profiles stored under environments use the AST/IDP profile schema.
+
+Stores retain version 2 with optional `environments` alongside `keychain`.
+Store writes encrypt in memory/pipes and publish ciphertext atomically, protected
+by an exclusive `.lock` file against simultaneous MCP writers. A crashed writer
+may leave a lock: verify no writer is running before removing it manually.
+An encryption failure preserves the previous store. No plaintext store temporary
+file is written. The explicitly requested identity and optional exported profile
+are private plaintext files by design. Updates encrypt to the selected single
+identity only; they do not preserve other recipients from externally created
+multi-recipient envelopes. Sources remain intact and no host configuration is
+switched automatically. Keep private files in a directory you control.

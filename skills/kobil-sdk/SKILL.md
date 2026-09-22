@@ -182,3 +182,7 @@ pending; a passed backend request is not a passed SDK integration.
 ## Additional service helpers
 
 See [service interfaces](../../docs/service-interfaces.md) for explicit flow configuration operations, login-page fetch, activation-code generation/set, authentication testing, private AST token export and optional Grafana correlation. These tools do not select app flows.
+
+## Encrypted connection stores
+
+Use the `sdk_age_*` tools to create an encrypted store, import SFTP/SCP or backend passwords by reference, and store named AST/IDP profiles. Prefer `sdk_age_environment_selector_write` so server settings remain encrypted at rest. See [credential setup](../../docs/credentials.md). Store creation is separate from provisioning real credentials and from editor installation; never claim a transfer or backend login from successful storage alone.

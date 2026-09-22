@@ -137,7 +137,7 @@ def age_read(ref):
         code, output = bounded_process(['age', '--decrypt', '--identity', ref['identity']], ciphertext)
         if code: raise CredentialError('AGE_DECRYPT_FAILED')
         data = json.loads(output)
-        if not isinstance(data, dict) or set(data) != {'version', 'keychain'} or type(data['version']) is not int or data['version'] != 2:
+        if not isinstance(data, dict) or (set(data)-{'version', 'keychain', 'environments'} or not {'version','keychain'} <= set(data)) or type(data['version']) is not int or data['version'] != 2:
             raise ValueError()
         services = data['keychain']
         if not isinstance(services, dict): raise ValueError()
