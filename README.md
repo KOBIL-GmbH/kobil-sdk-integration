@@ -112,3 +112,11 @@ The service-interface feature adds explicit IDP/AST APIs, with [dashboard covera
 ### Shared credential setup
 
 See [server profiles and native keystore setup](docs/credentials.md) for AST/IDP credential references, encrypted age delivery, MCP import/status/delete and local onboarding.
+
+### Self-contained native knowledge
+
+The MCP bundles [eight native Shift integration topics](docs/native-knowledge.md),
+retrieved with `sdk_knowledge_topics`, `sdk_knowledge_get` and
+`sdk_integration_checklist`. They include source-reviewed guidance and illustrative
+Kotlin/Swift snippets. No external skills or repositories are required. Runtime
+qualification and unsupported-platform gaps are reported explicitly.

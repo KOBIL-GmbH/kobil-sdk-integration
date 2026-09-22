@@ -1,0 +1,87 @@
+{
+  "id": "diagnostics",
+  "title": "Warning, runtime/fatal errors and stalled operations",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "Global asynchronous error listeners are active from initialization onward."
+  ],
+  "sequence": [
+    "Capture event class, original errorType, errorDescription and unsigned errorCode for Warning, RuntimeError and FatalError.",
+    "Record timestamp, current SDK state, pending operation and last relevant event with sensitive fields removed.",
+    "Keep the original SDK error separate from an app-created timeout or invalid-state message.",
+    "Stop blind retries after a fatal or uncertain state; use the documented recovery/start/restart transition.",
+    "If progress stops, present the captured evidence and ask for missing deployment/SDK information."
+  ],
+  "expected_result": "All three error categories are handled.",
+  "checklist": [
+    "All three error categories are handled.",
+    "Numeric code and full description survive formatting.",
+    "Fatal events are observable even before activation UI appears.",
+    "No password, activation code, token or configuration JWT is in the diagnostic log."
+  ],
+  "failure_handling": [
+    "Do not guess an error meaning from a numeric code; use version-matched evidence.",
+    "GettingStarted sample handlers are not uniformly complete: improve them rather than copying their omissions."
+  ],
+  "platform_notes": {
+    "android": "The inspected ErrorHandlingModel logs generic runtime/warning messages and lacks a fatal branch in that class; do not copy it as complete diagnostic coverage. The 15.16 events inherit AbstractErrorEvent getters. Java int is signed: use errorCode.toLong() and 0xffffffffL to preserve its unsigned value.",
+    "ios": "ErrorModel receives KSMWarningEvent, KSMErrorRuntimeEvent and KSMErrorFatalEvent and extracts descriptions/codes. Preserve the original SDK error type too. In the 15.16 delivery, Warning uses errorStatus; RuntimeError/FatalError use errorType. The Objective-C signed int errorCode needs UInt32(bitPattern:) to retain the unsigned 32-bit code."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/Shared/Models/ErrorModel/ErrorModel.swift"
+      ],
+      "working_tree_changes_present": true
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/models/ErrorHandlingModel.kt"
+      ],
+      "working_tree_changes_present": true
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Source review only for the complete recipe. Example validation is recorded separately and does not qualify live SDK initialization, event delivery or backend flows."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import com.kobil.wrapper.events.*\n\ndata class SdkFailure(val eventName: String, val errorType: String,\n    val errorDescription: String, val errorCode: Long)\n\n// Keep in memory; redact descriptions before writing/exporting logs.\nfun sdkFailure(event: EventFrameworkEvent): SdkFailure? {\n    val name = when (event) {\n        is WarningEvent -> \"Warning\"\n        is RuntimeErrorEvent -> \"RuntimeError\"\n        is FatalErrorEvent -> \"FatalError\"\n        else -> return null\n    }\n    val error = event as AbstractErrorEvent\n    return SdkFailure(name, error.errorType.name, error.errorDescription,\n        error.errorCode.toLong() and 0xffffffffL)\n}\n",
+      "validation": {
+        "kind": "synthetic_event_device_test",
+        "sdk_artifact_version": "15.16.3088426",
+        "toolchain": "AGP 8.11.1, Kotlin 2.1.20, Gradle 8.13",
+        "device": "Pixel 8",
+        "device_verified": true,
+        "scope": "Synthetic Warning/RuntimeError/FatalError instances and unsigned code mapping only; not live SDK initialization or backend flows."
+      }
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import Foundation\nimport KSMasterController\n\nstruct SDKFailure {\n    let eventName: String\n    let errorType: String\n    let errorDescription: String\n    let errorCode: UInt32\n}\n\n// Keep this in memory; redact descriptions before writing/exporting logs.\nfunc sdkFailure(_ event: KsMacroEvent) -> SDKFailure? {\n    switch event {\n    case let warning as KSMWarningEvent:\n        return SDKFailure(eventName: \"Warning\", errorType: String(describing: warning.errorStatus),\n            errorDescription: warning.errorDescription, errorCode: UInt32(bitPattern: warning.errorCode))\n    case let runtime as KSMErrorRuntimeEvent:\n        return SDKFailure(eventName: \"RuntimeError\", errorType: String(describing: runtime.errorType),\n            errorDescription: runtime.errorDescription, errorCode: UInt32(bitPattern: runtime.errorCode))\n    case let fatal as KSMErrorFatalEvent:\n        return SDKFailure(eventName: \"FatalError\", errorType: String(describing: fatal.errorType),\n            errorDescription: fatal.errorDescription, errorCode: UInt32(bitPattern: fatal.errorCode))\n    default:\n        return nil\n    }\n}\n",
+      "validation": {
+        "kind": "synthetic_event_device_test",
+        "sdk_artifact_version": "15.16.803.3089231",
+        "target": "arm64-apple-ios18.0",
+        "toolchain": "Xcode 27.0 (27A266a)",
+        "device_verified": true,
+        "warning": "SDK umbrella header does not include TokenCryptokey.h",
+        "device": "iPhone 17 Pro Max",
+        "scope": "Synthetic Warning/RuntimeError/FatalError instances and unsigned code mapping only; not live SDK initialization or backend flows."
+      }
+    }
+  }
+}

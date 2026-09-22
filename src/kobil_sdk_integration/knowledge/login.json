@@ -1,0 +1,72 @@
+{
+  "id": "login",
+  "title": "Native and returning-user login",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "SDK started; selected local user is known.",
+    "Existing native-compatible deployment client and supported authentication mode selected."
+  ],
+  "sequence": [
+    "Read current SDK/user state rather than assuming the last app session is still authenticated.",
+    "Start the selected user login through the native IDP integration.",
+    "Supply only requested credentials/challenges and route all intermediate results.",
+    "Verify SDK login completion before enabling authenticated actions.",
+    "Test return after app restart separately from initial activation; do not silently reactivate on login failure."
+  ],
+  "expected_result": "Activated user can log in after restarting the app.",
+  "checklist": [
+    "Activated user can log in after restarting the app.",
+    "Wrong PIN/password returns a usable error.",
+    "Cancellation clears pending UI state.",
+    "User identity is preserved and not confused with another local user."
+  ],
+  "failure_handling": [
+    "A successful token request or webpage is not sufficient proof of SDK login.",
+    "Different SDK generations use different wrappers; match the shipped headers/API."
+  ],
+  "platform_notes": {
+    "android": "NativeLoginViewModel and SubsequentLoginViewModel are separate entry points.",
+    "ios": "KssIdpModel.login passes an explicitly chosen client/auth mode and may carry the selected user ID header."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift"
+      ],
+      "working_tree_changes_present": true
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeLoginViewModel.kt",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/SubsequentLoginViewModel.kt"
+      ],
+      "working_tree_changes_present": true
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// App pseudocode: choose the activated user, not an arbitrary first account.\nval user = requireSelectedLocalUser()\nloginWithSelectedClient(clientId, user) { result ->\n    when (result) {\n        is Challenge -> renderRequestedFields(result)\n        is Completed -> verifyAuthenticatedSdkState(user)\n        is Failed -> showLoginFailure(result) // no implicit reactivation\n    }\n}"
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// App pseudocode; the SDK wrapper exposes version-dependent overloads.\nlet user = try requireSelectedLocalUser()\nloginWithSelectedClient(clientId, user: user) { result in\n    switch result {\n    case .challenge(let fields): renderRequestedFields(fields)\n    case .completed: verifyAuthenticatedSDKState(user)\n    case .failed(let error): showLoginFailure(error)\n    }\n}"
+    }
+  }
+}

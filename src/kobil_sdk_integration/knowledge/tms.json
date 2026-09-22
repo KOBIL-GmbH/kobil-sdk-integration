@@ -1,0 +1,72 @@
+{
+  "id": "tms",
+  "title": "Transaction approval, rejection and completion",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "User/device activated and authenticated as required by deployment.",
+    "Backend TMS initiation targets that device/user; app event listener active."
+  ],
+  "sequence": [
+    "Handle transaction availability/banner and start retrieval with the SDK transaction-start event.",
+    "Display the confirmation request transaction information and remaining time.",
+    "Submit the actual user decision through DisplayConfirmation; bind it to the displayed transaction information.",
+    "Handle any required authorization-code step for the selected SDK flow.",
+    "Wait for the terminal transaction event and inspect status; compare with backend result when testing end-to-end."
+  ],
+  "expected_result": "Approve and reject paths both tested.",
+  "checklist": [
+    "Approve and reject paths both tested.",
+    "Expired/cancelled transaction cannot be reported as approved.",
+    "Confirmation acknowledgement is not treated as terminal completion.",
+    "Displayed information matches the transaction being confirmed."
+  ],
+  "failure_handling": [
+    "Do not automate approval of an arbitrary real transaction. Use explicit test transactions.",
+    "UI timeout and backend completion may race; inspect final result rather than submitting twice."
+  ],
+  "platform_notes": {
+    "android": "StartTransactionEvent \u2192 DisplayConfirmationRequestEvent \u2192 DisplayConfirmationEvent \u2192 DisplayConfirmationResultEvent \u2192 TransactionEndEvent in the inspected Shift model.",
+    "ios": "KSMStartTransactionEvent \u2192 KSMDisplayConfirmationRequestEvent \u2192 KSMDisplayConfirmationEvent \u2192 KSMDisplayConfirmationResultEvent \u2192 KSMTransactionFinishedEvent in the inspected model."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/Shared/Models/TransactionModel/TransactionModel.swift",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/TransactionAuthCodeModel/TransactionAuthCodeModel.swift"
+      ],
+      "working_tree_changes_present": true
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/TransactionModel.kt",
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/viewModel/TransactionConfirmationViewModel.kt"
+      ],
+      "working_tree_changes_present": true
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// Request transaction details through the installed SDK adapter.\nval request = StartTransactionEvent()\n// Post request, then display DisplayConfirmationRequestEvent information.\n// Send DisplayConfirmationEvent with the actual approve/decline decision.\nwhen (event) {\n    is DisplayConfirmationResultEvent -> recordAcknowledgement(event.status)\n    is TransactionEndEvent -> completeFromTerminalStatus(event.status)\n}\n// App helper names are illustrative. Acknowledgement is not final approval."
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "let request = KSMStartTransactionEvent()\n// Submit request; display KSMDisplayConfirmationRequestEvent information.\n// Submit KSMDisplayConfirmationEvent with the actual user's decision.\nif let acknowledgement = event as? KSMDisplayConfirmationResultEvent {\n    recordAcknowledgement(acknowledgement) // app helper, not terminal success\n} else if let terminal = event as? KSMTransactionFinishedEvent {\n    completeFromTerminalStatus(terminal) // app helper\n}"
+    }
+  }
+}

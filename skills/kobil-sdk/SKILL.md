@@ -20,8 +20,10 @@ This is a scope decision, not a claim that desktop SDKs do not exist.
 ## Source of app-flow logic
 
 Follow [app-flow sources](references/app-flow-sources.md). App behavior comes from
-authorized WLA skills and version-matched GettingStarted apps, not a bundled
-realm-specific recipe. The MCP supplies IDP/AST service operations; it must not
+the self-contained bundled knowledge pack via sdk_knowledge_get. Source repositories
+and other skills are not required on customer machines. Recipes report their own
+platform/family scope and qualification; do not treat source review or synthetic
+event checks as live flow validation. The MCP supplies IDP/AST service operations; it must not
 choose a login journey or create a replacement to fit sample code. Never use
 SuperApp Login V2 for native Android/iOS. Missing discovery is unknown, not absence.
 Use `sdk_service_catalog` to inspect installed operations and explicit gaps.

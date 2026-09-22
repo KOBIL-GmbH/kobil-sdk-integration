@@ -1,0 +1,70 @@
+{
+  "id": "setup",
+  "title": "SDK assets and configuration",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "Select Shift SDK family, mobile SDK artifact version and native platform.",
+    "Obtain authorized SDK binaries and a matching server application/version with registration user selected.",
+    "Supply backend-issued SDK configuration and trust/configuration assets; keep backend admin credentials out of the app."
+  ],
+  "sequence": [
+    "Inspect supplied release manifest and archive layout; inventory framework/AAR dependencies and architectures.",
+    "Add SDK libraries and required assets to the app target/package.",
+    "Load the selected configuration from the actual runtime bundle/assets directory. Fail with an actionable missing-file error.",
+    "Pass the configuration, backend type and trust material to the version-specific SDK start API."
+  ],
+  "expected_result": "Required assets exist in the installed application, not just the project directory.",
+  "checklist": [
+    "Required assets exist in the installed application, not just the project directory.",
+    "Backend app name/version/platform agree with runtime start parameters.",
+    "SDK version is identified from artifacts/runtime information, not the MCP release number."
+  ],
+  "failure_handling": [
+    "Do not invent fixed asset filenames or copy a customer endpoint from an example.",
+    "Missing or mismatched SDK configuration can fail before activation; record start result and error events."
+  ],
+  "platform_notes": {
+    "android": "Android AssetReader is used to load mc configuration and SDK configuration bytes. Constructor signatures and filenames must match the supplied release. If a bundled AAR declares application@label, resolve the manifest merger conflict explicitly (for example tools:replace=\"android:label\" on your app label).",
+    "ios": "The inspected Swift start path uses KSMStartEventEx with serverBackend, ssmsAppConfiguration, mcConfig, certificateChain and configurationData. Bundle target membership matters. MCSDK 15.16 KSMasterController dynamically depends on hnb.framework: embed and sign both supplied xcframeworks. A successful link alone does not prove launch readiness."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/Shared/Models/StartModel.swift",
+        "GettingStartedApp/Pod_MasterController/Pod_MasterController/Classes/AssetHelper.swift"
+      ],
+      "working_tree_changes_present": true
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/models/StartModel.kt"
+      ],
+      "working_tree_changes_present": true
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// App helpers; map paths and start constructor to the supplied SDK release.\nval mcConfig = requireAsset(selectedMcConfigPath)\nval sdkConfig = requireAsset(selectedSdkConfigPath)\nrequire(mcConfig.isNotEmpty() && sdkConfig.isNotEmpty())\n// StartEvent in the inspected release accepts locale, version, app name,\n// mcConfig text and SDK configuration bytes. Never log these contents.\nstartUsingReleaseAdapter(mcConfig, sdkConfig)"
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// Inputs are loaded from validated target bundle assets.\nlet start = KSMStartEventEx(serverBackend: selectedBackend,\n    ssmsAppConfiguration: appConfiguration, mcConfig: mcConfigText,\n    certificateChain: certificateData, configurationData: sdkConfigurationData)\n// Submit through the version-matched controller adapter and inspect its result."
+    }
+  }
+}
