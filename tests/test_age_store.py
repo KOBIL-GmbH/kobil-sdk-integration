@@ -28,23 +28,37 @@ class AgeStoreTests(unittest.TestCase):
         a = self.root/'one'/'app';a.mkdir(parents=True)
         b = self.root/'two'/'app';b.mkdir(parents=True)
         with patch.object(Path, 'home', return_value=home):
-            first = age_store.project_identity(str(a))
-            again = age_store.project_identity(str(a))
-            other = age_store.project_identity(str(b))
+            first = age_store.project_identity(str(a), '11111111-1111-4111-8111-111111111111')
+            again = age_store.project_identity(str(a), '11111111-1111-4111-8111-111111111111')
+            other = age_store.project_identity(str(b), '22222222-2222-4222-8222-222222222222')
         self.assertEqual(first['recipient'], again['recipient'])
         self.assertFalse(again['created'])
         self.assertNotEqual(first['project_id'], other['project_id'])
-        self.assertRegex(first['project_id'], r'^app-[a-f0-9]{16}$')
+        self.assertEqual(first['project_id'], 'app-11111111-1111-4111-8111-111111111111')
         self.assertFalse(Path(first['identity_path']).is_relative_to(a))
         self.assertEqual(Path(first['identity_path']).stat().st_mode & 0o777, 0o600)
         self.assertEqual((a/'.kobil-sdk/recipient.txt').read_text().strip(), first['recipient'])
+
+    def test_project_memory_persists_generated_uuid_and_rejects_conflict(self):
+        project=self.root/'remember';project.mkdir()
+        with patch.object(Path, 'home', return_value=self.root/'home'):
+            first=age_store.project_identity(str(project))
+            again=age_store.project_identity(str(project))
+            self.assertEqual(first['project_uuid'], again['project_uuid'])
+            self.assertEqual(first['recipient'], again['recipient'])
+            with self.assertRaisesRegex(credentials.CredentialError, 'ALREADY_EXISTS'):
+                age_store.project_identity(str(project), '22222222-2222-4222-8222-222222222222')
+            moved=self.root/'moved';project.rename(moved)
+            result=age_store.project_identity(str(moved))
+            self.assertEqual(first['project_uuid'], result['project_uuid'])
+            self.assertEqual(first['recipient'], result['recipient'])
 
     def test_project_convention_adopts_existing_key_without_rotation(self):
         project = self.root/'app';local=project/'.kobil-sdk';local.mkdir(parents=True)
         age_store.atomic_write(local/'identity-reference.json', json.dumps({'identity_path': self.identity}).encode())
         before = age_store.recipient(self.identity)
         with patch.object(Path, 'home', return_value=self.root/'home'):
-            result = age_store.project_identity(str(project))
+            result = age_store.project_identity(str(project), '11111111-1111-4111-8111-111111111111')
         self.assertEqual(result['recipient'], before)
         self.assertTrue(result['legacy_identity_retained'])
         self.assertTrue(Path(self.identity).exists())
