@@ -120,3 +120,7 @@ retrieved with `sdk_knowledge_topics`, `sdk_knowledge_get` and
 `sdk_integration_checklist`. They include source-reviewed guidance and illustrative
 Kotlin/Swift snippets. No external skills or repositories are required. Runtime
 qualification and unsupported-platform gaps are reported explicitly.
+
+The current development knowledge pack has 16 compile-checked native examples
+for classic MCSDK 15.16; see the [native integration handoff](skills/kobil-sdk/references/native-integration.md).
+Full live-flow acceptance remains separate from these checks.

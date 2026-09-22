@@ -7,7 +7,8 @@ customers need no WLA skill or GettingStarted checkout.
 
 Select platform, SDK family and mobile SDK artifact version explicitly. The MCP
 release number is not the mobile SDK version. This initial pack is source-reviewed
-with mostly illustrative examples. Diagnostic adapters include limited synthetic
+with concrete examples compiled for the exact SDK artifacts in their metadata.
+They are helper functions, not complete app templates. Diagnostic adapters include limited synthetic
 device-test evidence in their example validation metadata; this does not qualify
 a complete recipe or live backend flow. Unsupported
 platforms/families return a knowledge gap; do not infer Flutter or SSMS behavior.

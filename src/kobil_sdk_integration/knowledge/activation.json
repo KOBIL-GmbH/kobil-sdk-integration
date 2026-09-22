@@ -3,6 +3,7 @@
   "title": "Native activation and authorization-code handoff",
   "sdk_family": "shift",
   "prerequisites": [
+    "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
     "SDK initialization completed and activation is allowed by current state.",
     "Existing server application/version has a selected registration user.",
     "An explicitly selected native-compatible IDP client/flow and a valid activation user/code are available."
@@ -14,7 +15,7 @@
     "Handle the authorization-code result and SDK activation outcome separately.",
     "Query local user/device state and perform a subsequent login as separate acceptance checks."
   ],
-  "expected_result": "Fresh installation reaches activation-required state.",
+  "expected_result": "Activation completes and the expected SDK local user/device is present; subsequent login is checked separately.",
   "checklist": [
     "Fresh installation reaches activation-required state.",
     "Valid activation completes and the expected local user/device exists.",
@@ -38,7 +39,11 @@
         "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift",
         "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift": "fade3e9d95e1714c7fc921d525c454c70dd3a92fd8c41b13b508288e0f14763b",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift": "d533118a0873ae724b951c412612092cbbc5e45a3b96b7276823c0dfbb518002"
+      }
     },
     "android": {
       "repository": "MC_GettingStarted_Kotlin",
@@ -47,28 +52,53 @@
         "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeActivationViewModel.kt",
         "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/IdpNativeInterfaces.kt"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeActivationViewModel.kt": "f0c4cfad673cdb36f9543e95f56dbb8534efe98eba540a237e7f891e5888a666",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/IdpNativeInterfaces.kt": "0903fd06132aa787dbe6599a48c9e15661c56fe4dfe6294879a38e789148fdef"
+      }
     }
   },
   "qualification": {
     "level": "source_reviewed",
     "mobile_sdk_versions_verified": [],
-    "compiled_examples": false,
+    "compiled_examples": true,
     "device_verified": false,
-    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
   },
   "examples": {
     "android": {
       "language": "kotlin",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// Illustrative integration sequence, not a standalone SDK program.\nrequire(selectedClientIsNativeCompatible)\nrequire(currentStateAllowsActivation)\n// The app adapter drives the selected SDK wrapper and every challenge.\nactivateWithSelectedClient(clientId, activationUser, activationCode) { result ->\n    when (result) {\n        is Challenge -> renderRequestedFields(result)\n        is Completed -> verifyLocalUserAndDevice()\n        is Failed -> showFailureWithoutReissuingCode(result)\n    }\n}"
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import com.kobil.kssidp.wrapper.models.*\nimport com.kobil.wrapper.events.AuthenticationMode\n\nfun activateNative(idp: KssIdp, clientId: String, mode: AuthenticationMode,\n    credentials: HashMap<String, String>, completion: (KssIdpResultObject) -> Unit) {\n    idp.activate(clientId, mode, credentials, null, completion)\n}\n// Initialize KssIdp once with the selected deployment configuration first.\n// Credential field names belong to that existing flow; never log their values.\n// Inspect the SDK result status AND local user state, not just token receipt.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.3088426",
+        "toolchain": "AGP 8.11.1 / Kotlin 2.1.20 / Gradle 8.13",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     },
     "ios": {
       "language": "swift",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// Fragment matching the inspected KSSIDP-wrapper integration style.\n// selectedClientId comes from deployment configuration, never a sample alias.\nidpWrapper.activate(clientId: selectedClientId,\n    authMode: selectedAuthenticationMode, appDelegate: interactionDelegate) {\n        _, result in\n        handleActivationResult(result) // continuation/failure/success separately\n    }\n// Verify local SDK user/device state; token receipt alone is not acceptance."
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import KSMasterController\nimport kssidp\n\nfunc activateNative(idp: KssIdpWrapper, clientId: String,\n    mode: KSMAuthenticationMode, credentials: [String: String],\n    completion: @escaping KssIdpCompletion) {\n    idp.activate(clientId: clientId, authMode: mode,\n        credentials: credentials, completion: completion)\n}\n// The caller retains the configured wrapper and checks its result plus SDK state.\n// Credential field names belong to the explicitly selected existing native flow.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.803.3089231",
+        "toolchain": "Xcode 27.0 (27A266a)",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     }
-  }
+  },
+  "integration_generation": "classic_mcsdk_kssidp",
+  "backend_tools": [
+    "sdk_idp_user_search",
+    "sdk_idp_user_get",
+    "sdk_idp_user_create",
+    "sdk_idp_activation_code_generate"
+  ]
 }
