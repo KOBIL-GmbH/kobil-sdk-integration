@@ -194,19 +194,21 @@ can decrypt it with their own identities.
 4. On each destination, use
    `sdk_age_credential_import_keyring(store_path, identity_path, service, account,
    destination_service, destination_account)` to import exactly one entry.
+   `destination_service` is a label such as `server-a/idp`; the tool always writes
+   `kobil-sdk/import/server-a/idp`, never the original source service.
    Existing entries require explicit `replace=true`. The encrypted file remains.
 5. Use the destination reference
-   `{"provider":"keyring","service":"customer-transfer","account":"sdk-user"}`
+   `{"provider":"keyring","service":"kobil-sdk/import/customer-transfer","account":"sdk-user"}`
    in backend or transfer-client settings. The same provider selects macOS
-   Keychain on macOS and native Windows Credential Manager on Windows. Names can
-   be preserved or explicitly mapped during import.
+   Keychain on macOS and native Windows Credential Manager on Windows. Use the returned `credential_reference` verbatim. The destination label is
+   opaque; do not pass the expanded service name back as a label. Choose separate
+   labels per server and purpose (for example server-a/idp and server-a/ast).
 
 Alternatively use an `age` reference directly on the destination without import;
 its store/identity paths must be local to that destination. Paths in server
 profiles are not automatically translated from macOS to Windows. Keyring
-service/account references avoid that path dependency. Stored server profiles
-can be exported explicitly using the existing environment tools; the transfer
-export itself contains only the selected credential entries.
+service/account references avoid that path dependency. For profiles and credentials together, use the server-bundle tools below.
+The credential-only sdk_age_transfer_export remains available.
 
 This flow does not copy a macOS Keychain database to Windows and does not share
 private age identities. It also supports Windows-to-Mac with the same interfaces.
@@ -219,3 +221,60 @@ Windows backend-selection contract tests. A real Windows Credential Manager
 import still requires validation on a Windows host. Before using private identity
 files on Windows, provision a user-private directory/ACL; automatic ACL management
 is not implemented by this package.
+
+## Imported-credential namespace
+
+Age-to-keystore imports always prefix destination service labels with
+`kobil-sdk/import/`. Accounts remain explicitly selected. Source credentials and
+existing local service names are not changed. Duplicate destination entries fail
+unless `replace=true`; replacement is limited to that namespaced destination.
+
+`sdk_credential_import` uses an existing connection profile and therefore cannot
+silently change its credential reference. Its destination must already be under
+`kobil-sdk/import/`; otherwise import fails before reading source credentials.
+Update the profile explicitly using the reference returned by the age import.
+Legacy references remain readable; this does not migrate or delete existing keys.
+
+This changes the destination semantics of age imports: callers must use the
+returned reference rather than assuming destination_service is a literal service.
+Complete multi-environment transfer is provided by the explicit server-bundle
+tools described below.
+
+## Share several complete server environments
+
+The recipient creates an identity with `sdk_age_identity_create` and shares only
+its returned public `age1…` recipient. The private identity stays on that machine.
+
+1. On the sender, prepare owner-only connection profile JSON files for the chosen
+   servers. AST and optional IDP credentials are references to the sender's
+   Keychain, age store, private file or environment; no raw secret tool arguments.
+2. Call `sdk_age_server_bundle_export(output_path, recipients, profile_files)`.
+   It validates all profiles, resolves only their referenced credentials, and
+   encrypts profiles plus credentials in one new `.age` file. Sender paths and
+   legacy environment-variable references are replaced by portable bundle labels.
+   All supplied recipients can decrypt every server included in the file.
+3. Share that file through the intended transfer channel. On the recipient, call
+   `sdk_age_store_list` with its local identity to inspect environment names.
+4. Call `sdk_age_server_bundle_import(store_path, identity_path, environments,
+   namespace, output_store_path)` with the explicit environment-name subset.
+   A namespace such as `partner-a` separates deliveries. Imported services are
+   `kobil-sdk/import/partner-a/<encoded environment>/ast` and `/idp`, with account
+   `credential`. No sender-selected service or filesystem path is used locally.
+5. The result contains local credential references and a new encrypted profile
+   store. Use `sdk_age_environment_selector_write` to create a private selector
+   for one imported environment, then explicitly configure `KOBIL_SDK_CONNECTION`
+   and restart the MCP. Server settings remain encrypted. Verify backend auth and
+   native preflight after selection; import itself makes no backend requests.
+
+Existing keystore entries or output files block imports. There is no batch
+replacement: choose a new namespace or deliberately resolve an earlier import.
+On failure, only entries created by that import are removed. If cleanup fails,
+`status=cleanup_required` reports the leftover references without secret values;
+resolve those before retrying. Process termination or a machine crash can still
+leave partial entries; the OS keystore and filesystem are not one transaction.
+
+Limits: at most 50 connection profiles per bundle and 20 recipients; plaintext
+size is bounded. AST/IDP server profiles are supported. SFTP/SCP credentials can
+still be shared separately using `sdk_age_transfer_export`; they are not AST/IDP
+connection profiles. macOS Keychain round-trip tests passed with disposable data;
+Windows Credential Manager runtime testing remains pending.

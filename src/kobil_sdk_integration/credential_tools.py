@@ -1,7 +1,7 @@
 """Manage only credentials selected by the current connection profile."""
 from typing import Literal
 from .backend import configuration, authentication, admin_reference
-from .credentials import resolve, store, delete, CredentialError
+from .credentials import resolve, store, delete, CredentialError, require_import_namespace
 from .idp_secrets import CredentialRef
 
 
@@ -26,9 +26,9 @@ def register(mcp):
     @mcp.tool()
     def sdk_credential_import(expected_environment: str, source: CredentialRef,
                                service: Literal['ast','idp'] = 'ast', replace: bool = False) -> dict:
-        """Import one server-side credential reference into the native keystore entry selected by the current profile. Source may be a private file, age envelope, environment or keystore reference; no raw secret arguments. Destination must be keyring. Existing entries are preserved unless replace=true. Does not delete source files, switch profiles or alter backend accounts. OS authorization may be required."""
+        """Import one server-side credential reference into the native keystore entry selected by the current profile. Source may be a private file, age envelope, environment or keystore reference; no raw secret arguments. Destination must be keyring under kobil-sdk/import/. Other destinations fail before resolving the source; update the selected profile explicitly to an imported credential reference. Existing entries are preserved unless replace=true. Does not delete source files, switch profiles or alter backend accounts. OS authorization may be required."""
         ref=selected(expected_environment,service)
-        if ref['provider']!='keyring':raise ValueError('Destination profile must select a keyring reference')
+        require_import_namespace(ref)
         value=resolve(source.model_dump(exclude_none=True))
         store(ref,value,replace=replace)
         return {'stored':True,'service':service,'provider':'keyring','backend_changed':False}
