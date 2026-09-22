@@ -33,3 +33,9 @@ verification remain pending. SDK binaries and credentials are not distributed he
 - Integrate native keystore, private file, environment and encrypted age references into AST and IDP authentication.
 - Add scoped MCP credential status/import/delete and local setup CLI; preserve legacy profiles and OAuth scope.
 - Keep original shared-credentials branch archived; no app-flow implementation imported.
+
+## Encrypted store authoring (unreleased)
+
+- Add age identity/store creation, reference-based password storage, encrypted named environments, metadata listing and private selector/export tools.
+- Backend connections can resolve encrypted environments without exporting server settings.
+- Preserve existing credentials during atomic encrypted updates; require explicit replacement.

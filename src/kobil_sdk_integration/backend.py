@@ -68,13 +68,17 @@ def admin_reference(admin):
     return validate_reference(ref)
 
 
-def configuration(expected_environment=None, path=None):
+def validate_configuration(cfg, expected_environment=None):
+    """Validate profile data without reading credential values."""
     try:
-        source = Path(path or os.environ['KOBIL_SDK_CONNECTION']).expanduser()
-        cfg = json.loads(source.read_text())
         if set(cfg)-{'environment','tenant','ast_url','token_env','oauth','services','admin','schema_version','auth'}:raise ValueError()
         segment(cfg['environment']); segment(cfg['tenant']); https_url(cfg['ast_url'])
         authentication(cfg)
+        if 'services' in cfg:
+            if not isinstance(cfg['services'],list):raise ValueError()
+            for service in cfg['services']:
+                if not isinstance(service,dict) or set(service)!={'name','url'}:raise ValueError()
+                segment(service['name']);https_url(service['url'])
         if 'admin' in cfg:
             admin=cfg['admin']
             required={'idp_url','realm','client_id','username'}
@@ -87,6 +91,23 @@ def configuration(expected_environment=None, path=None):
     if expected_environment is not None and expected_environment != cfg['environment']:
         raise ValueError('Active environment mismatch')
     return cfg
+
+
+def configuration(expected_environment=None, path=None):
+    try:
+        source=Path(path or os.environ['KOBIL_SDK_CONNECTION']).expanduser()
+        cfg=json.loads(source.read_text())
+        if isinstance(cfg,dict) and set(cfg)=={'age_environment'}:
+            from .age_store import read_document
+            ref=cfg['age_environment']
+            if not isinstance(ref,dict) or set(ref)!={'store','identity','environment'}:raise ValueError()
+            if expected_environment is not None and expected_environment!=ref['environment']:
+                raise ValueError('Active environment mismatch')
+            cfg=read_document(ref['store'],ref['identity']).get('environments',{}).get(ref['environment'])
+            if not isinstance(cfg,dict) or cfg.get('environment')!=ref['environment']:raise ValueError()
+    except Exception:
+        raise BackendError('Invalid connection configuration; see backend setup documentation') from None
+    return validate_configuration(cfg,expected_environment)
 
 
 class AST:
