@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1 — 2026-09-22
+
+- Add read-only sdk_native_preflight to verify required native clients and actual backend flow bindings; reject missing, substituted and SuperApp flows.
+- Enforce BDDKEnrollment/BDDKLogin, token-based login, maverick and X-KOBIL-ASTUSERID in native KSSIDP guidance; distinguish KSTrustedWebView.
+- Diagnose missing IAM status50 and require typed Swift callback result handling.
+- Include GSA automated-testing knowledge from PR7. No new mobile SDK/device acceptance claim.
+
 ## 0.5.0 — 2026-09-22
 
 - Ship 179 MCP tools, typed IDP/AST administration, 49 explicit HTTP contracts, activation-code generation and backend configuration delivery.
