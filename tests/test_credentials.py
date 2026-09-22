@@ -123,3 +123,11 @@ class CredentialTests(unittest.TestCase):
             native.assert_not_called();self.assertEqual(f.read_bytes(),original)
             self.assertEqual(json.loads(dest.read_text())['auth']['credential']['account'],'new')
             self.assertFalse(json.loads(out.getvalue().splitlines()[0])['credential_checked'])
+
+    def test_windows_selects_native_credential_manager_backend(self):
+        backend=Mock()
+        module=types.ModuleType('keyring.backends.Windows')
+        module.WinVaultKeyring=Mock(return_value=backend)
+        with patch.object(worker.sys,'platform','win32'),patch.dict(sys.modules,{'keyring.backends.Windows':module}):
+            self.assertIs(worker.native_backend(),backend)
+        module.WinVaultKeyring.assert_called_once_with()

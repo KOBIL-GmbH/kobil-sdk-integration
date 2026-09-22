@@ -77,3 +77,33 @@ class AgeStoreTests(unittest.TestCase):
             self.assertEqual(before,Path(path).read_bytes())
         link=self.root/'link.age';link.symlink_to(self.store)
         with self.assertRaises(credentials.CredentialError):self.tools['sdk_age_store_list'](str(link),self.identity)
+
+    def test_transfer_to_two_recipients_without_sender_identity(self):
+        second=str(self.root/'second-identity');third=str(self.root/'unauthorized-identity')
+        public2=self.tools['sdk_age_identity_create'](second)['recipient']
+        self.tools['sdk_age_identity_create'](third)
+        public1=age_store.recipient(self.identity)
+        output=str(self.root/'transfer.age')
+        entry={'service':'transfer','account':'user','source':{'provider':'keyring','service':'source','account':'user'}}
+        with patch.object(age_store,'resolve',return_value='transfer-fixture'):
+            result=self.tools['sdk_age_transfer_export'](output,[public1,public2],[entry])
+        self.assertNotIn('transfer-fixture',str(result))
+        for identity in (self.identity,second):
+            self.assertEqual(credentials.resolve({'provider':'age','store':output,'identity':identity,'service':'transfer','account':'user'}),'transfer-fixture')
+        with self.assertRaises(credentials.CredentialError):
+            credentials.resolve({'provider':'age','store':output,'identity':third,'service':'transfer','account':'user'})
+        with patch.object(age_store,'keyring_store') as store:
+            result=self.tools['sdk_age_credential_import_keyring'](output,second,'transfer','user','target','target-user')
+            store.assert_called_once_with({'provider':'keyring','service':'target','account':'target-user'},'transfer-fixture',replace=False)
+            self.assertNotIn('transfer-fixture',str(result))
+        with patch.object(age_store,'resolve') as resolve:
+            with self.assertRaises(credentials.CredentialError):self.tools['sdk_age_transfer_export'](output,[public1],[entry])
+            resolve.assert_not_called()
+
+    def test_transfer_rejects_duplicate_entries_and_invalid_recipient_before_reading_secret(self):
+        entry={'service':'s','account':'a','source':{'provider':'env','name':'SOURCE'}}
+        with patch.object(age_store,'resolve') as resolve:
+            for recipients,entries in [(['--plugin'],[entry]),([age_store.recipient(self.identity)],[entry,entry])]:
+                with self.assertRaises(credentials.CredentialError):
+                    self.tools['sdk_age_transfer_export'](str(self.root/'bad.age'),recipients,entries)
+            resolve.assert_not_called()
