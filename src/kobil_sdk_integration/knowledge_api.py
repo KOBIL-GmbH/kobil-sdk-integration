@@ -1,6 +1,7 @@
 """Bundled SDK knowledge with explicit source, artifact and runtime limits."""
 import json
 from importlib.resources import files
+from .native_policy import POLICY
 
 TOPICS = ("setup", "lifecycle", "activation", "login", "multi_step", "tms", "diagnostics", "logs", "automated_testing")
 
@@ -29,6 +30,8 @@ def get_topic(topic, platform, sdk_family="shift", sdk_version=None):
         "external_source_access_required": False,
         "integration_generation": data["integration_generation"],
         "backend_tools": data["backend_tools"],
+        "native_integration_policy": POLICY,
+        "required_preflight": "sdk_native_preflight",
         "runtime_acceptance": data.get("runtime_acceptance", {}).get(platform),
     }
 
