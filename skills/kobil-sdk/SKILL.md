@@ -27,6 +27,7 @@ event checks as live flow validation. The MCP supplies IDP/AST service operation
 choose a login journey or create a replacement to fit sample code. Never use
 SuperApp Login V2 for native Android/iOS. Missing discovery is unknown, not absence.
 Use `sdk_service_catalog` to inspect installed operations and explicit gaps.
+For a fresh native app, follow the [integration handoff](references/native-integration.md).
 
 ## Resolve the customer's request
 

@@ -40,3 +40,10 @@ verification remain pending. SDK binaries and credentials are not distributed he
 - Backend connections can resolve encrypted environments without exporting server settings.
 - Preserve existing credentials during atomic encrypted updates; require explicit replacement.
 - Add multi-recipient public-key credential delivery and explicit per-entry native-keystore import for macOS/Windows interoperability; private identities stay on destination machines.
+
+## Bundled native knowledge (unreleased)
+
+- Add eight self-contained classic MCSDK/KSSIDP topics and three MCP retrieval/checklist tools (179 tools total).
+- Replace external skill/checkout requirements with bundled Kotlin and Swift knowledge, source hashes and explicit validation scope.
+- Compile and link all 16 examples with MCSDK Android 15.16.3088426 / iOS 15.16.803.3089231; synthetic diagnostic adapters pass on both physical platforms.
+- Add backend-to-app integration handoff and candidate testing instructions. Full live-flow acceptance remains separate; no new release tag or editor upgrade is included.

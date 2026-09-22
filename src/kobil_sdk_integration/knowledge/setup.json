@@ -3,6 +3,7 @@
   "title": "SDK assets and configuration",
   "sdk_family": "shift",
   "prerequisites": [
+    "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
     "Select Shift SDK family, mobile SDK artifact version and native platform.",
     "Obtain authorized SDK binaries and a matching server application/version with registration user selected.",
     "Supply backend-issued SDK configuration and trust/configuration assets; keep backend admin credentials out of the app."
@@ -35,7 +36,11 @@
         "GettingStartedApp/GettingStarted/Shared/Models/StartModel.swift",
         "GettingStartedApp/Pod_MasterController/Pod_MasterController/Classes/AssetHelper.swift"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "GettingStartedApp/GettingStarted/Shared/Models/StartModel.swift": "e947bd785a3b1e3b7f7aa87be34cba35a97587493d1a367b2bee268f9f25b810",
+        "GettingStartedApp/Pod_MasterController/Pod_MasterController/Classes/AssetHelper.swift": "bb69374989f6d3baea0e594cf5e645d95f9ead870af946b78a7714659d1e2ac9"
+      }
     },
     "android": {
       "repository": "MC_GettingStarted_Kotlin",
@@ -43,28 +48,55 @@
       "files": [
         "app/src/main/java/com/kobil/mcgettingstartedkotlin/models/StartModel.kt"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/models/StartModel.kt": "da1cc6b3631272bb9f7f8cb6aa068395cd0f116f280ce57f31590c95db26e0e1"
+      }
     }
   },
   "qualification": {
     "level": "source_reviewed",
     "mobile_sdk_versions_verified": [],
-    "compiled_examples": false,
+    "compiled_examples": true,
     "device_verified": false,
-    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
   },
   "examples": {
     "android": {
       "language": "kotlin",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// App helpers; map paths and start constructor to the supplied SDK release.\nval mcConfig = requireAsset(selectedMcConfigPath)\nval sdkConfig = requireAsset(selectedSdkConfigPath)\nrequire(mcConfig.isNotEmpty() && sdkConfig.isNotEmpty())\n// StartEvent in the inspected release accepts locale, version, app name,\n// mcConfig text and SDK configuration bytes. Never log these contents.\nstartUsingReleaseAdapter(mcConfig, sdkConfig)"
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import android.content.res.AssetManager\nimport android.app.Application\nimport com.kobil.kssidp.wrapper.models.KssIdp\nimport com.kobil.kssidp.wrapper.models.KssIdpConfig\nimport com.kobil.wrapper.events.*\n\nfun createStart(assets: AssetManager, mcConfigPath: String, sdkConfigPath: String,\n    locale: String, version: AppVersion, appName: String, certificateChain: String,\n    serverBackend: String): StartEvent {\n    val mcConfig = assets.open(mcConfigPath).bufferedReader().use { it.readText() }\n    val sdkConfig = assets.open(sdkConfigPath).use { it.readBytes() }\n    require(mcConfig.isNotBlank() && sdkConfig.isNotEmpty()) { \"Empty SDK assets\" }\n    return StartEvent(locale, version, appName, mcConfig, certificateChain, sdkConfig)\n        .apply { this.serverBackend = serverBackend }\n}\n// Paths and serverBackend come from the selected delivery/configuration.\n// Submit through the retained controller and inspect StartResultEvent.\n\nfun configureIdp(application: Application, tenantId: String, baseUrl: String,\n    certificatePath: String, wrapperHandlesTms: Boolean, hashPin: Boolean): KssIdp {\n    KssIdp.init(application, KssIdpConfig(tenantId = tenantId, baseUrl = baseUrl,\n        certificatePath = certificatePath, shouldKssIdpHandleTms = wrapperHandlesTms,\n        shouldHashPin = hashPin))\n    return checkNotNull(KssIdp.getInstance()) { \"KSSIDP initialization failed\" }\n}\n// Choose one TMS owner. Set wrapperHandlesTms from the app's chosen architecture,\n// not an assumed universal default. Pass hashPin according to deployment policy.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.3088426",
+        "toolchain": "AGP 8.11.1 / Kotlin 2.1.20 / Gradle 8.13",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     },
     "ios": {
       "language": "swift",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// Inputs are loaded from validated target bundle assets.\nlet start = KSMStartEventEx(serverBackend: selectedBackend,\n    ssmsAppConfiguration: appConfiguration, mcConfig: mcConfigText,\n    certificateChain: certificateData, configurationData: sdkConfigurationData)\n// Submit through the version-matched controller adapter and inspect its result."
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import Foundation\nimport KSMasterController\nimport kssidp\n\nfunc createStart(serverBackend: String, appConfiguration: KSMSsmsAppConfiguration,\n    mcConfigURL: URL, certificateURL: URL,\n    configurationData: KSMConfigurationData) throws -> KSMStartEventEx {\n    let mcConfig = try String(contentsOf: mcConfigURL, encoding: .utf8)\n    let certificates = try Data(contentsOf: certificateURL)\n    guard !mcConfig.isEmpty, !certificates.isEmpty else {\n        throw NSError(domain: \"SDKAssets\", code: 1,\n            userInfo: [NSLocalizedDescriptionKey: \"Empty SDK assets\"])\n    }\n    return KSMStartEventEx(serverBackend: serverBackend,\n        ssmsAppConfiguration: appConfiguration, mcConfig: mcConfig,\n        certificateChain: certificates, configurationData: configurationData)\n}\n// Resolve URLs from the installed app bundle, not a developer machine path.\n// Populate appConfiguration/configurationData from the selected release assets.\n\nfunc configureIdp(tenantId: String, baseURL: String, certificatePath: String,\n    controller: KSAsyncEventReceiver & KSEcoModulInterface & KSEventSource,\n    wrapperHandlesTms: Bool, hashPin: Bool) throws -> KssIdpWrapper {\n    try KssIdpWrapper(config: KssIdpConfig(certificatePath: certificatePath,\n        baseUrl: baseURL, tenantId: tenantId, masterController: controller,\n        shouldKssIdpHandleTms: wrapperHandlesTms, shouldHashPin: hashPin))\n}\n// Retain the controller and wrapper. Choose one TMS owner and deployment PIN policy.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.803.3089231",
+        "toolchain": "Xcode 27.0 (27A266a)",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     }
-  }
+  },
+  "integration_generation": "classic_mcsdk_kssidp",
+  "backend_tools": [
+    "sdk_backend_status",
+    "sdk_credential_status",
+    "sdk_app_get",
+    "sdk_app_versions",
+    "sdk_app_ensure",
+    "sdk_app_version_ensure",
+    "sdk_config_write"
+  ]
 }

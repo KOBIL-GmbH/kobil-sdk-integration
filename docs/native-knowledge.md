@@ -8,7 +8,7 @@ lookup is needed to retrieve them.
 - `sdk_knowledge_topics(platform, sdk_family)` lists content and qualification.
 - `sdk_knowledge_get(topic, platform, sdk_family, sdk_version)` returns a complete
   recipe with prerequisites, sequence, expected result, failure handling,
-  platform notes, illustrative snippet and checks.
+  platform notes, concrete example and checks.
 - `sdk_integration_checklist(...)` returns acceptance items, initially `not_run`.
   It does not scan an application or certify a completed integration.
 
@@ -19,12 +19,17 @@ Shift example.
 
 ## Qualification
 
-This initial pack is source-reviewed, not device-qualified. Most example fragments
-are explicitly marked `compile_ready=false`; application helper names and
-normalized result enums are illustrative, not claimed SDK methods. Inspect the
-provided SDK headers when implementing their adapter. No verified mobile SDK
-release range is claimed. Source repository revisions identify evidence only;
-they are not SDK artifact versions. MCP package version is a third distinct value.
+All 16 platform examples compile and link in fresh apps against classic MCSDK
+Android 15.16.3088426 and iOS 15.16.803.3089231. They are concrete SDK dispatch,
+configuration and utility functions, not complete application templates. The
+caller supplies UI, selected deployment inputs, controller ownership and result
+handling. `compile_ready=true` applies to that function in the stated SDK context.
+
+Each example records its exact artifact version and validation scope. Complete
+recipes remain `source_reviewed_unqualified` until live flow acceptance is done;
+`version_verified=false` deliberately refers to that broader qualification.
+Source revisions and file hashes identify inspected source snapshots, not SDK
+release versions. MCP package version is a third distinct value.
 
 Native deployment clients and backend flows are explicitly selected by the
 customer. No customer aliases or backend settings are bundled. Administrative
@@ -64,3 +69,9 @@ The examples carry this limited validation independently of recipe qualification
 Real initialization, asynchronous event delivery, activation/login, multi-step,
 TMS and log export are not qualified by these synthetic tests. SDK binaries,
 signing identities and private device/backend configuration are not included.
+
+Use the [native integration handoff](../skills/kobil-sdk/references/native-integration.md)
+to connect backend tools, asset packaging, app callbacks and user acceptance.
+
+[Candidate testing instructions](native-knowledge-testing.md) explain how to use
+the matching MCP and skill without mixing them with an older installation.

@@ -23,7 +23,7 @@ class KnowledgeTests(unittest.TestCase):
                 self.assertFalse(data['version_verified'])
                 if data['example']['compile_ready']:
                     self.assertTrue(data['example']['validation']['sdk_artifact_version'])
-                    self.assertIn(data['example']['validation']['kind'], ('swift_typecheck', 'synthetic_event_device_test'))
+                    self.assertIn(data['example']['validation']['kind'], ('app_build', 'synthetic_event_device_test'))
                 self.assertFalse(data['qualification']['device_verified'])
                 self.assertFalse(data['external_source_access_required'])
                 self.assertNotIn('/Users/',json.dumps(data))

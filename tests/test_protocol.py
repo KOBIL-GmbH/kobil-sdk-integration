@@ -29,6 +29,20 @@ class ProtocolTests(unittest.TestCase):
                         self.assertFalse({"sdk_idp_journeys", "sdk_activation_flow_ensure", "sdk_activation_client_ensure"} & names)
                         self.assertTrue({"sdk_idp_client_list", "sdk_idp_flow_list", "sdk_app_list"} <= names)
                         self.assertTrue({'sdk_app_get', 'sdk_app_versions'} <= names)
+                        for platform in ('android', 'ios'):
+                            for topic in ('setup', 'lifecycle', 'activation', 'login', 'multi_step', 'tms', 'diagnostics', 'logs'):
+                                result = await session.call_tool('sdk_knowledge_get', {
+                                    'topic': topic, 'platform': platform})
+                                self.assertFalse(result.isError)
+                                payload = result.structuredContent or json.loads(result.content[0].text)
+                                self.assertTrue(payload['example']['compile_ready'])
+                                self.assertFalse(payload['version_verified'])
+                                self.assertEqual(payload['integration_generation'], 'classic_mcsdk_kssidp')
+                                self.assertTrue(set(payload['backend_tools']) <= names)
+                        gap = await session.call_tool('sdk_knowledge_get', {'topic': 'login', 'platform': 'flutter'})
+                        self.assertFalse(gap.isError)
+                        payload = gap.structuredContent or json.loads(gap.content[0].text)
+                        self.assertEqual(payload['status'], 'knowledge_gap')
                         result = await session.call_tool('sdk_backend_status', {})
                         self.assertFalse(result.isError)
                         self.assertNotIn('protocol-fixture', str(result))
