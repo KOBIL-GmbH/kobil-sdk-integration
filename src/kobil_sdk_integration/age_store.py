@@ -95,6 +95,18 @@ def register(mcp):
         return {'identity_path':str(path),'recipient':recipient(path),'created':True}
 
     @mcp.tool()
+    def sdk_age_identity_public_key(identity_path: str) -> dict:
+        """Return the public age1 recipient for this receiver's existing local private identity.
+
+        Safe to copy the returned recipient into the sender's chat for server-bundle
+        export. Reads locally; never returns or changes the private key. Use the
+        identity chosen during receiver setup. If none exists, create one once with
+        sdk_age_identity_create and retain it to import deliveries encrypted for it.
+        """
+        path = absolute(identity_path)
+        return {'identity_path': str(path), 'recipient': recipient(path), 'secret_returned': False}
+
+    @mcp.tool()
     def sdk_age_store_create(store_path: str, identity_path: str) -> dict:
         """Create a NEW encrypted age store for credentials and named environments. Uses one explicitly selected native identity; existing files are never replaced. No backend or OS keystore changes."""
         path=absolute(store_path)

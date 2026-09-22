@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Retrieve the receiver public age key with sdk_age_identity_public_key for a two-chat encrypted server handoff.
+
 - Identify inaccessible age identities versus encrypted bundles without exposing secrets; document project-local deliveries and separate recipient identities.
 
 - Transfer multiple AST/IDP server profiles and credentials in a single recipient-encrypted age bundle; import selected environments with recipient-local references.
