@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Enforce stable project identity naming through sdk_age_project_identity, with collision-resistant project IDs and reuse of existing keys.
+
 - Retrieve the receiver public age key with sdk_age_identity_public_key for a two-chat encrypted server handoff.
 
 - Identify inaccessible age identities versus encrypted bundles without exposing secrets; document project-local deliveries and separate recipient identities.
