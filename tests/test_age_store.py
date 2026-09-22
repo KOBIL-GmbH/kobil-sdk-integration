@@ -23,6 +23,19 @@ class AgeStoreTests(unittest.TestCase):
         self.tools['sdk_age_identity_create'](self.identity)
         self.tools['sdk_age_store_create'](self.store,self.identity)
 
+    def test_public_recipient_is_repeatable_and_does_not_change_identity(self):
+        before = Path(self.identity).read_bytes()
+        get = self.tools['sdk_age_identity_public_key']
+        first = get(self.identity)
+        self.assertEqual(first, get(self.identity))
+        self.assertEqual(first['recipient'], age_store.recipient(self.identity))
+        self.assertNotIn('AGE-SECRET-KEY-', str(first))
+        self.assertFalse(first['secret_returned'])
+        self.assertEqual(before, Path(self.identity).read_bytes())
+        with self.assertRaises(credentials.CredentialError):
+            get(str(self.root/'missing-identity'))
+        self.assertFalse((self.root/'missing-identity').exists())
+
     def test_password_roundtrip_compatible_with_runtime_and_replace(self):
         source=self.root/'password';source.write_text('fixture-password');source.chmod(0o600)
         args=(self.store,self.identity,'sftp-test','account',{'provider':'file','path':str(source)})
