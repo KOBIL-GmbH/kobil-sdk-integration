@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Identify inaccessible age identities versus encrypted bundles without exposing secrets; document project-local deliveries and separate recipient identities.
+
 - Transfer multiple AST/IDP server profiles and credentials in a single recipient-encrypted age bundle; import selected environments with recipient-local references.
 - Isolate imported credentials under kobil-sdk/import/; reject collisions, preserve local services and report incomplete rollback without exposing secrets.
 - Validate macOS Keychain round trips with disposable credentials. Windows native runtime validation remains pending.
