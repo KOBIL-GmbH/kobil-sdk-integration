@@ -59,3 +59,9 @@ Trigger a KOBIL v3_user TMS transaction through the IDP route. Separate from AST
 Parameters: `expected_environment, user_uuid, text, realm`.
 
 Live verification: not performed for this clean service-interface branch.
+
+## Activation code generation
+
+`sdk_idp_activation_code_generate(expected_environment, user_uuid, valid_for="60d", digits=8, realm=None)` generates a numeric code in the MCP process and stores it as a KOBIL `ACTIVATION_CODE` credential on an existing user. The backend must support that credential type and the connection needs user-management rights. The tool returns the code for entering into the app; keep it out of committed files and logs.
+
+This is an explicit credential operation, separate from registration-user selection and app-flow configuration. It never creates users, selects a flow or activates a device. Existing activation codes may be replaced. Readback confirms the credential type exists, not that the exact generated value was stored; successful device activation remains a separate test. An uncertain write must not be automatically retried.

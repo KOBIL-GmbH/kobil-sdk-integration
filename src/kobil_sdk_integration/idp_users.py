@@ -43,7 +43,7 @@ def register(mcp):
     @mcp.tool()
     def sdk_idp_user_get(expected_environment: str, user_uuid: str | None = None,
                          username: str | None = None, realm: str | None = None) -> dict:
-        """Read a user by UUID or exact username (exactly one). Requires view-users. Returns profile metadata; use activation_user_status for activation state."""
+        """Read a user by UUID or exact username (exactly one). Requires view-users. Returns profile metadata; inspect credential metadata and device state separately."""
         if bool(user_uuid)==bool(username):raise ValueError('Provide exactly one user_uuid or username')
         with Admin(expected_environment,realm) as api:
             if user_uuid:return {'user':api.call('GET','/users/'+segment(user_uuid))}

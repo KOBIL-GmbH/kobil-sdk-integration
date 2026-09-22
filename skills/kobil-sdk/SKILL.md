@@ -178,3 +178,7 @@ entry reusable and customer-neutral; internal hosts, credentials, test identitie
 JWTs and private logs stay in local evidence. Record build, launch, SDK start,
 activation and return-login separately. Failed or untested steps remain explicitly
 pending; a passed backend request is not a passed SDK integration.
+
+## Additional service helpers
+
+See [service interfaces](../../docs/service-interfaces.md) for explicit flow configuration operations, login-page fetch, activation-code generation/set, authentication testing, private AST token export and optional Grafana correlation. These tools do not select app flows.

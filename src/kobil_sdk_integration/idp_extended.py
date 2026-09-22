@@ -210,7 +210,7 @@ def register(mcp):
 
     @mcp.tool()
     def sdk_idp_flow_create(expected_environment: str, alias: str, description: str = "", provider_id: Literal["basic-flow", "client-flow"] = "basic-flow", top_level: bool = True, realm: str | None = None) -> dict:
-        """Create a custom authentication flow. Existing aliases report conflict; built-in flows are never replaced. Requires manage-realm. Add executions separately using supported activation recipe tools."""
+        """Create a custom authentication flow. Existing aliases report conflict; built-in flows are never replaced. Requires manage-realm. Add executions explicitly with sdk_idp_service_request operation flow_execution_create."""
         with Admin(expected_environment, realm=realm) as api:
             return api.call("POST", "/authentication/flows", body={"alias": alias, "description": description, "providerId": provider_id, "topLevel": top_level, "builtIn": False})
 
