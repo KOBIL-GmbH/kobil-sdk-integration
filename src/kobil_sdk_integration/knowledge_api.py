@@ -2,7 +2,7 @@
 import json
 from importlib.resources import files
 
-TOPICS = ("setup", "lifecycle", "activation", "login", "multi_step", "tms", "diagnostics", "logs")
+TOPICS = ("setup", "lifecycle", "activation", "login", "multi_step", "tms", "diagnostics", "logs", "automated_testing")
 
 
 def get_topic(topic, platform, sdk_family="shift", sdk_version=None):

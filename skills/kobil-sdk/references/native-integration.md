@@ -1,7 +1,7 @@
 # Native integration handoff
 
 This first-priority pack covers classic MCSDK with KSSIDP on Kotlin/Android and
-Swift/iOS. Select a platform and read all eight `sdk_knowledge_get` topics before
+Swift/iOS. Select a platform and read the eight integration topics plus `automated_testing` through `sdk_knowledge_get` before
 building a fresh app. Examples are small functions to integrate into the app;
 they do not provide a complete UI, controller lifecycle or customer configuration.
 Their exact artifact validation is returned with each example. Standalone IDPSDK,
