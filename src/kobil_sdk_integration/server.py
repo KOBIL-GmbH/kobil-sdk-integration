@@ -7,7 +7,7 @@ import stat
 from mcp.server.fastmcp import FastMCP
 from .planner import FRAMEWORKS, plan
 
-mcp = FastMCP("KOBILSDK", instructions="Use typed IDP and AST service interfaces with explicit environment and resource identifiers. Derive app-flow logic from authorized WLA skills and version-matched GettingStarted apps. Do not choose backend journeys from example names or create replacement flows to fit sample code.")
+mcp = FastMCP("KOBILSDK", instructions="Use typed IDP and AST service interfaces with explicit environment and resource identifiers. Use bundled sdk_knowledge_topics/get/checklist for app integration. Respect source-review and mobile SDK qualification limits. Do not choose backend journeys from example names or create replacement flows to fit sample code.")
 
 
 @mcp.tool()
@@ -60,8 +60,8 @@ def sdk_artifact_info(path: str) -> dict:
 
 
 # Explicit service operations only; app orchestration belongs to app reference sources.
-from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store
-for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store):
+from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api
+for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api):
     _module.register(mcp)
 
 
@@ -70,7 +70,7 @@ async def sdk_service_catalog() -> dict:
     """List installed service tool names and coverage boundaries. No backend calls or app-flow recommendation."""
     names = sorted(t.name for t in await mcp.list_tools())
     return {'tools': names, 'tool_count': len(names),
-            'app_flow_source': 'Use authorized WLA skills and version-matched GettingStarted apps.',
+            'app_flow_source': 'Bundled sdk_knowledge_get recipes; no external skill or source repository required. Respect per-topic qualification.',
             'coverage': 'Typed operations plus 49 explicit HTTP contracts cover 45 inspected dashboard IDP/AST routes; not every vendor endpoint.',
             'gaps': ['Arbitrary custom IDP providers', 'Observability-based cross-user client lookup'],
             'flow_selection': 'Caller selects explicit resources; service tools do not select or provision app journeys.'}

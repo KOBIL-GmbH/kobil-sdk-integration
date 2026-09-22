@@ -1,0 +1,136 @@
+{
+  "id": "activation",
+  "title": "Native activation and authorization-code handoff",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
+    "SDK initialization completed and activation is allowed by current state.",
+    "Existing server application/version has a selected registration user.",
+    "An explicitly selected native-compatible IDP client/flow and a valid activation user/code are available."
+  ],
+  "sequence": [
+    "Choose the existing deployment client and authentication mode explicitly; do not create a replacement flow to fit a sample.",
+    "Collect only the fields required by the selected activation flow; keep credentials out of logs.",
+    "Drive the native IDP wrapper or version-matched authorization-code bridge. Continue intermediate challenges rather than assuming one request.",
+    "Handle the authorization-code result and SDK activation outcome separately.",
+    "Query local user/device state and perform a subsequent login as separate acceptance checks."
+  ],
+  "expected_result": "Activation completes and the expected SDK local user/device is present; subsequent login is checked separately.",
+  "checklist": [
+    "Fresh installation reaches activation-required state.",
+    "Valid activation completes and the expected local user/device exists.",
+    "Invalid/expired code produces a visible failure without automatic code reissue.",
+    "Activation user is not confused with the application registration user."
+  ],
+  "failure_handling": [
+    "A server-issued code is required; device UI status cannot generate one.",
+    "A timeout may follow a consumed code. Inspect state before trying a new code.",
+    "Never recommend SuperApp Login V2 for native Android/iOS."
+  ],
+  "platform_notes": {
+    "android": "NativeActivationViewModel handles SetAuthorisationCodeResultEvent; IdpNativeInterfaces defines activation input mappings.",
+    "ios": "KssIdpModel has separate activate calls for credential dictionaries and appDelegate-driven multi-step activation."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift"
+      ],
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift": "fade3e9d95e1714c7fc921d525c454c70dd3a92fd8c41b13b508288e0f14763b",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift": "d533118a0873ae724b951c412612092cbbc5e45a3b96b7276823c0dfbb518002"
+      }
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeActivationViewModel.kt",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/IdpNativeInterfaces.kt"
+      ],
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeActivationViewModel.kt": "f0c4cfad673cdb36f9543e95f56dbb8534efe98eba540a237e7f891e5888a666",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/IdpNativeInterfaces.kt": "0903fd06132aa787dbe6599a48c9e15661c56fe4dfe6294879a38e789148fdef"
+      }
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": true,
+    "device_verified": false,
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import com.kobil.kssidp.wrapper.models.*\nimport com.kobil.wrapper.events.AuthenticationMode\n\nfun activateNative(idp: KssIdp, clientId: String, mode: AuthenticationMode,\n    credentials: HashMap<String, String>, completion: (KssIdpResultObject) -> Unit) {\n    idp.activate(clientId, mode, credentials, null, completion)\n}\n// Initialize KssIdp once with the selected deployment configuration first.\n// Credential field names belong to that existing flow; never log their values.\n// Inspect the SDK result status AND local user state, not just token receipt.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.3088426",
+        "toolchain": "AGP 8.11.1 / Kotlin 2.1.20 / Gradle 8.13",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import KSMasterController\nimport kssidp\n\nfunc activateNative(idp: KssIdpWrapper, clientId: String,\n    mode: KSMAuthenticationMode, credentials: [String: String],\n    completion: @escaping KssIdpCompletion) {\n    idp.activate(clientId: clientId, authMode: mode,\n        credentials: credentials, completion: completion)\n}\n// The caller retains the configured wrapper and checks its result plus SDK state.\n// Credential field names belong to the explicitly selected existing native flow.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.803.3089231",
+        "toolchain": "Xcode 27.0 (27A266a)",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
+    }
+  },
+  "integration_generation": "classic_mcsdk_kssidp",
+  "backend_tools": [
+    "sdk_idp_user_search",
+    "sdk_idp_user_get",
+    "sdk_idp_user_create",
+    "sdk_idp_activation_code_generate"
+  ],
+  "runtime_acceptance": {
+    "android": {
+      "date": "2026-09-22",
+      "sdk_artifact_version": "15.16.3088426",
+      "device": "Pixel 8",
+      "scenario": "fresh_app_registration_activation_cold_restart_login",
+      "backend": "nonproduction Shift deployment with existing native-compatible clients",
+      "app_version": "1.0.1",
+      "authentication_mode": "NO",
+      "hash_pin": false,
+      "integrity_check": false,
+      "result": "passed",
+      "sdk_status": "OK / 0",
+      "backend_device_readback": true,
+      "limits": "Successful path only. No wrong/expired credential, multiflow, TMS, log export or production integrity acceptance."
+    },
+    "ios": {
+      "date": "2026-09-22",
+      "sdk_artifact_version": "15.16.803.3089231",
+      "device": "iPhone 17 Pro Max",
+      "scenario": "fresh_app_registration_activation_cold_restart_login",
+      "backend": "nonproduction Shift deployment with existing native-compatible clients",
+      "app_version": "1.0.1",
+      "authentication_mode": "NO",
+      "hash_pin": false,
+      "integrity_check": false,
+      "result": "passed",
+      "sdk_status": "OK / 0",
+      "backend_device_readback": true,
+      "limits": "Successful path only. No wrong/expired credential, multiflow, TMS, log export or production integrity acceptance."
+    }
+  }
+}
