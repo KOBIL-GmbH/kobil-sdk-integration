@@ -94,7 +94,8 @@ class AgeStoreTests(unittest.TestCase):
             credentials.resolve({'provider':'age','store':output,'identity':third,'service':'transfer','account':'user'})
         with patch.object(age_store,'keyring_store') as store:
             result=self.tools['sdk_age_credential_import_keyring'](output,second,'transfer','user','target','target-user')
-            store.assert_called_once_with({'provider':'keyring','service':'target','account':'target-user'},'transfer-fixture',replace=False)
+            store.assert_called_once_with({'provider':'keyring','service':'kobil-sdk/import/target','account':'target-user'},'transfer-fixture',replace=False)
+            self.assertEqual(result['credential_reference']['service'],'kobil-sdk/import/target')
             self.assertNotIn('transfer-fixture',str(result))
         with patch.object(age_store,'resolve') as resolve:
             with self.assertRaises(credentials.CredentialError):self.tools['sdk_age_transfer_export'](output,[public1],[entry])
