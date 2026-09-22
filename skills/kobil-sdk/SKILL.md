@@ -276,11 +276,15 @@ information; derive project paths and a proposed namespace from the workspace.
 ### Two-chat server delivery: receiver public key first
 
 When the user requests the MCP public key for receiving servers, call
-`sdk_age_project_identity(project_path)` with the receiving project directory.
+`sdk_age_project_identity(project_path, project_uuid)` with the receiving project
+directory. The optional project_uuid accepts the host project UUID when available.
+Otherwise the MCP reads its project memory `.kobil-sdk/identity-reference.json`;
+on first setup it generates and persists a UUID once. Never use a chat/session UUID.
+Keep this memory file when moving the project so its ID and key remain discoverable.
 The MCP enforces the private identity convention:
-`~/.config/kobil-sdk/identities/<project-slug>-<path-hash>/identity.key`.
-The hash is the first 16 hexadecimal SHA256 characters of the canonical absolute
-project path, preventing collisions between projects with the same folder name.
+`~/.config/kobil-sdk/identities/<project-slug>-<persistent-project-uuid>/identity.key`.
+The UUID identifies the project; the slug makes the directory readable.
+Different project UUIDs keep same-named projects separate.
 Do not invent personal identity filenames. Repeated calls reuse the same key.
 Existing project identity references are adopted without rotating the key; the
 old identity file is retained. A moved project must retain its identity reference
