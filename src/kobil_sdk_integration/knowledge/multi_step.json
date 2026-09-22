@@ -1,0 +1,71 @@
+{
+  "id": "multi_step",
+  "title": "Multi-step native IDP interaction",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "Native flow chosen explicitly and its wrapper/delegate contract identified.",
+    "UI can present successive field/challenge requests and cancellation."
+  ],
+  "sequence": [
+    "Retain the same interaction/session context for successive callbacks.",
+    "Render only the fields requested by the current callback.",
+    "Submit the response through the corresponding delegate/continuation.",
+    "Distinguish continuation, cancellation, HTTP failure, event failure and terminal success.",
+    "Clear sensitive input and pending state on terminal completion."
+  ],
+  "expected_result": "A flow requesting more than one screen can finish.",
+  "checklist": [
+    "A flow requesting more than one screen can finish.",
+    "Cancellation is processed and does not leave the app waiting indefinitely.",
+    "A network failure is distinguished from SDK rejection."
+  ],
+  "failure_handling": [
+    "Native does not imply single-page. Do not reject a flow because an example expects one dictionary.",
+    "Do not log callback bodies containing passwords, codes or tokens."
+  ],
+  "platform_notes": {
+    "android": "KssIdpModel and MultiflowActionType separate multi-step actions from simpler credential mappings.",
+    "ios": "KssIdpModel uses appDelegate callbacks and handles success, letter-sent, event-failure, request-failure and biometric-error results distinctly."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift"
+      ],
+      "working_tree_changes_present": true
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/KssIdpModel.kt",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/MultiflowActionType.kt"
+      ],
+      "working_tree_changes_present": true
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// App-normalized result model; not SDK type names.\nwhen (interactionResult) {\n    is NeedFields -> showFields(interactionResult.fields) { values ->\n        interactionResult.continueWith(values)\n    }\n    is Cancelled -> clearPendingInteraction()\n    is Failed -> showSanitizedFailure(interactionResult)\n    is Completed -> verifyTerminalSdkState()\n}"
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// App-normalized result model; not SDK type names.\nswitch interactionResult {\ncase .needFields(let fields, let continuation):\n    showFields(fields) { values in continuation(values) }\ncase .cancelled: clearPendingInteraction()\ncase .failed(let error): showSanitizedFailure(error)\ncase .completed: verifyTerminalSDKState()\n}"
+    }
+  }
+}

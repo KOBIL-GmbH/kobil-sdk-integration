@@ -17,4 +17,4 @@ kobil-sdk-mcp = "kobil_sdk_integration.server:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-kobil_sdk_integration = ["modules.json", "service_routes.json"]
+kobil_sdk_integration = ["modules.json", "service_routes.json", "knowledge/*.json"]

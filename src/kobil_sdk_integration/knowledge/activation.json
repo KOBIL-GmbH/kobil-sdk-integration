@@ -1,0 +1,74 @@
+{
+  "id": "activation",
+  "title": "Native activation and authorization-code handoff",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "SDK initialization completed and activation is allowed by current state.",
+    "Existing server application/version has a selected registration user.",
+    "An explicitly selected native-compatible IDP client/flow and a valid activation user/code are available."
+  ],
+  "sequence": [
+    "Choose the existing deployment client and authentication mode explicitly; do not create a replacement flow to fit a sample.",
+    "Collect only the fields required by the selected activation flow; keep credentials out of logs.",
+    "Drive the native IDP wrapper or version-matched authorization-code bridge. Continue intermediate challenges rather than assuming one request.",
+    "Handle the authorization-code result and SDK activation outcome separately.",
+    "Query local user/device state and perform a subsequent login as separate acceptance checks."
+  ],
+  "expected_result": "Fresh installation reaches activation-required state.",
+  "checklist": [
+    "Fresh installation reaches activation-required state.",
+    "Valid activation completes and the expected local user/device exists.",
+    "Invalid/expired code produces a visible failure without automatic code reissue.",
+    "Activation user is not confused with the application registration user."
+  ],
+  "failure_handling": [
+    "A server-issued code is required; device UI status cannot generate one.",
+    "A timeout may follow a consumed code. Inspect state before trying a new code.",
+    "Never recommend SuperApp Login V2 for native Android/iOS."
+  ],
+  "platform_notes": {
+    "android": "NativeActivationViewModel handles SetAuthorisationCodeResultEvent; IdpNativeInterfaces defines activation input mappings.",
+    "ios": "KssIdpModel has separate activate calls for credential dictionaries and appDelegate-driven multi-step activation."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift"
+      ],
+      "working_tree_changes_present": true
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeActivationViewModel.kt",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/IdpNativeInterfaces.kt"
+      ],
+      "working_tree_changes_present": true
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// Illustrative integration sequence, not a standalone SDK program.\nrequire(selectedClientIsNativeCompatible)\nrequire(currentStateAllowsActivation)\n// The app adapter drives the selected SDK wrapper and every challenge.\nactivateWithSelectedClient(clientId, activationUser, activationCode) { result ->\n    when (result) {\n        is Challenge -> renderRequestedFields(result)\n        is Completed -> verifyLocalUserAndDevice()\n        is Failed -> showFailureWithoutReissuingCode(result)\n    }\n}"
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// Fragment matching the inspected KSSIDP-wrapper integration style.\n// selectedClientId comes from deployment configuration, never a sample alias.\nidpWrapper.activate(clientId: selectedClientId,\n    authMode: selectedAuthenticationMode, appDelegate: interactionDelegate) {\n        _, result in\n        handleActivationResult(result) // continuation/failure/success separately\n    }\n// Verify local SDK user/device state; token receipt alone is not acceptance."
+    }
+  }
+}

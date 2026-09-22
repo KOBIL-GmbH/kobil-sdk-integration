@@ -1,0 +1,72 @@
+{
+  "id": "logs",
+  "title": "SDK log archive export",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "SDK log directory determined for the actual SDK build and app container.",
+    "User explicitly requests export; app can write a temporary archive and present sharing UI."
+  ],
+  "sequence": [
+    "Locate the SDK-created log directories rather than exporting only app console output.",
+    "Create a bounded archive in app-controlled storage, preserving encrypted SDK log contents.",
+    "Check archive creation succeeded and the expected entries are present.",
+    "Expose it through the platform sharing/file mechanism with scoped access.",
+    "Record SDK version and reproduction time separately; remove temporary exports according to app retention policy."
+  ],
+  "expected_result": "Archive exists, is nonempty and contains SDK log entries.",
+  "checklist": [
+    "Archive exists, is nonempty and contains SDK log entries.",
+    "A recipient can open the archive without needing app-private filesystem paths.",
+    "Missing directories and copy/zip failures are reported.",
+    "Export is distinguished from decryption."
+  ],
+  "failure_handling": [
+    "Do not place backend secrets or app configuration exports into the log archive.",
+    "Do not assume identical paths or permissions on Android and iOS."
+  ],
+  "platform_notes": {
+    "android": "The inspected exporter selects stageOneLogs and logs_mPower and shares a ZIP using FileProvider. Prefer app-controlled output and verify URI grants for the chosen Android target.",
+    "ios": "LoggingModel archives Documents/logs_mPower using NSFileCoordinator with forUploading and moves the archive to a temporary location."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/Shared/Models/LoggingModel.swift",
+        "GettingStartedApp/GettingStarted/Shared/Views/Logging/LoggingViewController.swift"
+      ],
+      "working_tree_changes_present": true
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/viewModel/ExportLogsViewModel.kt",
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/models/LoggingModel.kt"
+      ],
+      "working_tree_changes_present": true
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// App pseudocode; resolve release-specific paths inside the app container.\nval dirs = resolveSdkLogDirectories()\nrequire(dirs.isNotEmpty())\nval zip = archiveSdkLogs(dirs, appPrivateCacheDirectory)\nrequire(zip.exists() && zip.length() > 0L)\nval uri = fileProviderUri(zip)\nshareZipWithTemporaryReadGrant(uri)\n// Keep encrypted SDK logs intact; do not include config or credential files."
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// Fragment: logsURL is the verified SDK log directory in this app container.\nlet coordinator = NSFileCoordinator()\nvar coordinationError: NSError?\ncoordinator.coordinate(readingItemAt: logsURL, options: .forUploading,\n    error: &coordinationError) { archiveURL in\n    // Copy/move the coordinated archive to an app-controlled temporary URL\n    // before returning; check success, then present the platform share sheet.\n}\n// Handle coordinationError and missing directories; export is not decryption."
+    }
+  }
+}

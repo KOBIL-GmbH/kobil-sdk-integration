@@ -1,0 +1,75 @@
+{
+  "id": "lifecycle",
+  "title": "Initialization, restart and asynchronous state",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "Assets validated; SDK controller/adapter created once for the intended lifecycle.",
+    "Install asynchronous event/error listeners before sending operations."
+  ],
+  "sequence": [
+    "Submit the version-specific Start event once; keep UI operations pending until its result arrives.",
+    "Inspect both result type and status; query/consume state before enabling actions.",
+    "Route callbacks to the app state machine and dispatch UI updates onto the platform UI thread.",
+    "Use the dedicated Restart event when the documented SDK transition requires it; do not repeatedly reconstruct controllers.",
+    "On timeout, capture pending operation, last event and error fields rather than replaying a mutation."
+  ],
+  "expected_result": "Cold start reports a valid result/state.",
+  "checklist": [
+    "Cold start reports a valid result/state.",
+    "A second tap cannot enqueue duplicate starts.",
+    "Restart completion is handled separately from start completion.",
+    "Listeners remain attached and obsolete callbacks do not update a replaced screen."
+  ],
+  "failure_handling": [
+    "Start success does not mean activation or login succeeded.",
+    "Unexpected result type and InvalidState are explicit failures, not successful empty callbacks.",
+    "MCSDK 15.16 release notes add automatic foreground/background suspend/resume and SDK-state queries. Match lifecycle handling to the delivered SDK generation; do not add duplicate manual transitions from older examples."
+  ],
+  "platform_notes": {
+    "android": "StartResultEvent, RestartResultEvent and the state machine are handled asynchronously through the adapter.",
+    "ios": "KSMStartResultEvent and KSMRestartResultEvent are distinct; the sample checks status before reporting completion."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/Shared/Models/StartModel.swift",
+        "GettingStartedApp/GettingStarted/Shared/MasterController/MasterControllerAdapter.swift",
+        "GettingStartedApp/GettingStarted/Shared/StateMachine/StateMachine.swift"
+      ],
+      "working_tree_changes_present": true
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/models/StartModel.kt",
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/masterController/EventListener.kt",
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/statemachine/StateMachine.kt"
+      ],
+      "working_tree_changes_present": true
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// Illustrative app reducer; adapter event decoding is release-specific.\nwhen (resultEvent) {\n    is StartResultEvent -> {\n        if (resultEvent.status == StatusType.OK) queryCurrentSdkState()\n        else showStartFailure(resultEvent.status)\n    }\n    is RestartResultEvent -> finishRestart(resultEvent.status)\n    else -> showUnexpectedEvent(resultEvent)\n}\n// The app helpers above must not infer login success from start status."
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "illustrative_app_logic",
+      "compile_ready": false,
+      "code": "// Illustrative callback fragment; app helpers manage UI state.\nif let result = event as? KSMStartResultEvent {\n    if result.status == .KSMOK { queryCurrentSDKState() }\n    else { showStartFailure(result.status) }\n} else if let result = event as? KSMRestartResultEvent {\n    finishRestart(result.status)\n} else { showUnexpectedEvent(event) }"
+    }
+  }
+}
