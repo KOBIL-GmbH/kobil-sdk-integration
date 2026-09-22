@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Transfer multiple AST/IDP server profiles and credentials in a single recipient-encrypted age bundle; import selected environments with recipient-local references.
+- Isolate imported credentials under kobil-sdk/import/; reject collisions, preserve local services and report incomplete rollback without exposing secrets.
+- Validate macOS Keychain round trips with disposable credentials. Windows native runtime validation remains pending.
+
 ## 0.5.1 — 2026-09-22
 
 - Add read-only sdk_native_preflight to verify required native clients and actual backend flow bindings; reject missing, substituted and SuperApp flows.
