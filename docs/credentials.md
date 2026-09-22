@@ -194,12 +194,15 @@ can decrypt it with their own identities.
 4. On each destination, use
    `sdk_age_credential_import_keyring(store_path, identity_path, service, account,
    destination_service, destination_account)` to import exactly one entry.
+   `destination_service` is a label such as `server-a/idp`; the tool always writes
+   `kobil-sdk/import/server-a/idp`, never the original source service.
    Existing entries require explicit `replace=true`. The encrypted file remains.
 5. Use the destination reference
-   `{"provider":"keyring","service":"customer-transfer","account":"sdk-user"}`
+   `{"provider":"keyring","service":"kobil-sdk/import/customer-transfer","account":"sdk-user"}`
    in backend or transfer-client settings. The same provider selects macOS
-   Keychain on macOS and native Windows Credential Manager on Windows. Names can
-   be preserved or explicitly mapped during import.
+   Keychain on macOS and native Windows Credential Manager on Windows. Use the returned `credential_reference` verbatim. The destination label is
+   opaque; do not pass the expanded service name back as a label. Choose separate
+   labels per server and purpose (for example server-a/idp and server-a/ast).
 
 Alternatively use an `age` reference directly on the destination without import;
 its store/identity paths must be local to that destination. Paths in server
@@ -219,3 +222,21 @@ Windows backend-selection contract tests. A real Windows Credential Manager
 import still requires validation on a Windows host. Before using private identity
 files on Windows, provision a user-private directory/ACL; automatic ACL management
 is not implemented by this package.
+
+## Imported-credential namespace
+
+Age-to-keystore imports always prefix destination service labels with
+`kobil-sdk/import/`. Accounts remain explicitly selected. Source credentials and
+existing local service names are not changed. Duplicate destination entries fail
+unless `replace=true`; replacement is limited to that namespaced destination.
+
+`sdk_credential_import` uses an existing connection profile and therefore cannot
+silently change its credential reference. Its destination must already be under
+`kobil-sdk/import/`; otherwise import fails before reading source credentials.
+Update the profile explicitly using the reference returned by the age import.
+Legacy references remain readable; this does not migrate or delete existing keys.
+
+This changes the destination semantics of age imports: callers must use the
+returned reference rather than assuming destination_service is a literal service.
+No bundled server/profile transfer or automatic multi-environment import is added
+by this change.
