@@ -27,3 +27,9 @@ verification remain pending. SDK binaries and credentials are not distributed he
 - Add activation-code generation/set, private AST token export, authentication testing and optional Grafana client correlation.
 - Keep connection selection host-owned and app-flow selection explicit.
 - Validate with 115 local tests and package build; live backend acceptance pending.
+
+## Shared credentials (unreleased)
+
+- Integrate native keystore, private file, environment and encrypted age references into AST and IDP authentication.
+- Add scoped MCP credential status/import/delete and local setup CLI; preserve legacy profiles and OAuth scope.
+- Keep original shared-credentials branch archived; no app-flow implementation imported.
