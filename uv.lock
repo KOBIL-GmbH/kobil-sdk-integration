@@ -379,7 +379,7 @@ wheels = [
 
 [[package]]
 name = "kobil-sdk-integration"
-version = "0.4.1.dev0"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },
