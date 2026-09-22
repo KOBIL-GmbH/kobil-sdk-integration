@@ -57,6 +57,19 @@ It separates AST backend operations, SDK event handling, authentication and push
 from end-to-end verification. Foreground native Android and iOS accept/reject/timeout/server-cancel scenarios passed; consult
 the recorded tuple and limits before extending coverage to other TMS modes.
 
+## Automated app tests
+
+When building or testing a native app, retrieve
+`sdk_knowledge_get(topic="automated_testing", platform="android" or "ios")`
+and its `sdk_integration_checklist`. This bundles Getting Started App test
+know-how; customers do not need those repositories or another skill.
+Keep unit checks, SDK integration and UI/backend acceptance separate. Adapt the
+runner and app UI selectors to the actual project. Provision dedicated fixtures
+through MCP tools, use bounded event waits, test cold returning login without
+clearing activation data, and collect SDK errors/logs before cleanup. Preserve
+source-noted gaps, ignored tests and unexecuted cases in the result report.
+See [automated testing](../../docs/automated-testing.md).
+
 ## Modules
 
 Read [modules.md](references/modules.md). Providers are conditional: a customer

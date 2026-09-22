@@ -1,7 +1,7 @@
 # Bundled native SDK knowledge
 
-The MCP includes eight first-priority Shift topics: setup, lifecycle, activation,
-login, multi_step, tms, diagnostics and logs. It reads packaged resources through
+The MCP includes nine Shift topics: setup, lifecycle, activation,
+login, multi_step, tms, diagnostics, logs and automated_testing. It reads packaged resources through
 Python importlib.resources; no customer-side WLA skill, Git checkout or network
 lookup is needed to retrieve them.
 
@@ -19,7 +19,7 @@ Shift example.
 
 ## Qualification
 
-All 16 platform examples compile and link in fresh apps against classic MCSDK
+The original 16 integration examples compile and link in fresh apps against classic MCSDK
 Android 15.16.3088426 and iOS 15.16.803.3089231. They are concrete SDK dispatch,
 configuration and utility functions, not complete application templates. The
 caller supplies UI, selected deployment inputs, controller ownership and result
@@ -101,3 +101,5 @@ are successful-path checks, not production integrity/security qualification. Wro
 credentials, expired codes, multi-step, TMS and real log export remain outside this
 acceptance. Per-platform runtime evidence is included in setup/activation/login
 tool responses; full recipe checklists still require their remaining checks.
+
+The automated_testing topic is a separate source-reviewed GSA test recipe with runner templates, not compiled app examples or a new device acceptance claim. See [automated testing](automated-testing.md).

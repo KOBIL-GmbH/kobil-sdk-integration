@@ -26,7 +26,7 @@ Ask the agent:
 > knowledge. Use normal file, build, terminal and device tools to implement the app.
 > Call sdk_service_catalog and sdk_knowledge_topics first. Build a fresh native
 > app for my chosen Android or iOS target, using classic MCSDK 15.16. Follow the
-> bundled integration handoff and all eight topic recipes. Use my selected backend
+> bundled integration handoff and the eight integration recipes and automated_testing topic. Use my selected backend
 > environment and existing suitable app/version. Implement activation, returning
 > login, native multi-step interaction, TMS and SDK log export. Record the topic
 > checklists and original SDK error events. Ask when required deployment choices
