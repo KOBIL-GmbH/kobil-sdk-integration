@@ -93,5 +93,37 @@
     }
   },
   "integration_generation": "classic_mcsdk_kssidp",
-  "backend_tools": []
+  "backend_tools": [],
+  "runtime_acceptance": {
+    "android": {
+      "date": "2026-09-22",
+      "sdk_artifact_version": "15.16.3088426",
+      "device": "Pixel 8",
+      "scenario": "fresh_app_registration_activation_cold_restart_login",
+      "backend": "nonproduction Shift deployment with existing native-compatible clients",
+      "app_version": "1.0.1",
+      "authentication_mode": "NO",
+      "hash_pin": false,
+      "integrity_check": false,
+      "result": "passed",
+      "sdk_status": "OK / 0",
+      "backend_device_readback": true,
+      "limits": "Successful path only. No wrong/expired credential, multiflow, TMS, log export or production integrity acceptance."
+    },
+    "ios": {
+      "date": "2026-09-22",
+      "sdk_artifact_version": "15.16.803.3089231",
+      "device": "iPhone 17 Pro Max",
+      "scenario": "fresh_app_registration_activation_cold_restart_login",
+      "backend": "nonproduction Shift deployment with existing native-compatible clients",
+      "app_version": "1.0.1",
+      "authentication_mode": "NO",
+      "hash_pin": false,
+      "integrity_check": false,
+      "result": "passed",
+      "sdk_status": "OK / 0",
+      "backend_device_readback": true,
+      "limits": "Successful path only. No wrong/expired credential, multiflow, TMS, log export or production integrity acceptance."
+    }
+  }
 }

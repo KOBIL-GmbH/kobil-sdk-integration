@@ -75,3 +75,29 @@ to connect backend tools, asset packaging, app callbacks and user acceptance.
 
 [Candidate testing instructions](native-knowledge-testing.md) explain how to use
 the matching MCP and skill without mixing them with an older installation.
+
+## Live registration, activation and login — 2026-09-22
+
+Fresh app IDs on the same two physical devices passed with the artifact versions
+above. The current MCP registered Android/iOS app version 1.0.1 using an existing
+registration user, issued signed SDK configuration, created dedicated test users
+and issued activation codes. Each app reported activation-required/users=0,
+activation success, then login-required/users=1 after process restart, followed
+by successful returning login. SDK status was OK/0. Backend readback returned a
+device for each selected test user.
+
+The iOS test exposed missing IAM-chain initialization: FatalError 800000174
+reported a missing chain in the SDK database. The setup helper now supplies
+`iamCertificateChain` explicitly and sets `serverBackend` on the resulting event.
+The test passed after rebuilding with that correction.
+
+AST device responses without total counts are now returned with `complete=false`,
+`total=null` and an explicit warning. This permits inspection of returned devices
+without claiming a complete inventory. Counted inconsistent responses still fail.
+
+Scope: one nonproduction Shift deployment, existing native clients, authentication
+mode NO, no PIN hashing, integrity checks disabled on the test registration. These
+are successful-path checks, not production integrity/security qualification. Wrong
+credentials, expired codes, multi-step, TMS and real log export remain outside this
+acceptance. Per-platform runtime evidence is included in setup/activation/login
+tool responses; full recipe checklists still require their remaining checks.

@@ -198,9 +198,16 @@ class ASTAdminTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.call('sdk_app_version_update', app_name='app', version_id='v1', register_user_id='other')
 
-    def test_device_list_requires_complete_count_and_drops_secrets(self):
+    def test_device_list_distinguishes_uncounted_response_and_drops_secrets(self):
         user = '00000000-0000-0000-0000-000000000001'
-        self.b.request.return_value = [{'id': 'one'}]
+        for value in ([{'id': 'one', 'token': 'SECRET'}], {'data': [{'id': 'one', 'token': 'SECRET'}]}, []):
+            self.b.request.return_value = value
+            uncounted = self.call('sdk_ast_device_list', user_uuid=user)
+            self.assertFalse(uncounted['complete'])
+            self.assertFalse(uncounted['completeness_verified'])
+            self.assertIsNone(uncounted['total'])
+            self.assertNotIn('SECRET', json.dumps(uncounted))
+        self.b.request.return_value = {'data': [], 'totalCount': 3}
         with self.assertRaises(BackendError):
             self.call('sdk_ast_device_list', user_uuid=user)
         self.b.request.return_value = {'data': [{'id': 'one', 'token': 'SECRET'}], 'totalCount': 1}
