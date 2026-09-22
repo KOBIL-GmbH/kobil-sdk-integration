@@ -3,14 +3,15 @@ import os
 from .backend import BackendError, segment
 
 def admin_settings(cfg):
-    """The IDP administrative connection, with its credential read from the environment."""
+    """The IDP administrative connection, with its credential resolved server-side."""
     admin = cfg.get('admin')
     if not admin:
         raise BackendError('No IDP administration configured; add an "admin" block to the '
-                           'connection file (idp_url, realm, client_id, username, password_env)')
-    secret = os.environ.get(admin['password_env'])
-    if not secret:
-        raise BackendError('IDP administrator credential is not configured in the runtime environment')
+                           'connection file (idp_url, realm, client_id, username, credential or password_env)')
+    from .backend import admin_reference
+    from .credentials import resolve, CredentialError
+    try:secret=resolve(admin_reference(admin))
+    except CredentialError as error:raise BackendError(str(error)) from None
     return admin, secret
 
 
