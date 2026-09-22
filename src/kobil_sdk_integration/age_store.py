@@ -1,6 +1,7 @@
 """Local encrypted store authoring. Plaintext exists only in bounded memory/pipes."""
 from contextlib import contextmanager
 import json
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -83,7 +84,76 @@ def encrypt_write(path,identity,data,replace):
     atomic_write(path,cipher,replace)
 
 
+def project_identity(project_path):
+    """Stable project identity convention; reuse legacy keys without rotating them."""
+    project = absolute(project_path).resolve(strict=True)
+    if not project.is_dir():
+        raise CredentialError('CONFIG_INVALID')
+    slug = re.sub(r'[^a-z0-9-]+', '-', project.name.lower()).strip('-')[:48] or 'project'
+    project_id = slug + '-' + hashlib.sha256(os.fsencode(str(project))).hexdigest()[:16]
+    keydir = Path.home().resolve()/'.config/kobil-sdk/identities'/project_id
+    local = project/'.kobil-sdk'
+    for directory in (keydir, local):
+        # Reject redirected setup locations, including symlink ancestors.
+        if any(p.is_symlink() for p in (directory, *directory.parents)):
+            raise CredentialError('ACCESS_DENIED')
+        directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    identity = keydir/'identity.key'
+    metadata = local/'identity-reference.json'
+    with writer_lock(identity):
+        previous = None
+        if os.path.lexists(metadata):
+            try:
+                record = json.loads(private_read(metadata))
+                previous = absolute(record['identity_path'])
+                # Legacy private identities must remain outside this project.
+                if previous.resolve().is_relative_to(project):
+                    raise ValueError()
+                prior_public = recipient(previous)
+            except CredentialError:
+                raise
+            except Exception:
+                raise CredentialError('CONFIG_INVALID') from None
+        created = False
+        if os.path.lexists(identity):
+            public = recipient(identity)
+            if previous and public != prior_public:
+                raise CredentialError('ALREADY_EXISTS')
+        else:
+            if previous:
+                raw = private_read(previous)
+            else:
+                code, raw = bounded_process(['age-keygen'])
+                if code or b'AGE-SECRET-KEY-' not in raw:
+                    raise CredentialError('STORE_FAILED')
+            atomic_write(identity, raw)
+            created = previous is None
+            public = recipient(identity)
+        record = {'project_path': str(project), 'project_id': project_id,
+                  'identity_path': str(identity), 'recipient_file': str(local/'recipient.txt')}
+        atomic_write(metadata, (json.dumps(record, indent=2)+'\n').encode(), True)
+        atomic_write(local/'recipient.txt', (public+'\n').encode(), True)
+    return {**record, 'recipient': public, 'created': created,
+            'legacy_identity_retained': bool(previous and previous != identity),
+            'secret_returned': False}
+
+
 def register(mcp):
+    @mcp.tool()
+    def sdk_age_project_identity(project_path: str) -> dict:
+        """Get or create this project's persistent receiver identity and return its public age key.
+
+        Preferred project setup tool. Naming is enforced by the MCP: private key at
+        ~/.config/kobil-sdk/identities/<project-slug>-<16-char SHA256 of canonical path>/identity.key.
+        Public recipient and identity-reference.json stay in <project>/.kobil-sdk/.
+        Repeated calls reuse the same key; equal folder names at different paths are distinct.
+        An existing local identity-reference.json preserves its key when adopting the
+        convention; the old private file is retained, never deleted. Moved projects
+        carrying that reference retain their identity while updating their project ID.
+        No credentials or private key contents are returned. No backend calls.
+        """
+        return project_identity(project_path)
+
     @mcp.tool()
     def sdk_age_identity_create(identity_path: str) -> dict:
         """Generate a native age identity in a NEW mode0600 file. Returns only its public recipient. Keep the identity separate from encrypted stores; losing it prevents recovery. Existing files are never replaced."""
