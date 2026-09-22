@@ -14,7 +14,7 @@ class KnowledgeTests(unittest.TestCase):
         r=Registry();register(r);self.tools=r.tools
 
     def test_every_topic_and_platform_has_complete_qualified_recipe(self):
-        self.assertEqual(len(TOPICS),8)
+        self.assertEqual(len(TOPICS),9)
         for topic in TOPICS:
             for platform in ('android','ios'):
                 data=get_topic(topic,platform,sdk_version='unverified-release')
@@ -51,3 +51,19 @@ class KnowledgeTests(unittest.TestCase):
     def test_resource_catalog_has_no_unlisted_files(self):
         resource=files('kobil_sdk_integration').joinpath('knowledge')
         self.assertEqual({p.name for p in resource.iterdir() if p.name.endswith('.json')},{t+'.json' for t in TOPICS})
+
+    def test_automated_testing_has_no_inherited_device_qualification(self):
+        for platform in ('android', 'ios'):
+            data = self.tools['sdk_knowledge_get']('automated_testing', platform)
+            self.assertIsNone(data['runtime_acceptance'])
+            self.assertFalse(data['example']['compile_ready'])
+            self.assertFalse(data['example']['validation']['executed'])
+            self.assertTrue(data['source_evidence']['file_sha256'])
+            self.assertIn('sdk_idp_activation_code_generate', data['backend_tools'])
+            self.assertIn('finally/teardown', ' '.join(data['sequence']))
+            self.assertTrue(all(c['status'] == 'not_run' for c in
+                self.tools['sdk_integration_checklist']('automated_testing', platform)['checks']))
+
+    def test_automated_testing_does_not_substitute_other_sdk_generations(self):
+        for platform, family in [('flutter', 'shift'), ('ios', 'ssms')]:
+            self.assertEqual(get_topic('automated_testing', platform, family)['status'], 'knowledge_gap')
