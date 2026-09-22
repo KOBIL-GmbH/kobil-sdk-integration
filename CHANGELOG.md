@@ -39,3 +39,4 @@ verification remain pending. SDK binaries and credentials are not distributed he
 - Add age identity/store creation, reference-based password storage, encrypted named environments, metadata listing and private selector/export tools.
 - Backend connections can resolve encrypted environments without exporting server settings.
 - Preserve existing credentials during atomic encrypted updates; require explicit replacement.
+- Add multi-recipient public-key credential delivery and explicit per-entry native-keystore import for macOS/Windows interoperability; private identities stay on destination machines.

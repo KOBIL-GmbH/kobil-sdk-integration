@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import tempfile
 from .credentials import (CredentialError, private_read, bounded_process, identifier,
-                          resolve, LIMIT)
+                          resolve, store as keyring_store, LIMIT)
 
 
 def absolute(value):
@@ -154,3 +154,47 @@ def register(mcp):
         output=absolute(output_path)
         atomic_write(output,json.dumps(selector,indent=2).encode())
         return {'path':str(output),'environment':environment,'settings_encrypted':True,'connection_changed':False}
+
+
+    @mcp.tool()
+    def sdk_age_transfer_export(output_path: str, recipients: list[str], entries: list[dict]) -> dict:
+        """Export explicitly selected credential references into a NEW age file encrypted to destination PUBLIC recipients (age1...). Each entry has service, account and source (env/file/keyring/age reference). Supports Mac-to-Mac or Mac-to-Windows transfer without sharing private identities. No automatic credential enumeration, overwrite or file transmission. All recipients can decrypt all included entries; verify intended public recipients before export."""
+        if not recipients or len(recipients)>20 or len(set(recipients))!=len(recipients) or any(
+                not isinstance(r,str) or not re.fullmatch(r'age1[0-9a-z]{58}',r) for r in recipients):
+            raise CredentialError('CONFIG_INVALID')
+        if not entries or len(entries)>100:raise CredentialError('CONFIG_INVALID')
+        from .credentials import validate_reference
+        seen=set()
+        for entry in entries:
+            if not isinstance(entry,dict) or set(entry)!={'service','account','source'}:raise CredentialError('CONFIG_INVALID')
+            pair=(identifier(entry['service']),identifier(entry['account']))
+            if pair in seen:raise CredentialError('CONFIG_INVALID')
+            seen.add(pair);validate_reference(entry['source'])
+        path=absolute(output_path)
+        with writer_lock(path):
+            if os.path.lexists(path):raise CredentialError('ALREADY_EXISTS')
+            data={'version':2,'keychain':{}}
+            for entry in entries:
+                data['keychain'].setdefault(entry['service'],{})[entry['account']]=resolve(entry['source'])
+            raw=json.dumps(data).encode()
+            if len(raw)>LIMIT//2:raise CredentialError('CONFIG_INVALID')
+            argv=['age','--encrypt']
+            for public in recipients:argv.extend(['-r',public])
+            code,cipher=bounded_process(argv,raw)
+            if code or not cipher.startswith(b'age-encryption.org/v1'):raise CredentialError('STORE_FAILED')
+            atomic_write(path,cipher)
+        return {'path':str(path),'entry_count':len(entries),'recipient_count':len(recipients),
+                'secret_returned':False,'transmitted':False}
+
+    @mcp.tool()
+    def sdk_age_credential_import_keyring(store_path: str, identity_path: str, service: str,
+                                          account: str, destination_service: str,
+                                          destination_account: str, replace: bool = False) -> dict:
+        """Decrypt one explicitly named entry and import it into the local native keystore: macOS Keychain, Windows Credential Manager or Linux Secret Service. Private destination identity stays on this machine. Requires explicit destination service/account; never enumerates/imports the whole store. Existing destination entries require replace=true. No secret values returned; encrypted source retained. OS authorization may be required."""
+        source={'provider':'age','store':str(absolute(store_path)),'identity':str(absolute(identity_path)),
+                'service':identifier(service),'account':identifier(account)}
+        target={'provider':'keyring','service':identifier(destination_service),'account':identifier(destination_account)}
+        value=resolve(source)
+        keyring_store(target,value,replace=replace)
+        return {'imported':True,'service':destination_service,'account':destination_account,
+                'provider':'keyring','secret_returned':False}
