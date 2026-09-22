@@ -110,3 +110,112 @@ fallback policy and MCP discovery. Disposable native Keychain and real age
 round-trips were tested on macOS. Windows/Linux native providers need platform
 acceptance. Live customer authentication and editor installation are separate
 steps; no customer credential is enrolled by installing the package.
+
+## Create and maintain encrypted stores through MCP
+
+These tools require both `age` and `age-keygen` on PATH:
+
+1. `sdk_age_identity_create(identity_path)` creates a new owner-only private
+   identity; only the public recipient is returned. Provision/backup this
+   identity separately from the store. Existing identities are never replaced.
+2. `sdk_age_store_create(store_path, identity_path)` creates an empty encrypted
+   store. Existing files are never overwritten by creation.
+3. `sdk_age_credential_put(store_path, identity_path, service, account, source)`
+   resolves a credential reference internally and encrypts the value into the
+   selected entry. Use explicit `replace=true` to replace an existing entry.
+   This supports SFTP/SCP passwords as well as AST/IDP secrets. Source references
+   use the same env/file/keyring/age schema; passwords never appear in arguments.
+4. `sdk_age_environment_put(..., environment, profile_file)` reads a private
+   reference-only AST/IDP connection profile and stores the entire named profile
+   encrypted. Environment name must match; replacement is explicit.
+5. `sdk_age_store_list(store_path, identity_path)` lists names/labels only.
+6. `sdk_age_environment_selector_write(..., environment, output_path)` writes
+   a new private selector for `KOBIL_SDK_CONNECTION`. The selector contains only
+   store/identity paths and the environment name. Server settings are decrypted
+   in memory by the backend; credentials are resolved separately when needed.
+7. `sdk_age_environment_export(..., environment, output_path)` is an optional
+   explicit export of the reference-only server profile to a new private file.
+   Prefer the selector when server settings should remain encrypted on disk.
+
+An SFTP/SCP password stored as service `customer-transfer`, account `sdk-user`
+can be read by a credential consumer using:
+
+```json
+{
+  "provider": "age",
+  "store": "/private/customer.age",
+  "identity": "/private/customer-identity.txt",
+  "service": "customer-transfer",
+  "account": "sdk-user"
+}
+```
+
+This feature stores the password; it does not add an SCP/SFTP transport or run
+transfers. A transfer client must support the reference resolver. Backend
+profiles stored under environments use the AST/IDP profile schema.
+
+Stores retain version 2 with optional `environments` alongside `keychain`.
+Store writes encrypt in memory/pipes and publish ciphertext atomically, protected
+by an exclusive `.lock` file against simultaneous MCP writers. A crashed writer
+may leave a lock: verify no writer is running before removing it manually.
+An encryption failure preserves the previous store. No plaintext store temporary
+file is written. The explicitly requested identity and optional exported profile
+are private plaintext files by design. Updates encrypt to the selected single
+identity only; they do not preserve other recipients from externally created
+multi-recipient envelopes. Sources remain intact and no host configuration is
+switched automatically. Keep private files in a directory you control.
+
+## macOS → macOS / Windows credential transfer
+
+Use **recipient-based export** for machine-to-machine delivery. The sender never
+needs the destination's private identity. A single export may contain several
+public recipients, so both an authorized Mac and an authorized Windows machine
+can decrypt it with their own identities.
+
+1. On each destination, call `sdk_age_identity_create` with a private local path.
+   Share only the returned public `age1...` recipient with the sender. Keep the
+   `AGE-SECRET-KEY...` identity on its destination machine.
+2. On the sender, call `sdk_age_transfer_export(output_path, recipients, entries)`.
+   Every entry explicitly selects a source credential reference and the portable
+   service/account labels to store. For example:
+
+   ```json
+   {
+     "service": "customer-transfer",
+     "account": "sdk-user",
+     "source": {"provider": "keyring", "service": "local-sdk", "account": "sdk-user"}
+   }
+   ```
+
+   Supply the Mac and/or Windows public recipients. All listed recipients can
+   read all entries in that delivery. The MCP resolves Keychain credentials
+   internally and writes ciphertext only; it does not transmit the file.
+3. Transfer the `.age` file through your chosen file-transfer channel.
+4. On each destination, use
+   `sdk_age_credential_import_keyring(store_path, identity_path, service, account,
+   destination_service, destination_account)` to import exactly one entry.
+   Existing entries require explicit `replace=true`. The encrypted file remains.
+5. Use the destination reference
+   `{"provider":"keyring","service":"customer-transfer","account":"sdk-user"}`
+   in backend or transfer-client settings. The same provider selects macOS
+   Keychain on macOS and native Windows Credential Manager on Windows. Names can
+   be preserved or explicitly mapped during import.
+
+Alternatively use an `age` reference directly on the destination without import;
+its store/identity paths must be local to that destination. Paths in server
+profiles are not automatically translated from macOS to Windows. Keyring
+service/account references avoid that path dependency. Stored server profiles
+can be exported explicitly using the existing environment tools; the transfer
+export itself contains only the selected credential entries.
+
+This flow does not copy a macOS Keychain database to Windows and does not share
+private age identities. It also supports Windows-to-Mac with the same interfaces.
+Do not edit a multi-recipient delivery using single-identity store-update tools;
+create a fresh transfer export to keep the intended recipient set explicit.
+
+Validation: real macOS native-keystore → age → native-keystore round-trip,
+multiple real age recipient identities, unauthorized identity rejection and
+Windows backend-selection contract tests. A real Windows Credential Manager
+import still requires validation on a Windows host. Before using private identity
+files on Windows, provision a user-private directory/ACL; automatic ACL management
+is not implemented by this package.
