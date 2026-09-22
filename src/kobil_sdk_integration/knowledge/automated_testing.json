@@ -11,6 +11,7 @@
     "note": "GSA source patterns reviewed; this test recipe and runner templates have not been executed against customer apps. Earlier activation/login acceptance does not qualify these suites."
   },
   "prerequisites": [
+    "Required: run sdk_native_preflight against the selected environment before building or activation. Native KSSIDP uses BDDKEnrollment/BDDKLogin, useTokenBasedLogin=true, astServerBackend=maverick and login header X-KOBIL-ASTUSERID. The WebView alternative is KSTrustedWebView with explicit deployment clients. Missing clients or incompatible bindings block progress; never create substitute flows.",
     "Select native platform, exact SDK artifact, app build, dedicated test app ID, device and explicit customer-configured backend/client flow. Never recommend SuperApp Login V2 for native Android/iOS.",
     "Register app/version with an existing registration user and package valid SDK config JWT and certificate assets before attempting activation.",
     "Provision unique test users and one-time activation codes through MCP IDP/AST tools. Keep backend administrative credentials in the configured credential provider, outside app/test binaries.",
@@ -41,7 +42,9 @@
     "iOS checked-continuation error paths can call XCTFail without resuming. Resolve every success/error path exactly once and provide an overall timeout; failing an assertion alone does not unblock the await.",
     "iOS nonoptional-result XCTAssertNotNil and transaction-finished expectation fulfillment do not verify SDK success. Assert concrete result type/status and transaction identity.",
     "iOS wrong-activation-code helper checks contents only if an alert exists. Require a bounded wait with mandatory failure when the expected error UI is absent.",
-    "Do not copy broad keychain/sandbox deletion helpers or an unbounded SpringBoard uninstall loop. Scope reset to the dedicated app/test-owned records and bound its duration."
+    "Do not copy broad keychain/sandbox deletion helpers or an unbounded SpringBoard uninstall loop. Scope reset to the dedicated app/test-owned records and bound its duration.",
+    "Never disable useTokenBasedLogin to work around ast_login_with_unactivated_client; this skips IAM setup and can cause CannotAcquireTokenData(50). Investigate the selected native backend flow instead.",
+    "Swift: switch on KssIdpStatus.success/eventFailed/requestFailed; never infer success from text containing accept. Preserve detailed callback status, errorCode and underlying event without logging tokens or credentials."
   ],
   "platform_notes": {
     "android": "GSA uses app/src/testShift model tests; integratedUnitTest for SDK-event tests; integratedUiTest with Espresso/Kaspresso/UIAutomator and sharedintegrationtestsources; positiveflowtest for combined UI/backend flows. integratedUiTest targets :app, AndroidJUnitRunner and AndroidX Test Orchestrator with clearPackageData=true. Its connected-test hooks disable device animations persistently: record and restore original settings. Discover actual tasks using ./gradlew :integratedUiTest:tasks --all; do not assume GSA module names exist in a fresh customer app.",
