@@ -29,8 +29,20 @@ def recipient(identity):
 
 
 def read_document(store,identity):
-    recipient(identity)
-    code,out=bounded_process(['age','--decrypt','--identity',str(absolute(identity))],private_read(absolute(store)))
+    # Preserve access errors and identify the input without exposing file contents.
+    try:
+        recipient(identity)
+    except CredentialError as error:
+        if error.code == 'ACCESS_DENIED':
+            raise CredentialError('ACCESS_DENIED', 'private identity: check existence, ownership, owner-only permissions and symlinks; key matching has not been checked') from None
+        raise
+    try:
+        ciphertext = private_read(absolute(store))
+    except CredentialError as error:
+        if error.code == 'ACCESS_DENIED':
+            raise CredentialError('ACCESS_DENIED', 'encrypted bundle/store: check existence, ownership, owner-only permissions and symlinks; decryption has not been attempted') from None
+        raise
+    code,out=bounded_process(['age','--decrypt','--identity',str(absolute(identity))],ciphertext)
     try:
         if code:raise ValueError()
         data=json.loads(out)
