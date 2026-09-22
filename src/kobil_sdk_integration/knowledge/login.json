@@ -3,6 +3,7 @@
   "title": "Native and returning-user login",
   "sdk_family": "shift",
   "prerequisites": [
+    "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
     "SDK started; selected local user is known.",
     "Existing native-compatible deployment client and supported authentication mode selected."
   ],
@@ -36,7 +37,11 @@
         "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift",
         "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift": "d533118a0873ae724b951c412612092cbbc5e45a3b96b7276823c0dfbb518002",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift": "fade3e9d95e1714c7fc921d525c454c70dd3a92fd8c41b13b508288e0f14763b"
+      }
     },
     "android": {
       "repository": "MC_GettingStarted_Kotlin",
@@ -45,28 +50,48 @@
         "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeLoginViewModel.kt",
         "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/SubsequentLoginViewModel.kt"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeLoginViewModel.kt": "577fe89106a00d27e55c772c6f1d0db53dcebae4da503aa8568c6ca3a48bc190",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/SubsequentLoginViewModel.kt": "626a1cdd4d09277b6e14b00aad5972861b11842ea9f01e8104c236397a5a79f6"
+      }
     }
   },
   "qualification": {
     "level": "source_reviewed",
     "mobile_sdk_versions_verified": [],
-    "compiled_examples": false,
+    "compiled_examples": true,
     "device_verified": false,
-    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
   },
   "examples": {
     "android": {
       "language": "kotlin",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// App pseudocode: choose the activated user, not an arbitrary first account.\nval user = requireSelectedLocalUser()\nloginWithSelectedClient(clientId, user) { result ->\n    when (result) {\n        is Challenge -> renderRequestedFields(result)\n        is Completed -> verifyAuthenticatedSdkState(user)\n        is Failed -> showLoginFailure(result) // no implicit reactivation\n    }\n}"
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import com.kobil.kssidp.wrapper.models.*\nimport com.kobil.wrapper.events.AuthenticationMode\n\nfun loginNative(idp: KssIdp, clientId: String, mode: AuthenticationMode,\n    credentials: HashMap<String, String>, headers: HashMap<String, String>,\n    completion: (KssIdpResultObject) -> Unit) {\n    idp.login(clientId, mode, credentials, headers, null, completion)\n}\n// Use selected local user/deployment headers, never arbitrary first-user defaults.\n// Handle failure/cancellation explicitly; do not reactivate on login failure.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.3088426",
+        "toolchain": "AGP 8.11.1 / Kotlin 2.1.20 / Gradle 8.13",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     },
     "ios": {
       "language": "swift",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// App pseudocode; the SDK wrapper exposes version-dependent overloads.\nlet user = try requireSelectedLocalUser()\nloginWithSelectedClient(clientId, user: user) { result in\n    switch result {\n    case .challenge(let fields): renderRequestedFields(fields)\n    case .completed: verifyAuthenticatedSDKState(user)\n    case .failed(let error): showLoginFailure(error)\n    }\n}"
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import KSMasterController\nimport kssidp\n\nfunc loginNative(idp: KssIdpWrapper, clientId: String, mode: KSMAuthenticationMode,\n    credentials: [String: String], headers: [String: String],\n    completion: @escaping KssIdpCompletion) {\n    idp.login(clientId: clientId, authMode: mode, credentials: credentials,\n        headers: headers, completion: completion)\n}\n// Headers bind the selected local user when required by the deployment.\n// Verify authenticated SDK state in completion; never silently reactivate.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.803.3089231",
+        "toolchain": "Xcode 27.0 (27A266a)",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     }
-  }
+  },
+  "integration_generation": "classic_mcsdk_kssidp",
+  "backend_tools": []
 }

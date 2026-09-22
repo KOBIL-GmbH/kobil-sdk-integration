@@ -3,6 +3,7 @@
   "title": "Warning, runtime/fatal errors and stalled operations",
   "sdk_family": "shift",
   "prerequisites": [
+    "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
     "Global asynchronous error listeners are active from initialization onward."
   ],
   "sequence": [
@@ -34,7 +35,10 @@
       "files": [
         "GettingStartedApp/GettingStarted/Shared/Models/ErrorModel/ErrorModel.swift"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "GettingStartedApp/GettingStarted/Shared/Models/ErrorModel/ErrorModel.swift": "8455c9647144ad622a3687791b55b58b52bfd3cc29261781da3f2d646497967c"
+      }
     },
     "android": {
       "repository": "MC_GettingStarted_Kotlin",
@@ -42,15 +46,18 @@
       "files": [
         "app/src/main/java/com/kobil/mcgettingstartedkotlin/models/ErrorHandlingModel.kt"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/models/ErrorHandlingModel.kt": "a27498a858ff6ef12e89d5e580b3aff12e986ec2a3a49b1ca3488c6cf22d98d1"
+      }
     }
   },
   "qualification": {
     "level": "source_reviewed",
     "mobile_sdk_versions_verified": [],
-    "compiled_examples": false,
+    "compiled_examples": true,
     "device_verified": false,
-    "note": "Source review only for the complete recipe. Example validation is recorded separately and does not qualify live SDK initialization, event delivery or backend flows."
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
   },
   "examples": {
     "android": {
@@ -83,5 +90,7 @@
         "scope": "Synthetic Warning/RuntimeError/FatalError instances and unsigned code mapping only; not live SDK initialization or backend flows."
       }
     }
-  }
+  },
+  "integration_generation": "classic_mcsdk_kssidp",
+  "backend_tools": []
 }

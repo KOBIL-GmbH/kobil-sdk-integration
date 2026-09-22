@@ -3,6 +3,7 @@
   "title": "Multi-step native IDP interaction",
   "sdk_family": "shift",
   "prerequisites": [
+    "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
     "Native flow chosen explicitly and its wrapper/delegate contract identified.",
     "UI can present successive field/challenge requests and cancellation."
   ],
@@ -35,7 +36,11 @@
         "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift",
         "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift": "d533118a0873ae724b951c412612092cbbc5e45a3b96b7276823c0dfbb518002",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift": "fade3e9d95e1714c7fc921d525c454c70dd3a92fd8c41b13b508288e0f14763b"
+      }
     },
     "android": {
       "repository": "MC_GettingStarted_Kotlin",
@@ -44,28 +49,48 @@
         "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/KssIdpModel.kt",
         "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/MultiflowActionType.kt"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/KssIdpModel.kt": "dd33cc15e312589d19963e0add28eec2512ff7500ccb852c1d7c0749ebb85cf0",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/MultiflowActionType.kt": "6a0c1fa3933db4f8d1e0d6d05052d1a495eb44a5312a124c21fe74c35cdb02e9"
+      }
     }
   },
   "qualification": {
     "level": "source_reviewed",
     "mobile_sdk_versions_verified": [],
-    "compiled_examples": false,
+    "compiled_examples": true,
     "device_verified": false,
-    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
   },
   "examples": {
     "android": {
       "language": "kotlin",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// App-normalized result model; not SDK type names.\nwhen (interactionResult) {\n    is NeedFields -> showFields(interactionResult.fields) { values ->\n        interactionResult.continueWith(values)\n    }\n    is Cancelled -> clearPendingInteraction()\n    is Failed -> showSanitizedFailure(interactionResult)\n    is Completed -> verifyTerminalSdkState()\n}"
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import com.kobil.kssidp.wrapper.models.*\nimport com.kobil.wrapper.events.AuthenticationMode\n\nfun activateMultiStep(idp: KssIdp, clientId: String, mode: AuthenticationMode,\n    interaction: AdditionalDataCallback, completion: (KssIdpResultObject) -> Unit) {\n    idp.activate(clientId, mode, null, interaction, completion)\n}\nfun loginMultiStep(idp: KssIdp, clientId: String, mode: AuthenticationMode,\n    headers: HashMap<String, String>, interaction: AdditionalDataCallback,\n    completion: (KssIdpResultObject) -> Unit) {\n    idp.login(clientId, mode, headers, null, interaction, completion)\n}\n// AdditionalDataCallback.getAdditionalData receives requested DataModel fields,\n// the KssIdpResult, and a continuation accepting HashMap<String,String>.\n// Render requested fields; return input through that continuation exactly once.\n// Retain the interaction until terminal result. Never log field values.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.3088426",
+        "toolchain": "AGP 8.11.1 / Kotlin 2.1.20 / Gradle 8.13",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     },
     "ios": {
       "language": "swift",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// App-normalized result model; not SDK type names.\nswitch interactionResult {\ncase .needFields(let fields, let continuation):\n    showFields(fields) { values in continuation(values) }\ncase .cancelled: clearPendingInteraction()\ncase .failed(let error): showSanitizedFailure(error)\ncase .completed: verifyTerminalSDKState()\n}"
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import KSMasterController\nimport kssidp\n\nfunc activateMultiStep(idp: KssIdpWrapper, clientId: String,\n    mode: KSMAuthenticationMode, interaction: KssIdpDelegate,\n    completion: @escaping KssIdpCompletion) {\n    idp.activate(clientId: clientId, authMode: mode, appDelegate: interaction,\n        completion: completion)\n}\nfunc loginMultiStep(idp: KssIdpWrapper, clientId: String,\n    mode: KSMAuthenticationMode, headers: [String: String],\n    interaction: KssIdpDelegate, completion: @escaping KssIdpCompletion) {\n    idp.login(clientId: clientId, authMode: mode, appDelegate: interaction,\n        headers: headers, completion: completion)\n}\n// Retain the delegate/UI for the complete interaction. Render each requested\n// challenge and invoke its completion once. A displayed form is not success.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.803.3089231",
+        "toolchain": "Xcode 27.0 (27A266a)",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     }
-  }
+  },
+  "integration_generation": "classic_mcsdk_kssidp",
+  "backend_tools": []
 }

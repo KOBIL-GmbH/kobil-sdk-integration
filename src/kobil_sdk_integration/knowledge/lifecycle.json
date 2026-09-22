@@ -3,6 +3,7 @@
   "title": "Initialization, restart and asynchronous state",
   "sdk_family": "shift",
   "prerequisites": [
+    "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
     "Assets validated; SDK controller/adapter created once for the intended lifecycle.",
     "Install asynchronous event/error listeners before sending operations."
   ],
@@ -38,7 +39,12 @@
         "GettingStartedApp/GettingStarted/Shared/MasterController/MasterControllerAdapter.swift",
         "GettingStartedApp/GettingStarted/Shared/StateMachine/StateMachine.swift"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "GettingStartedApp/GettingStarted/Shared/Models/StartModel.swift": "e947bd785a3b1e3b7f7aa87be34cba35a97587493d1a367b2bee268f9f25b810",
+        "GettingStartedApp/GettingStarted/Shared/MasterController/MasterControllerAdapter.swift": "0d6c38a05234b021b78343a4c095d530d6bc91b684790be0a2d6774d3643f11e",
+        "GettingStartedApp/GettingStarted/Shared/StateMachine/StateMachine.swift": "d12959863884853a388220cf70c719526d1629106adea21e5dc77a3c83fa5fb3"
+      }
     },
     "android": {
       "repository": "MC_GettingStarted_Kotlin",
@@ -48,28 +54,49 @@
         "app/src/main/java/com/kobil/mcgettingstartedkotlin/masterController/EventListener.kt",
         "app/src/main/java/com/kobil/mcgettingstartedkotlin/statemachine/StateMachine.kt"
       ],
-      "working_tree_changes_present": true
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/models/StartModel.kt": "da1cc6b3631272bb9f7f8cb6aa068395cd0f116f280ce57f31590c95db26e0e1",
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/masterController/EventListener.kt": "2504a394e43025373aaecf09404a8bfc85e1ddfb2cb358ae893dd1cbd6bb235f",
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/statemachine/StateMachine.kt": "56c122e9683de093a27d901529c194cc9084a1dcb5c7846e0333f0b1e6479701"
+      }
     }
   },
   "qualification": {
     "level": "source_reviewed",
     "mobile_sdk_versions_verified": [],
-    "compiled_examples": false,
+    "compiled_examples": true,
     "device_verified": false,
-    "note": "Inspected local source snapshots; revisions identify app sources, not mobile SDK releases. SDK artifacts must be qualified separately."
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
   },
   "examples": {
     "android": {
       "language": "kotlin",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// Illustrative app reducer; adapter event decoding is release-specific.\nwhen (resultEvent) {\n    is StartResultEvent -> {\n        if (resultEvent.status == StatusType.OK) queryCurrentSdkState()\n        else showStartFailure(resultEvent.status)\n    }\n    is RestartResultEvent -> finishRestart(resultEvent.status)\n    else -> showUnexpectedEvent(resultEvent)\n}\n// The app helpers above must not infer login success from start status."
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import com.kobil.wrapper.events.*\n\nfun createRestart(locale: String, version: AppVersion, appName: String,\n    mcConfig: String, certificateChain: String, sdkConfig: ByteArray,\n    serverBackend: String): RestartEvent =\n    RestartEvent(locale, version, appName, mcConfig, certificateChain, sdkConfig)\n        .apply { this.serverBackend = serverBackend }\n\nfun stateRequest(): GetSdkStateEvent = GetSdkStateEvent()\nfun returnedState(event: EventFrameworkEvent): SdkState? =\n    (event as? GetSdkStateResultEvent)?.sdkState\n// Route StartResultEvent and RestartResultEvent separately; inspect their\n// status/state before enabling actions. A state query is asynchronous too.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.3088426",
+        "toolchain": "AGP 8.11.1 / Kotlin 2.1.20 / Gradle 8.13",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     },
     "ios": {
       "language": "swift",
-      "kind": "illustrative_app_logic",
-      "compile_ready": false,
-      "code": "// Illustrative callback fragment; app helpers manage UI state.\nif let result = event as? KSMStartResultEvent {\n    if result.status == .KSMOK { queryCurrentSDKState() }\n    else { showStartFailure(result.status) }\n} else if let result = event as? KSMRestartResultEvent {\n    finishRestart(result.status)\n} else { showUnexpectedEvent(event) }"
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import Foundation\nimport KSMasterController\n\nfunc createRestart(serverBackend: String, appConfiguration: KSMSsmsAppConfiguration,\n    mcConfig: String, certificateChain: Data) -> KSMRestartEventEx {\n    KSMRestartEventEx(serverBackend: serverBackend,\n        ssmsAppConfiguration: appConfiguration, mcConfig: mcConfig,\n        certificateChain: certificateChain)\n}\nfunc stateRequest() -> KSMGetSdkStateEvent {\n    KSMGetSdkStateEvent(ssmsUserCredentialPath: nil)\n}\nfunc returnedState(_ event: KsEvent) -> KSMSdkState? {\n    (event as? KSMGetSdkStateResultEvent)?.sdkState\n}\n// StartResult and RestartResult are distinct. Query completion is asynchronous.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.803.3089231",
+        "toolchain": "Xcode 27.0 (27A266a)",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
     }
-  }
+  },
+  "integration_generation": "classic_mcsdk_kssidp",
+  "backend_tools": []
 }
