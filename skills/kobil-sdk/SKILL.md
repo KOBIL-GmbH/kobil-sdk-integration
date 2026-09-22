@@ -246,3 +246,29 @@ writes encrypted profiles with local references. Create an environment selector
 next; switching the active connection requires explicit setup/restart. Do not
 carry sender filesystem paths to the recipient or claim backend verification
 from a successful import. See the complete workflow in docs/credentials.md.
+
+### Local file layout and access-error recovery
+
+Keep received encrypted bundles inside the current project, for example
+`.kobil-sdk/incoming/servers.age`, and imported encrypted settings at
+`.kobil-sdk/environments.age`. Keep the private identity outside the project,
+for example `~/.config/kobil-sdk/identities/<recipient>.key`. These are layout
+recommendations, not hard-coded defaults. Resolve paths to absolute paths when
+calling tools. Exclude local settings, selectors and deliveries from version control.
+
+Never guess an identity path or reuse another component's private identity just
+because its file exists. Use the recipient identity selected during setup and
+share only its public recipient. A new identity cannot decrypt an old delivery:
+the sender must export again for its public key. Keep private identities separate
+from bundles; never copy them into the project or transfer them to another machine.
+
+On `ACCESS_DENIED`, first inspect metadata only for the input identified by the
+error: existence, owner, permissions and whether it is a symlink. Reads require
+regular, owner-only files on POSIX (normally mode 0600); symlinks are refused.
+Do not print contents or silently change ownership, permissions or unrelated
+component files. Report the specific metadata problem and repair only the intended
+local delivery/setup files. This error does not prove a wrong recipient or bundle
+format. Only proceed to `sdk_age_store_list` after access succeeds; it returns
+names without secrets. `AGE_DECRYPT_FAILED` means decryption or document validation
+failed and does not by itself distinguish the two. Ask only for missing setup
+information; derive project paths and a proposed namespace from the workspace.
