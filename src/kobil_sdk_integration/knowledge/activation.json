@@ -3,6 +3,7 @@
   "title": "Native activation and authorization-code handoff",
   "sdk_family": "shift",
   "prerequisites": [
+    "Required: run sdk_native_preflight against the selected environment before building or activation. Native KSSIDP uses BDDKEnrollment/BDDKLogin, useTokenBasedLogin=true, astServerBackend=maverick and login header X-KOBIL-ASTUSERID. The WebView alternative is KSTrustedWebView with explicit deployment clients. Missing clients or incompatible bindings block progress; never create substitute flows.",
     "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
     "SDK initialization completed and activation is allowed by current state.",
     "Existing server application/version has a selected registration user.",
@@ -25,7 +26,9 @@
   "failure_handling": [
     "A server-issued code is required; device UI status cannot generate one.",
     "A timeout may follow a consumed code. Inspect state before trying a new code.",
-    "Never recommend SuperApp Login V2 for native Android/iOS."
+    "Never recommend SuperApp Login V2 for native Android/iOS.",
+    "Never disable useTokenBasedLogin to work around ast_login_with_unactivated_client; this skips IAM setup and can cause CannotAcquireTokenData(50). Investigate the selected native backend flow instead.",
+    "Swift: switch on KssIdpStatus.success/eventFailed/requestFailed; never infer success from text containing accept. Preserve detailed callback status, errorCode and underlying event without logging tokens or credentials."
   ],
   "platform_notes": {
     "android": "NativeActivationViewModel handles SetAuthorisationCodeResultEvent; IdpNativeInterfaces defines activation input mappings.",
