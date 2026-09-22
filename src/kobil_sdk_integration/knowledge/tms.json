@@ -1,0 +1,102 @@
+{
+  "id": "tms",
+  "title": "Transaction approval, rejection and completion",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
+    "User/device activated and authenticated as required by deployment.",
+    "Backend TMS initiation targets that device/user; app event listener active."
+  ],
+  "sequence": [
+    "Handle transaction availability/banner and start retrieval with the SDK transaction-start event.",
+    "Display the confirmation request transaction information and remaining time.",
+    "Submit the actual user decision through DisplayConfirmation; bind it to the displayed transaction information.",
+    "Handle any required authorization-code step for the selected SDK flow.",
+    "Wait for the terminal transaction event and inspect status; compare with backend result when testing end-to-end."
+  ],
+  "expected_result": "The displayed transaction reaches a terminal SDK result matching the actual user decision and backend outcome.",
+  "checklist": [
+    "Approve and reject paths both tested.",
+    "Expired/cancelled transaction cannot be reported as approved.",
+    "Confirmation acknowledgement is not treated as terminal completion.",
+    "Displayed information matches the transaction being confirmed."
+  ],
+  "failure_handling": [
+    "Do not automate approval of an arbitrary real transaction. Use explicit test transactions.",
+    "UI timeout and backend completion may race; inspect final result rather than submitting twice."
+  ],
+  "platform_notes": {
+    "android": "StartTransactionEvent \u2192 DisplayConfirmationRequestEvent \u2192 DisplayConfirmationEvent \u2192 DisplayConfirmationResultEvent \u2192 TransactionEndEvent in the inspected Shift model.",
+    "ios": "KSMStartTransactionEvent \u2192 KSMDisplayConfirmationRequestEvent \u2192 KSMDisplayConfirmationEvent \u2192 KSMDisplayConfirmationResultEvent \u2192 KSMTransactionFinishedEvent in the inspected model."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/Shared/Models/TransactionModel/TransactionModel.swift",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/TransactionAuthCodeModel/TransactionAuthCodeModel.swift"
+      ],
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "GettingStartedApp/GettingStarted/Shared/Models/TransactionModel/TransactionModel.swift": "870e4f3900e78b3f2e01e6101fc914fc9808d487cd27744a2d2ee3968b355e01",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/TransactionAuthCodeModel/TransactionAuthCodeModel.swift": "71115d5f9eae50d1a70c885aa9f45a8a42387a87631fca2602ee5c8b859f79d5"
+      }
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/TransactionModel.kt",
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/viewModel/TransactionConfirmationViewModel.kt"
+      ],
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/models/TransactionModel.kt": "95dc3d11a5c5437d9adedd6ca5841d8720688d2dd0c8b3fb1f8a5bb05ee48fbc",
+        "app/src/main/java/com/kobil/mcgettingstartedkotlin/viewModel/TransactionConfirmationViewModel.kt": "30c0d9497afc6fa204a57fc5a00ffbe4f1000039c4434dd7528b780e3b128779"
+      }
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": true,
+    "device_verified": false,
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import com.kobil.wrapper.events.*\n\nfun transactionRequest(): StartTransactionEvent = StartTransactionEvent()\nfun confirmationResponse(request: DisplayConfirmationRequestEvent,\n    userDecision: ConfirmationType): DisplayConfirmationEvent =\n    DisplayConfirmationEvent(userDecision, request.transactionInformation)\nfun terminalTransactionStatus(event: EventFrameworkEvent): StatusType? =\n    (event as? TransactionEndEvent)?.status\n// Display request.transactionInformation and request.timerValue first.\n// Send only the actual user's decision; do not default to approval.\n// DisplayConfirmationResultEvent is an acknowledgement, not a terminal result.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.3088426",
+        "toolchain": "AGP 8.11.1 / Kotlin 2.1.20 / Gradle 8.13",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import KSMasterController\n\nfunc transactionRequest() -> KSMStartTransactionEvent { KSMStartTransactionEvent() }\nfunc confirmationResponse(request: KSMDisplayConfirmationRequestEvent,\n    userDecision: KSMConfirmationType) -> KSMDisplayConfirmationEvent {\n    KSMDisplayConfirmationEvent(confirmationType: userDecision,\n        andTransactionInformation: request.transactionInformation)\n}\nfunc terminalTransactionStatus(_ event: KsEvent) -> KSMEventStatusType? {\n    (event as? KSMTransactionFinishedEvent)?.status\n}\n// Display request.transactionInformation and request.timerValue first.\n// Send the actual user's decision, then wait for terminal status.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.803.3089231",
+        "toolchain": "Xcode 27.0 (27A266a)",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
+    }
+  },
+  "integration_generation": "classic_mcsdk_kssidp",
+  "backend_tools": [
+    "sdk_tms_trigger",
+    "sdk_tms_status",
+    "sdk_tms_result",
+    "sdk_tms_cancel"
+  ]
+}
