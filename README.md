@@ -34,7 +34,7 @@ history are included.
 ## Install a fixed release
 
 Use [versioned installation](docs/releases.md) for a fixed MCP and skill version.
-The current release is **v0.3.3**. Upgrades are explicit; do not deploy from `main`.
+The current release is **v0.5.0**. Upgrades are explicit; install a tag rather than a moving branch.
 
 ## Run from a development checkout
 
@@ -112,3 +112,15 @@ The service-interface feature adds explicit IDP/AST APIs, with [dashboard covera
 ### Shared credential setup
 
 See [server profiles and native keystore setup](docs/credentials.md) for AST/IDP credential references, encrypted age delivery, MCP import/status/delete and local onboarding.
+
+### Self-contained native knowledge
+
+The MCP bundles [eight native Shift integration topics](docs/native-knowledge.md),
+retrieved with `sdk_knowledge_topics`, `sdk_knowledge_get` and
+`sdk_integration_checklist`. They include source-reviewed guidance and illustrative
+Kotlin/Swift snippets. No external skills or repositories are required. Runtime
+qualification and unsupported-platform gaps are reported explicitly.
+
+The bundled knowledge pack has 16 compile-checked native examples
+for classic MCSDK 15.16; see the [native integration handoff](skills/kobil-sdk/references/native-integration.md).
+Full live-flow acceptance remains separate from these checks.

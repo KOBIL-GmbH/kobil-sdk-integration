@@ -1,0 +1,129 @@
+{
+  "id": "login",
+  "title": "Native and returning-user login",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "These bindings target classic MCSDK with KSSIDP; standalone IDPSDK needs its own adapter and is not interchangeable.",
+    "SDK started; selected local user is known.",
+    "Existing native-compatible deployment client and supported authentication mode selected."
+  ],
+  "sequence": [
+    "Read current SDK/user state rather than assuming the last app session is still authenticated.",
+    "Start the selected user login through the native IDP integration.",
+    "Supply only requested credentials/challenges and route all intermediate results.",
+    "Verify SDK login completion before enabling authenticated actions.",
+    "Test return after app restart separately from initial activation; do not silently reactivate on login failure."
+  ],
+  "expected_result": "Activated user can log in after restarting the app.",
+  "checklist": [
+    "Activated user can log in after restarting the app.",
+    "Wrong PIN/password returns a usable error.",
+    "Cancellation clears pending UI state.",
+    "User identity is preserved and not confused with another local user."
+  ],
+  "failure_handling": [
+    "A successful token request or webpage is not sufficient proof of SDK login.",
+    "Different SDK generations use different wrappers; match the shipped headers/API."
+  ],
+  "platform_notes": {
+    "android": "NativeLoginViewModel and SubsequentLoginViewModel are separate entry points.",
+    "ios": "KssIdpModel.login passes an explicitly chosen client/auth mode and may carry the selected user ID header."
+  },
+  "source_evidence": {
+    "ios": {
+      "repository": "MC_GettingStarted_Swift",
+      "revision": "069f899d",
+      "files": [
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift"
+      ],
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/KssIdpModel/KssIdpModel.swift": "d533118a0873ae724b951c412612092cbbc5e45a3b96b7276823c0dfbb518002",
+        "GettingStartedApp/GettingStarted/GettingStarted_Shift/Models/IdpNativeFlows.swift": "fade3e9d95e1714c7fc921d525c454c70dd3a92fd8c41b13b508288e0f14763b"
+      }
+    },
+    "android": {
+      "repository": "MC_GettingStarted_Kotlin",
+      "revision": "ccba87e8",
+      "files": [
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeLoginViewModel.kt",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/SubsequentLoginViewModel.kt"
+      ],
+      "working_tree_changes_present": true,
+      "file_sha256": {
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/NativeLoginViewModel.kt": "577fe89106a00d27e55c772c6f1d0db53dcebae4da503aa8568c6ca3a48bc190",
+        "app/src/shift/java/com/kobil/mcgettingstartedkotlin/viewModel/SubsequentLoginViewModel.kt": "626a1cdd4d09277b6e14b00aad5972861b11842ea9f01e8104c236397a5a79f6"
+      }
+    }
+  },
+  "qualification": {
+    "level": "source_reviewed",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": true,
+    "device_verified": false,
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
+  },
+  "examples": {
+    "android": {
+      "language": "kotlin",
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import com.kobil.kssidp.wrapper.models.*\nimport com.kobil.wrapper.events.AuthenticationMode\n\nfun loginNative(idp: KssIdp, clientId: String, mode: AuthenticationMode,\n    credentials: HashMap<String, String>, headers: HashMap<String, String>,\n    completion: (KssIdpResultObject) -> Unit) {\n    idp.login(clientId, mode, credentials, headers, null, completion)\n}\n// Use selected local user/deployment headers, never arbitrary first-user defaults.\n// Handle failure/cancellation explicitly; do not reactivate on login failure.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.3088426",
+        "toolchain": "AGP 8.11.1 / Kotlin 2.1.20 / Gradle 8.13",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
+    },
+    "ios": {
+      "language": "swift",
+      "kind": "sdk_adapter",
+      "compile_ready": true,
+      "code": "import KSMasterController\nimport kssidp\n\nfunc loginNative(idp: KssIdpWrapper, clientId: String, mode: KSMAuthenticationMode,\n    credentials: [String: String], headers: [String: String],\n    completion: @escaping KssIdpCompletion) {\n    idp.login(clientId: clientId, authMode: mode, credentials: credentials,\n        headers: headers, completion: completion)\n}\n// Headers bind the selected local user when required by the deployment.\n// Verify authenticated SDK state in completion; never silently reactivate.\n",
+      "validation": {
+        "kind": "app_build",
+        "sdk_artifact_version": "15.16.803.3089231",
+        "toolchain": "Xcode 27.0 (27A266a)",
+        "device_verified": false,
+        "scope": "Compiled and linked as part of a fresh native app; no live flow acceptance."
+      }
+    }
+  },
+  "integration_generation": "classic_mcsdk_kssidp",
+  "backend_tools": [],
+  "runtime_acceptance": {
+    "android": {
+      "date": "2026-09-22",
+      "sdk_artifact_version": "15.16.3088426",
+      "device": "Pixel 8",
+      "scenario": "fresh_app_registration_activation_cold_restart_login",
+      "backend": "nonproduction Shift deployment with existing native-compatible clients",
+      "app_version": "1.0.1",
+      "authentication_mode": "NO",
+      "hash_pin": false,
+      "integrity_check": false,
+      "result": "passed",
+      "sdk_status": "OK / 0",
+      "backend_device_readback": true,
+      "limits": "Successful path only. No wrong/expired credential, multiflow, TMS, log export or production integrity acceptance."
+    },
+    "ios": {
+      "date": "2026-09-22",
+      "sdk_artifact_version": "15.16.803.3089231",
+      "device": "iPhone 17 Pro Max",
+      "scenario": "fresh_app_registration_activation_cold_restart_login",
+      "backend": "nonproduction Shift deployment with existing native-compatible clients",
+      "app_version": "1.0.1",
+      "authentication_mode": "NO",
+      "hash_pin": false,
+      "integrity_check": false,
+      "result": "passed",
+      "sdk_status": "OK / 0",
+      "backend_device_readback": true,
+      "limits": "Successful path only. No wrong/expired credential, multiflow, TMS, log export or production integrity acceptance."
+    }
+  }
+}
