@@ -16,37 +16,27 @@ from .idp_transport import _call
 
 class CredentialRef(BaseModel):
     model_config=ConfigDict(extra='forbid')
-    provider: Literal['env','keyring','file']
+    provider: Literal['env','keyring','file','age']
     name: str | None = None
     service: str | None = None
     account: str | None = None
     path: str | None = None
+    store: str | None = None
+    identity: str | None = None
+    fallback: dict | None = None
 
     @model_validator(mode='after')
     def exact(self):
-        required={'env':{'name'},'keyring':{'service','account'},'file':{'path'}}[self.provider]
-        found={k for k in ('name','service','account','path') if getattr(self,k) is not None}
-        if found!=required or any(not getattr(self,k) for k in found):raise ValueError('Provide exactly the selected provider reference fields')
+        from .credentials import validate_reference, CredentialError
+        try:validate_reference(self.model_dump(exclude_none=True))
+        except CredentialError:raise ValueError('Invalid credential reference') from None
         return self
 
 
 def resolve(ref):
-    try:
-        if ref.provider=='env':value=os.environ.get(ref.name)
-        elif ref.provider=='keyring':
-            import keyring
-            value=keyring.get_password(ref.service,ref.account)
-        else:
-            with Path(ref.path).expanduser().open('rb') as stream:
-                meta=os.fstat(stream.fileno())
-                if not stat.S_ISREG(meta.st_mode) or (os.name!='nt' and meta.st_mode&0o077):raise ValueError()
-                value=stream.read(65537)
-            if len(value)>65536:raise ValueError()
-            value=value.decode().rstrip('\r\n')
-        if not isinstance(value,str) or not value:raise ValueError()
-        return value
-    except Exception:
-        raise ValueError('Credential reference could not be resolved; no value was returned') from None
+    from .credentials import resolve as shared_resolve, CredentialError
+    try:return shared_resolve(ref.model_dump(exclude_none=True))
+    except CredentialError as error:raise ValueError(str(error)) from None
 
 
 @contextmanager

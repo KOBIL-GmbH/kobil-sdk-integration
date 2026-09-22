@@ -24,8 +24,8 @@ end-to-end mobile behavior. Prior branch live checks are not acceptance evidence
 for this clean branch.
 
 Connections retain KOBIL_SDK_CONNECTION. Optional oauth.scope is supported.
-The optional admin object has idp_url, realm, client_id, username and password_env;
-the server reads the password from the named environment variable. Private
+The optional admin object has idp_url, realm, client_id, username and a credential reference (or legacy password_env);
+the server resolves either credential references or legacy password_env server-side. See [shared credentials](credentials.md). Private
 credential operations also accept environment, private-file or OS-keyring
 references. Never put credential values in tool arguments or public config.
 

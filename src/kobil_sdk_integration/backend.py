@@ -29,44 +29,59 @@ def https_url(value):
     return value.rstrip('/')
 
 
-def configuration(expected_environment=None):
+def authentication(cfg):
+    """Normalize legacy/v2 AST authentication without reading credentials."""
+    from .credentials import validate_reference
+    if 'schema_version' in cfg:
+        if type(cfg['schema_version']) is not int or cfg['schema_version'] != 2 or 'oauth' in cfg or 'token_env' in cfg:
+            raise ValueError('Invalid authentication schema')
+        auth = cfg['auth']
+        fields = {'type', 'credential'}
+        if auth.get('type') == 'oauth_client_credentials':
+            fields |= {'token_url', 'client_id'}
+            https_url(auth['token_url']); segment(auth['client_id'])
+            if 'scope' in auth: fields.add('scope')
+        elif auth.get('type') != 'bearer': raise ValueError('Invalid authentication mode')
+        if set(auth) != fields: raise ValueError('Invalid authentication fields')
+    else:
+        if 'auth' in cfg or bool(cfg.get('token_env')) == bool(cfg.get('oauth')):
+            raise ValueError('Ambiguous authentication')
+        if cfg.get('token_env'):
+            auth = {'type':'bearer','credential':{'provider':'env','name':cfg['token_env']}}
+        else:
+            oauth=cfg['oauth']
+            if set(oauth)-{'token_url','client_id','client_secret_env','scope'} or not {'token_url','client_id','client_secret_env'} <= set(oauth): raise ValueError()
+            https_url(oauth['token_url']); segment(oauth['client_id'])
+            auth={'type':'oauth_client_credentials','token_url':oauth['token_url'],'client_id':oauth['client_id'],
+                  'credential':{'provider':'env','name':oauth['client_secret_env']}}
+            if 'scope' in oauth:auth['scope']=oauth['scope']
+    if 'scope' in auth and (not isinstance(auth['scope'],str) or not re.fullmatch(r'[A-Za-z0-9 _:.-]{1,200}',auth['scope'])):
+        raise ValueError('Invalid OAuth scope')
+    validate_reference(auth['credential'])
+    return auth
+
+
+def admin_reference(admin):
+    from .credentials import validate_reference
+    if ('password_env' in admin) == ('credential' in admin):raise ValueError('Select one administrator credential reference')
+    ref=admin.get('credential') if 'credential' in admin else {'provider':'env','name':admin['password_env']}
+    return validate_reference(ref)
+
+
+def configuration(expected_environment=None, path=None):
     try:
-        path = Path(os.environ['KOBIL_SDK_CONNECTION']).expanduser()
-        cfg = json.loads(path.read_text())
-        if set(cfg) - {'environment', 'tenant', 'ast_url', 'token_env', 'oauth', 'services', 'admin'}:
-            raise ValueError()
-        segment(cfg['environment'])
-        segment(cfg['tenant'])
-        https_url(cfg['ast_url'])
-        if bool(cfg.get('token_env')) == bool(cfg.get('oauth')):
-            raise ValueError()
-        if cfg.get('oauth'):
-            oauth = cfg['oauth']
-            if set(oauth) - {'token_url', 'client_id', 'client_secret_env', 'scope'} or \
-                    not {'token_url', 'client_id', 'client_secret_env'} <= set(oauth):
-                raise ValueError()
-            https_url(oauth['token_url'])
-            segment(oauth['client_id'])
-            if 'scope' in oauth:
-                # Optional client scopes are only included when the token request asks for them.
-                # The ks-management role needed by AST rides on such a scope; without this the
-                # token carries no roles and AST answers 403.
-                if not isinstance(oauth['scope'], str) or not re.fullmatch(r'[A-Za-z0-9 _:.-]{1,200}', oauth['scope']):
-                    raise ValueError()
+        source = Path(path or os.environ['KOBIL_SDK_CONNECTION']).expanduser()
+        cfg = json.loads(source.read_text())
+        if set(cfg)-{'environment','tenant','ast_url','token_env','oauth','services','admin','schema_version','auth'}:raise ValueError()
+        segment(cfg['environment']); segment(cfg['tenant']); https_url(cfg['ast_url'])
+        authentication(cfg)
         if 'admin' in cfg:
-            # IDP administration is optional and independent of AST authentication.
-            admin = cfg['admin']
-            if set(admin) != {'idp_url', 'realm', 'client_id', 'username', 'password_env'}:
-                raise ValueError()
-            https_url(admin['idp_url'])
-            segment(admin['realm'])
-            segment(admin['client_id'])
-            if not re.fullmatch(r'[A-Za-z0-9._@+-]{1,120}', admin['username']) or \
-                    not re.fullmatch(r'[A-Z][A-Z0-9_]*', admin['password_env']):
-                raise ValueError()
-        secret_ref = cfg.get('token_env') or cfg['oauth']['client_secret_env']
-        if not isinstance(secret_ref, str) or not re.fullmatch(r'[A-Z][A-Z0-9_]*', secret_ref):
-            raise ValueError()
+            admin=cfg['admin']
+            required={'idp_url','realm','client_id','username'}
+            if not required<=set(admin) or set(admin)-required-{'password_env','credential'}:raise ValueError()
+            https_url(admin['idp_url']);segment(admin['realm']);segment(admin['client_id'])
+            if not isinstance(admin['username'],str) or not re.fullmatch(r'[A-Za-z0-9._@+-]{1,120}',admin['username']):raise ValueError()
+            admin_reference(admin)
     except Exception:
         raise BackendError('Invalid connection configuration; see backend setup documentation') from None
     if expected_environment is not None and expected_environment != cfg['environment']:
@@ -84,21 +99,16 @@ class AST:
         self.client.close()
 
     def token(self):
-        ref = self.cfg.get('token_env') or self.cfg['oauth']['client_secret_env']
-        secret = os.environ.get(ref)
-        if not secret:
-            raise BackendError('Backend credential is not configured in the runtime environment')
-        if self.cfg.get('token_env'):
-            return secret
-        oauth = self.cfg['oauth']
-        form = {'grant_type': 'client_credentials', 'client_id': oauth['client_id'],
-                'client_secret': secret}
-        if oauth.get('scope'):
-            form['scope'] = oauth['scope']
-        result = self.send('POST', oauth['token_url'], data=form)
-        token = result.get('access_token') if isinstance(result, dict) else None
-        if not isinstance(token, str) or not token:
-            raise BackendError('Backend authentication did not return an access token')
+        from .credentials import resolve, CredentialError
+        auth=authentication(self.cfg)
+        try:secret=resolve(auth['credential'])
+        except CredentialError as error:raise BackendError(str(error)) from None
+        if auth['type']=='bearer':return secret
+        form={'grant_type':'client_credentials','client_id':auth['client_id'],'client_secret':secret}
+        if auth.get('scope'):form['scope']=auth['scope']
+        result=self.send('POST',auth['token_url'],data=form)
+        token=result.get('access_token') if isinstance(result,dict) else None
+        if not isinstance(token,str) or not token:raise BackendError('Backend authentication did not return an access token')
         return token
 
     def send(self, method, url, allow_not_found=False, **kwargs):
