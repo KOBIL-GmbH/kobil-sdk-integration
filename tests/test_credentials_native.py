@@ -50,7 +50,7 @@ class NativeCredentialTests(unittest.TestCase):
         registry=Registry();age_store.register(registry);tools=registry.tools
         prefix='kobil-sdk-transfer-test-'+uuid.uuid4().hex
         source={'provider':'keyring','service':prefix,'account':'source'}
-        target={'provider':'keyring','service':prefix,'account':'destination'}
+        target={'provider':'keyring','service':'kobil-sdk/import/'+prefix,'account':'destination'}
         source_created=False;target_created=False
         try:
             store(source,'disposable-transfer-value');source_created=True

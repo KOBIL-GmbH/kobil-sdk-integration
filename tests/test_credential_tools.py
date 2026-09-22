@@ -7,7 +7,7 @@ from kobil_sdk_integration import credentials, credential_tools, idp_transport
 from kobil_sdk_integration.backend import AST, configuration, BackendError
 from kobil_sdk_integration.idp_secrets import CredentialRef
 
-REF={'provider':'keyring','service':'example','account':'ast'}
+REF={'provider':'keyring','service':'kobil-sdk/import/example','account':'ast'}
 CFG={'schema_version':2,'environment':'test','tenant':'tenant','ast_url':'https://ast.example',
      'auth':{'type':'oauth_client_credentials','token_url':'https://idp.example/token','client_id':'ast','scope':'scope-a','credential':REF},
      'admin':{'idp_url':'https://idp.example','realm':'admin','client_id':'admin-cli','username':'admin','credential':REF|{'account':'idp'}}}
@@ -67,3 +67,20 @@ class CredentialIntegrationTests(unittest.TestCase):
             with self.assertRaises(credentials.CredentialError):credentials.resolve({'provider':'file','path':str(link)})
             p.chmod(0o644)
             with self.assertRaises(credentials.CredentialError):credentials.resolve({'provider':'file','path':str(p)})
+
+    def test_import_cannot_write_existing_local_namespace_even_with_replace(self):
+        ref = {'provider':'keyring','service':'local-server','account':'admin'}
+        with patch.object(credential_tools, 'selected', return_value=ref), patch.object(credential_tools, 'resolve') as resolve, patch.object(credential_tools, 'store') as store:
+            with self.assertRaises(credentials.CredentialError):
+                self.tools['sdk_credential_import']('test', CredentialRef(provider='env',name='SOURCE'), replace=True)
+            resolve.assert_not_called()
+            store.assert_not_called()
+
+    def test_import_namespacing_is_deterministic_and_separates_servers(self):
+        first=credentials.imported_keyring_reference('server-a/idp','admin')
+        second=credentials.imported_keyring_reference('server-b/idp','admin')
+        self.assertNotEqual(first,second)
+        self.assertEqual(first,credentials.imported_keyring_reference('server-a/idp','admin'))
+        self.assertEqual(first['service'],'kobil-sdk/import/server-a/idp')
+        with self.assertRaises(credentials.CredentialError):
+            credentials.imported_keyring_reference('x'*256,'admin')
