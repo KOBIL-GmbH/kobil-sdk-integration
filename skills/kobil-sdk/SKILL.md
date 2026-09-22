@@ -272,3 +272,23 @@ format. Only proceed to `sdk_age_store_list` after access succeeds; it returns
 names without secrets. `AGE_DECRYPT_FAILED` means decryption or document validation
 failed and does not by itself distinguish the two. Ask only for missing setup
 information; derive project paths and a proposed namespace from the workspace.
+
+### Two-chat server delivery: receiver public key first
+
+When the user requests the MCP public key for receiving servers, use the local
+identity recorded during receiver setup and call `sdk_age_identity_public_key`.
+If this receiver has no identity yet, create one once with
+`sdk_age_identity_create`, using a dedicated local identity outside the project
+(for example `~/.config/kobil-sdk/identities/recipient.key`; prepare its parent
+as an owner-only directory). Record its path in local, untracked setup metadata.
+Do not ask for bundle path, environments or namespace just to supply a public key.
+Return the full public `age1...` recipient prominently for copy/paste. Never display
+the private identity contents or generate a replacement for an existing identity.
+
+The user pastes that public key in the sender chat and specifies which servers
+to export. The sender uses `sdk_age_server_bundle_export` with that recipient and
+only the requested profiles. The user places the resulting encrypted `.age` file
+in the receiving project. The receiver uses its retained identity to list names
+with `sdk_age_store_list`, then imports the selected servers through
+`sdk_age_server_bundle_import`. Use project-local encrypted output settings and
+the `kobil-sdk/import/` namespace. A private key is never part of the handoff.
