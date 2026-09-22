@@ -239,18 +239,31 @@ def register(mcp):
     @mcp.tool()
     def sdk_ast_device_list(expected_environment: str, user_uuid: str, cursor: str = '0', page_size: int = 100) -> dict:
         """List a user's AST clients using their IDP UUID, not username. Read-only. Returns
-        safe device identifiers/state and local offset pagination. Unknown partial server
-        pages fail explicitly. Next use sdk_ast_device_get with the chosen client ID.
+        safe device identifiers/state and local offset pagination. Responses without
+        a total count are explicitly incomplete; an empty page does not prove absence. Next use sdk_ast_device_get with the chosen client ID.
         """
         user_uuid = _uuid(user_uuid)
         _page([], cursor, page_size)
         def operation(b):
             response = b.request('GET', '/astclients?userId=' + segment(user_uuid))
-            if not isinstance(response, dict) or not any(k in response for k in ('totalCount', 'totalElements')):
-                raise BackendError('Device collection completeness cannot be verified: missing total count')
-            rows = [_select(r, DEVICE_FIELDS) for r in _collection(response)]
+            counted = isinstance(response, dict) and any(k in response for k in ('totalCount', 'totalElements'))
+            if counted:
+                source = _collection(response)
+            elif isinstance(response, list):
+                source = response
+            elif isinstance(response, dict) and isinstance(response.get('data'), list):
+                source = response['data']
+            else:
+                raise BackendError('Unrecognized AST device collection response')
+            rows = [_select(r, DEVICE_FIELDS) for r in source]
             rows.sort(key=lambda r: str(r.get('id', r.get('astClientId', ''))))
-            return _page(rows, cursor, page_size)
+            result = _page(rows, cursor, page_size)
+            result['completeness_verified'] = counted
+            if not counted:
+                result.update(total=None, complete=False, received_count=len(rows),
+                              pagination='local_offset_over_unverified_backend_collection',
+                              warning='Server supplied no total count. Returned devices can be inspected, but this response cannot establish a complete inventory or absence of other devices.')
+            return result
         return _run(expected_environment, operation)
 
     @mcp.tool()

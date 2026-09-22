@@ -47,3 +47,9 @@ verification remain pending. SDK binaries and credentials are not distributed he
 - Replace external skill/checkout requirements with bundled Kotlin and Swift knowledge, source hashes and explicit validation scope.
 - Compile and link all 16 examples with MCSDK Android 15.16.3088426 / iOS 15.16.803.3089231; synthetic diagnostic adapters pass on both physical platforms.
 - Add backend-to-app integration handoff and candidate testing instructions. Full live-flow acceptance remains separate; no new release tag or editor upgrade is included.
+
+## Live native acceptance fixes (unreleased)
+
+- Correct Swift startup to supply the IAM certificate chain explicitly; confirmed registration/activation/cold returning login on both physical platforms with SDK 15.16.
+- Accept uncounted AST device lists with explicit incomplete-inventory metadata; retain strict validation of inconsistent counted responses.
+- Bundle scoped successful-path runtime evidence; production policies and other feature acceptance remain separate.

@@ -60,5 +60,8 @@ shareable SDK logs. Record platform, exact mobile SDK, app/backend version and
 result. Stop at an unexplained error and show the original error fields plus
 pending operation; do not claim success from a build, token or empty callback.
 
-Synthetic diagnostic checks and successful compilation are already recorded for
-MCSDK 15.16. They do not replace this end-to-end acceptance.
+Compilation, synthetic diagnostics and the successful registration/activation/cold
+returning-login path are recorded for MCSDK 15.16 on two physical devices. Read the
+per-platform runtime_acceptance scope. Other checklist cases remain to be tested.
+For iOS, package AND explicitly pass the IAM certificate chain at Start; packaging
+alone did not initialize it in the tested SDK.

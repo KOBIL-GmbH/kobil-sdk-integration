@@ -29,6 +29,7 @@ def get_topic(topic, platform, sdk_family="shift", sdk_version=None):
         "external_source_access_required": False,
         "integration_generation": data["integration_generation"],
         "backend_tools": data["backend_tools"],
+        "runtime_acceptance": data.get("runtime_acceptance", {}).get(platform),
     }
 
 
