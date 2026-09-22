@@ -275,15 +275,21 @@ information; derive project paths and a proposed namespace from the workspace.
 
 ### Two-chat server delivery: receiver public key first
 
-When the user requests the MCP public key for receiving servers, use the local
-identity recorded during receiver setup and call `sdk_age_identity_public_key`.
-If this receiver has no identity yet, create one once with
-`sdk_age_identity_create`, using a dedicated local identity outside the project
-(for example `~/.config/kobil-sdk/identities/recipient.key`; prepare its parent
-as an owner-only directory). Record its path in local, untracked setup metadata.
-Do not ask for bundle path, environments or namespace just to supply a public key.
-Return the full public `age1...` recipient prominently for copy/paste. Never display
-the private identity contents or generate a replacement for an existing identity.
+When the user requests the MCP public key for receiving servers, call
+`sdk_age_project_identity(project_path)` with the receiving project directory.
+The MCP enforces the private identity convention:
+`~/.config/kobil-sdk/identities/<project-slug>-<path-hash>/identity.key`.
+The hash is the first 16 hexadecimal SHA256 characters of the canonical absolute
+project path, preventing collisions between projects with the same folder name.
+Do not invent personal identity filenames. Repeated calls reuse the same key.
+Existing project identity references are adopted without rotating the key; the
+old identity file is retained. A moved project must retain its identity reference
+and access to its old private key; a new machine creates its own recipient.
+The MCP writes `.kobil-sdk/recipient.txt` and `identity-reference.json` locally.
+Exclude `.kobil-sdk/` from version control. Explicit-path identity tools remain
+available for advanced setup; normal project setup uses this convention tool.
+Return the full public `age1...` recipient prominently. Do not ask for bundle
+path, environments or namespace merely to supply the receiver public key.
 
 The user pastes that public key in the sender chat and specifies which servers
 to export. The sender uses `sdk_age_server_bundle_export` with that recipient and
