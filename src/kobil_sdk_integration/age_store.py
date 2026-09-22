@@ -190,11 +190,12 @@ def register(mcp):
     def sdk_age_credential_import_keyring(store_path: str, identity_path: str, service: str,
                                           account: str, destination_service: str,
                                           destination_account: str, replace: bool = False) -> dict:
-        """Decrypt one explicitly named entry and import it into the local native keystore: macOS Keychain, Windows Credential Manager or Linux Secret Service. Private destination identity stays on this machine. Requires explicit destination service/account; never enumerates/imports the whole store. Existing destination entries require replace=true. No secret values returned; encrypted source retained. OS authorization may be required."""
+        """Decrypt one explicitly named entry and import it into the local native keystore: macOS Keychain, Windows Credential Manager or Linux Secret Service. Private destination identity stays on this machine. destination_service is a label: the actual service is kobil-sdk/import/<label>. Returns the exact credential_reference for the local profile; never reuses the source service. Never enumerates/imports the whole store. Existing destination entries require replace=true. No secret values returned; encrypted source retained. OS authorization may be required."""
         source={'provider':'age','store':str(absolute(store_path)),'identity':str(absolute(identity_path)),
                 'service':identifier(service),'account':identifier(account)}
-        target={'provider':'keyring','service':identifier(destination_service),'account':identifier(destination_account)}
+        from .credentials import imported_keyring_reference
+        target=imported_keyring_reference(destination_service,destination_account)
         value=resolve(source)
         keyring_store(target,value,replace=replace)
-        return {'imported':True,'service':destination_service,'account':destination_account,
-                'provider':'keyring','secret_returned':False}
+        return {'imported':True,'service':target['service'],'account':target['account'],
+                'provider':'keyring','credential_reference':target,'secret_returned':False}

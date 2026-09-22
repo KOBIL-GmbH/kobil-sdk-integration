@@ -26,6 +26,22 @@ def identifier(value):
     return value
 
 
+# Imported credentials are isolated from the caller's existing keystore services.
+IMPORT_PREFIX = 'kobil-sdk/import/'
+
+
+def imported_keyring_reference(service_label, account):
+    """Service label is an opaque import destination, not a pre-expanded service."""
+    return {'provider': 'keyring', 'service': identifier(IMPORT_PREFIX + identifier(service_label)),
+            'account': identifier(account)}
+
+
+def require_import_namespace(ref):
+    if ref.get('provider') != 'keyring' or not ref.get('service', '').startswith(IMPORT_PREFIX) or len(ref['service']) <= len(IMPORT_PREFIX):
+        raise CredentialError('CONFIG_INVALID')
+    return ref
+
+
 def validate_reference(ref, nested=False):
     if not isinstance(ref, dict):
         raise CredentialError('CONFIG_INVALID')
