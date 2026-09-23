@@ -263,7 +263,8 @@ its returned public `age1…` recipient. The private identity stays on that mach
 5. The result contains local credential references and a new encrypted profile
    store. Use `sdk_age_environment_selector_write` to create a private selector
    for one imported environment, then explicitly configure `KOBIL_SDK_CONNECTION`
-   and restart the MCP. Server settings remain encrypted. Verify backend auth and
+   for persistent startup selection, or call `sdk_environment_select` for the current
+   MCP process without restarting. Server settings remain encrypted. Verify backend auth and
    native preflight after selection; import itself makes no backend requests.
 
 Existing keystore entries or output files block imports. There is no batch

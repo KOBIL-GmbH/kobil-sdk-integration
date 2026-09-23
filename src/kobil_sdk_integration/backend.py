@@ -2,6 +2,7 @@
 import json
 import os
 import re
+from threading import RLock
 from pathlib import Path
 from urllib.parse import quote, urlsplit
 
@@ -93,7 +94,39 @@ def validate_configuration(cfg, expected_environment=None):
     return cfg
 
 
+# Selection is local to this MCP process. Never mutate the launcher or a profile.
+_connection_lock = RLock()
+_connection_override = None
+
+
 def configuration(expected_environment=None, path=None):
+    with _connection_lock:
+        selected = path if path is not None else _connection_override
+        return _read_configuration(expected_environment, selected)
+
+
+def select_environment(connection_path, expected_current_environment, expected_environment):
+    """Compare-and-switch the session path after validating both profiles."""
+    global _connection_override
+    segment(expected_current_environment)
+    segment(expected_environment)
+    if not isinstance(connection_path, str) or not connection_path.strip():
+        raise ValueError('Provide an absolute connection file path')
+    source = Path(connection_path).expanduser()
+    if not source.is_absolute():
+        raise ValueError('Provide an absolute connection file path')
+    with _connection_lock:
+        current = configuration(expected_current_environment)
+        target = _read_configuration(expected_environment, str(source))
+        _connection_override = str(source)
+        return {'previous_environment': current['environment'],
+                'environment': target['environment'], 'tenant': target['tenant'],
+                'configured': True, 'connection_verified': False,
+                'scope': 'current_mcp_process', 'restart_required': False,
+                'persists_after_restart': False}
+
+
+def _read_configuration(expected_environment=None, path=None):
     try:
         source=Path(path or os.environ['KOBIL_SDK_CONNECTION']).expanduser()
         cfg=json.loads(source.read_text())
