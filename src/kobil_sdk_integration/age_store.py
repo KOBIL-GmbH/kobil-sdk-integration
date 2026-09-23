@@ -1,6 +1,7 @@
 """Local encrypted store authoring. Plaintext exists only in bounded memory/pipes."""
 from contextlib import contextmanager
 import json
+import uuid
 import os
 from pathlib import Path
 import re
@@ -29,8 +30,20 @@ def recipient(identity):
 
 
 def read_document(store,identity):
-    recipient(identity)
-    code,out=bounded_process(['age','--decrypt','--identity',str(absolute(identity))],private_read(absolute(store)))
+    # Preserve access errors and identify the input without exposing file contents.
+    try:
+        recipient(identity)
+    except CredentialError as error:
+        if error.code == 'ACCESS_DENIED':
+            raise CredentialError('ACCESS_DENIED', 'private identity: check existence, ownership, owner-only permissions and symlinks; key matching has not been checked') from None
+        raise
+    try:
+        ciphertext = private_read(absolute(store))
+    except CredentialError as error:
+        if error.code == 'ACCESS_DENIED':
+            raise CredentialError('ACCESS_DENIED', 'encrypted bundle/store: check existence, ownership, owner-only permissions and symlinks; decryption has not been attempted') from None
+        raise
+    code,out=bounded_process(['age','--decrypt','--identity',str(absolute(identity))],ciphertext)
     try:
         if code:raise ValueError()
         data=json.loads(out)
@@ -71,7 +84,103 @@ def encrypt_write(path,identity,data,replace):
     atomic_write(path,cipher,replace)
 
 
+def project_identity(project_path, project_uuid=None):
+    """Stable project identity convention; reuse legacy keys without rotating them."""
+    project = absolute(project_path).resolve(strict=True)
+    if not project.is_dir():
+        raise CredentialError('CONFIG_INVALID')
+    slug = re.sub(r'[^a-z0-9-]+', '-', project.name.lower()).strip('-')[:48] or 'project'
+    local = project/'.kobil-sdk'
+    if local.is_symlink():
+        raise CredentialError('ACCESS_DENIED')
+    local.mkdir(mode=0o700, exist_ok=True)
+    # Serialize setup per project so concurrent first calls cannot create two IDs.
+    with writer_lock(local/'project-identity'):
+        return _project_identity_locked(project, local, slug, project_uuid)
+
+
+def _project_identity_locked(project, local, slug, project_uuid):
+    metadata = local/'identity-reference.json'
+    saved = {}
+    if os.path.lexists(metadata):
+        try:
+            saved = json.loads(private_read(metadata))
+            if not isinstance(saved, dict):
+                raise ValueError()
+        except CredentialError:
+            raise
+        except Exception:
+            raise CredentialError('CONFIG_INVALID') from None
+    try:
+        canonical_uuid = str(uuid.UUID(project_uuid or saved.get('project_uuid') or str(uuid.uuid4())))
+        if saved.get('project_uuid') and canonical_uuid != saved['project_uuid']:
+            raise CredentialError('ALREADY_EXISTS')
+    except (ValueError, AttributeError, TypeError):
+        raise CredentialError('CONFIG_INVALID') from None
+    project_id = slug + '-' + canonical_uuid
+    keydir = Path.home().resolve()/'.config/kobil-sdk/identities'/project_id
+    if any(p.is_symlink() for p in (keydir, *keydir.parents)):
+        raise CredentialError('ACCESS_DENIED')
+    keydir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    identity = keydir/'identity.key'
+    metadata = local/'identity-reference.json'
+    with writer_lock(identity):
+        previous = None
+        if os.path.lexists(metadata):
+            try:
+                record = json.loads(private_read(metadata))
+                previous = absolute(record['identity_path'])
+                # Legacy private identities must remain outside this project.
+                if previous.resolve().is_relative_to(project):
+                    raise ValueError()
+                prior_public = recipient(previous)
+            except CredentialError:
+                raise
+            except Exception:
+                raise CredentialError('CONFIG_INVALID') from None
+        created = False
+        if os.path.lexists(identity):
+            public = recipient(identity)
+            if previous and public != prior_public:
+                raise CredentialError('ALREADY_EXISTS')
+        else:
+            if previous:
+                raw = private_read(previous)
+            else:
+                code, raw = bounded_process(['age-keygen'])
+                if code or b'AGE-SECRET-KEY-' not in raw:
+                    raise CredentialError('STORE_FAILED')
+            atomic_write(identity, raw)
+            created = previous is None
+            public = recipient(identity)
+        record = {'project_path': str(project), 'project_id': project_id, 'project_uuid': canonical_uuid,
+                  'identity_path': str(identity), 'recipient_file': str(local/'recipient.txt')}
+        atomic_write(metadata, (json.dumps(record, indent=2)+'\n').encode(), True)
+        atomic_write(local/'recipient.txt', (public+'\n').encode(), True)
+    return {**record, 'recipient': public, 'created': created,
+            'legacy_identity_retained': bool(previous and previous != identity),
+            'secret_returned': False}
+
+
 def register(mcp):
+    @mcp.tool()
+    def sdk_age_project_identity(project_path: str, project_uuid: str | None = None) -> dict:
+        """Get or create this project's persistent receiver identity and return its public age key.
+
+        Preferred project setup tool. Naming is enforced by the MCP: private key at
+        ~/.config/kobil-sdk/identities/<project-slug>-<persistent-project-uuid>/identity.key.
+        Public recipient and identity-reference.json stay in <project>/.kobil-sdk/.
+        Optionally supply the host project UUID. Otherwise reuse project_uuid in the
+        local identity-reference.json memory file, or generate and persist one once.
+        A conflicting explicit UUID is rejected; never supply a chat/session UUID.
+        Repeated calls reuse the same key; different project UUIDs have distinct identities.
+        An existing local identity-reference.json preserves its key when adopting the
+        convention; the old private file is retained, never deleted. Moved projects
+        carrying that reference retain their identity while updating their project ID.
+        No credentials or private key contents are returned. No backend calls.
+        """
+        return project_identity(project_path, project_uuid)
+
     @mcp.tool()
     def sdk_age_identity_create(identity_path: str) -> dict:
         """Generate a native age identity in a NEW mode0600 file. Returns only its public recipient. Keep the identity separate from encrypted stores; losing it prevents recovery. Existing files are never replaced."""
@@ -81,6 +190,18 @@ def register(mcp):
         # The only plaintext file written is the explicitly requested private identity.
         atomic_write(path,data)
         return {'identity_path':str(path),'recipient':recipient(path),'created':True}
+
+    @mcp.tool()
+    def sdk_age_identity_public_key(identity_path: str) -> dict:
+        """Return the public age1 recipient for this receiver's existing local private identity.
+
+        Safe to copy the returned recipient into the sender's chat for server-bundle
+        export. Reads locally; never returns or changes the private key. Use the
+        identity chosen during receiver setup. If none exists, create one once with
+        sdk_age_identity_create and retain it to import deliveries encrypted for it.
+        """
+        path = absolute(identity_path)
+        return {'identity_path': str(path), 'recipient': recipient(path), 'secret_returned': False}
 
     @mcp.tool()
     def sdk_age_store_create(store_path: str, identity_path: str) -> dict:
