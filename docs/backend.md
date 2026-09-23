@@ -122,3 +122,23 @@ These tools neither create activation users nor return their credentials.
 TMS status/result reads reject a conflicting transaction ID and missing status.
 Missing IDs may inherit the requested ID for endpoints that omit it. Missing
 results (HTTP404) remain explicitly unavailable, rather than successful results.
+
+## Switch a running MCP session
+
+`sdk_environment_select(connection_path, expected_current_environment,
+expected_environment)` selects an existing absolute connection JSON or encrypted
+age-selector path. Read `sdk_backend_status` first and pass its environment as
+the current value. Target and current names are checked before selection changes;
+concurrent stale selections fail. No backend request or credential import occurs.
+
+Configuration files are read per operation. The selected path is process-local:
+subsequent operations use it, while existing backend clients retain their original
+configuration. Finish a workflow before switching. Every backend operation must
+still carry its expected environment. Invalid target files leave selection unchanged.
+A later edit/deletion of the selected file is detected on the next operation.
+
+The response reports `connection_verified: false`, `restart_required: false`,
+and `persists_after_restart: false`. Verify authentication and native preflight
+separately. On restart the launcher value of `KOBIL_SDK_CONNECTION` applies again;
+edit host/launcher configuration separately if persistence is required. No app
+configuration, JWT, .mcp.json or credential store is changed by this tool.

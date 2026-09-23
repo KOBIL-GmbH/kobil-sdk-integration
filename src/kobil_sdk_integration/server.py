@@ -85,12 +85,32 @@ def sdk_backend_status() -> dict:
     """Validate runtime connection configuration without contacting the backend.
 
     KOBIL_SDK_CONNECTION points to a local JSON file. Credentials are supplied
-    through named environment variables, never through tool arguments/results.
+    through configured credential providers, never through this tool. Configuration
+    is reloaded per call; sdk_environment_select can override the path for this process.
     """
     from .backend import configuration
     cfg = configuration()
     return {'environment': cfg['environment'], 'tenant': cfg['tenant'],
             'configured': True, 'connection_verified': False}
+
+
+@mcp.tool()
+def sdk_environment_select(connection_path: str, expected_current_environment: str,
+                           expected_environment: str) -> dict:
+    """Explicitly switch this running MCP to an existing connection JSON/age selector.
+
+    First call sdk_backend_status; pass its environment as expected_current_environment
+    and the requested target as expected_environment. Use an absolute local file path,
+    never credentials. Validates profile structure (decrypting an age selector), but
+    does not authenticate, contact backends, edit files or change app configuration.
+    Failed validation leaves selection unchanged. Subsequent calls use the new file;
+    already-created backend clients keep their original configuration. Finish ongoing
+    workflows before switching. Applies only to this MCP process; restart restores
+    the launcher's KOBIL_SDK_CONNECTION. Importing credentials never selects a server.
+    After selection verify authentication and native preflight for the target.
+    """
+    from .backend import select_environment
+    return select_environment(connection_path, expected_current_environment, expected_environment)
 
 
 def _backend_operation(expected_environment, operation):
