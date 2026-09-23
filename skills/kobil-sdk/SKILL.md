@@ -243,7 +243,7 @@ private profile files and recipient public keys. On the recipient, list encrypte
 environment names and call `sdk_age_server_bundle_import` with the selected names
 and a local namespace. It imports credentials into the dedicated namespace and
 writes encrypted profiles with local references. Create an environment selector
-next; switching the active connection requires explicit setup/restart. Do not
+next; use `sdk_environment_select` for an explicitly requested session switch. Do not
 carry sender filesystem paths to the recipient or claim backend verification
 from a successful import. See the complete workflow in docs/credentials.md.
 
@@ -302,3 +302,21 @@ in the receiving project. The receiver uses its retained identity to list names
 with `sdk_age_store_list`, then imports the selected servers through
 `sdk_age_server_bundle_import`. Use project-local encrypted output settings and
 the `kobil-sdk/import/` namespace. A private key is never part of the handoff.
+
+### Switching the active backend
+
+For an explicit server change, finish current backend workflows, call
+`sdk_backend_status`, then `sdk_environment_select(connection_path,
+expected_current_environment, expected_environment)` with the existing absolute
+connection JSON or age-selector path. Use the reported current environment and
+requested target name; never guess them. The MCP validates both profiles and
+switches subsequent calls without a reconnect. Failed selection leaves the old
+selection intact. Credential import alone never activates a server.
+
+Selection is local to the running MCP process, does not edit app assets or launcher
+configuration, and does not verify credentials or connectivity. Restart restores
+`KOBIL_SDK_CONNECTION` from the launcher. For persistent setup, update that launch
+configuration separately. After switching, verify backend authentication and the
+native preflight, select app/version and obtain a new SDK JWT before rebuilding
+apps. Do not reuse assets/JWTs from the previous backend. Older installed versions
+without this tool require a one-time upgrade/reconnect.

@@ -25,7 +25,7 @@ class ProtocolTests(unittest.TestCase):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 184)
+                        self.assertEqual(len(names), 185)
                         self.assertFalse({"sdk_idp_journeys", "sdk_activation_flow_ensure", "sdk_activation_client_ensure"} & names)
                         self.assertTrue({"sdk_idp_client_list", "sdk_idp_flow_list", "sdk_app_list"} <= names)
                         self.assertTrue({'sdk_app_get', 'sdk_app_versions'} <= names)
@@ -50,6 +50,20 @@ class ProtocolTests(unittest.TestCase):
                             'expected_environment': 'wrong', 'app_name': 'sample', 'categories': ['tms']})
                         self.assertTrue(result.isError)
                         self.assertNotIn('protocol-fixture', str(result))
+                        target = Path(directory) / 'target.json'
+                        target.write_text(json.dumps({'environment': 'target', 'tenant': 'second',
+                            'ast_url': 'https://target.example', 'token_env': 'SDK_TEST_TOKEN'}))
+                        switched = await session.call_tool('sdk_environment_select', {
+                            'connection_path': str(target), 'expected_current_environment': 'test',
+                            'expected_environment': 'target'})
+                        self.assertFalse(switched.isError)
+                        status = await session.call_tool('sdk_backend_status', {})
+                        payload = status.structuredContent or json.loads(status.content[0].text)
+                        self.assertEqual(payload['environment'], 'target')
+                        stale = await session.call_tool('sdk_environment_select', {
+                            'connection_path': str(path), 'expected_current_environment': 'test',
+                            'expected_environment': 'test'})
+                        self.assertTrue(stale.isError)
                         for name in ['sdk_app_get', 'sdk_app_versions']:
                             result = await session.call_tool(name, {'expected_environment': 'wrong', 'app_name': 'sample'})
                             self.assertTrue(result.isError)
