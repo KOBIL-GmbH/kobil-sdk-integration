@@ -15,9 +15,9 @@ CODES = {'CONFIG_INVALID', 'CREDENTIAL_NOT_FOUND', 'STORE_LOCKED', 'ACCESS_DENIE
 
 
 class CredentialError(RuntimeError):
-    def __init__(self, code):
+    def __init__(self, code, guidance=None):
         self.code = code if code in CODES else 'ACCESS_DENIED'
-        super().__init__(self.code + ': use local credential setup; no secret values are returned')
+        super().__init__(self.code + ': ' + (guidance or 'use local credential setup') + '; no secret values are returned')
 
 
 def identifier(value):

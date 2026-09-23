@@ -30,6 +30,23 @@ class ServerTransferTests(unittest.TestCase):
                  'admin':{'idp_url':'https://idp.example','realm':'master','client_id':'admin-cli','username':'test','credential':ref}}
             p=self.root/(name+'.json');age_store.atomic_write(p,json.dumps(cfg).encode());self.files.append(str(p))
         self.db={('local-server','admin'):'preserve-local'}
+    @unittest.skipUnless(os.name == 'posix', 'POSIX file permissions')
+    def test_access_error_identifies_identity_before_decrypt(self):
+        self.identity.chmod(0o644)
+        with patch.object(age_store, 'bounded_process') as process:
+            with self.assertRaisesRegex(credentials.CredentialError, 'ACCESS_DENIED: private identity'):
+                age_store.read_document(self.bundle, self.identity)
+            process.assert_not_called()
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX file permissions')
+    def test_access_error_identifies_bundle_before_decrypt(self):
+        self.export()
+        self.bundle.chmod(0o644)
+        with patch.object(age_store, 'recipient', return_value=self.public), patch.object(age_store, 'bounded_process') as process:
+            with self.assertRaisesRegex(credentials.CredentialError, 'ACCESS_DENIED: encrypted bundle/store'):
+                age_store.read_document(self.bundle, self.identity)
+            process.assert_not_called()
+
     def lookup(self,ref):
         try:return self.db[(ref['service'],ref['account'])]
         except KeyError:raise credentials.CredentialError('CREDENTIAL_NOT_FOUND')
