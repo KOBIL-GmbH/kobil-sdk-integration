@@ -7,7 +7,7 @@ import stat
 from mcp.server.fastmcp import FastMCP
 from .planner import FRAMEWORKS, plan
 
-mcp = FastMCP("KOBILSDK", instructions="For first-time setup use sdk_default_status and sdk_default_initialize; the bundled encrypted default requires a separately provisioned delivery identity. Use typed IDP and AST service interfaces with explicit environment and resource identifiers. Use bundled sdk_knowledge_topics/get/checklist for app integration. Respect source-review and mobile SDK qualification limits. Do not choose backend journeys from example names or create replacement flows to fit sample code.")
+mcp = FastMCP("KOBILSDK", instructions="For first-time setup call sdk_onboarding_prepare with the project path, display its public recipient and copy-paste email, then wait for recipient-encrypted IDP/AST and SFTP credentials. Do not ask for private delivery keys. Use typed IDP and AST service interfaces with explicit environment and resource identifiers. Use bundled sdk_knowledge_topics/get/checklist for app integration. Respect source-review and mobile SDK qualification limits. Do not choose backend journeys from example names or create replacement flows to fit sample code.")
 
 
 @mcp.tool()
@@ -88,8 +88,8 @@ def sdk_sftp_download(relative_path: str, expected_sha512: str | None = None,
 
 
 # Explicit service operations only; app orchestration belongs to app reference sources.
-from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, environment_transfer, bundled_environment
-for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, environment_transfer, bundled_environment):
+from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, environment_transfer, bundled_environment, onboarding
+for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, environment_transfer, bundled_environment, onboarding):
     _module.register(mcp)
 
 
@@ -105,6 +105,7 @@ async def sdk_service_catalog() -> dict:
 
 
 def main():
+    onboarding.startup()
     mcp.run()
 
 

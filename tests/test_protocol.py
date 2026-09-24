@@ -25,7 +25,7 @@ class ProtocolTests(unittest.TestCase):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 189)
+                        self.assertEqual(len(names), 190)
                         self.assertTrue({'sdk_sftp_list', 'sdk_sftp_download'} <= names)
                         self.assertFalse({"sdk_idp_journeys", "sdk_activation_flow_ensure", "sdk_activation_client_ensure"} & names)
                         self.assertTrue({"sdk_idp_client_list", "sdk_idp_flow_list", "sdk_app_list"} <= names)
