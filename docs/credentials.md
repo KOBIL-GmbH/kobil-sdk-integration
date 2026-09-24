@@ -350,12 +350,20 @@ Two encrypted files serve different purposes:
   credentials, encrypted for this project's own identity. Additional environments
   use the existing age tools; the packaged bundle is never modified at runtime.
 
-Call `sdk_default_status`, then `sdk_default_initialize(project_path)` on initial
-setup. It prepares the project's identity and reports `delivery_identity_required`.
-Provision the delivery identity through a separate trusted channel outside the
-project, then repeat with `bundle_identity_path`. That key decrypts the shipped
-bundle; the new project key cannot decrypt it on its own. Initialization re-encrypts
-credentials for the project key and writes a selector when none exists.
+For normal first-start setup, call `sdk_onboarding_prepare(project_path)`. When
+`KOBIL_SDK_PROJECT` is configured (or derivable from a project-local connection
+selector), MCP startup prepares the identity and email draft automatically.
+Otherwise the caller must provide the project path; the MCP never guesses its
+working directory. Read the draft with sdk_onboarding_prepare and present it to
+the user. It saves public recipient.txt and credential-request.txt inside
+.kobil-sdk and creates incoming/ for returned encrypted files. No email is sent.
+
+The sender encrypts server credentials for the receiver's public key using
+sdk_age_server_bundle_export, and can deliver SFTP credentials separately using
+sdk_age_transfer_export with matching connection settings and a verified SSH
+host key. Import with the receiver's project identity. Normal setup never requires
+the package's shared delivery private key. Explicit managed bundle initialization
+with sdk_default_initialize(bundle_identity_path=...) remains an advanced option.
 
 Initialization never replaces existing server profiles, credentials or connection
 selectors, and never contacts a backend. Rerunning it preserves local changes;

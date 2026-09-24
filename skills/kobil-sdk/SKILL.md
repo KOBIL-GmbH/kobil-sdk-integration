@@ -327,14 +327,15 @@ For Flutter Android/iOS activation, token/SignedJWT login and foreground TMS, re
 `sdk_knowledge_get(topic="flutter_webview", platform="flutter_android")`
 (or `flutter_ios`). Keep deployment settings local and respect qualification limits.
 
-## Bundled default server initialization
+## First-start credential onboarding
 
-For a fresh installation, call `sdk_default_status` and
-`sdk_default_initialize(project_path)`. The package ships an encrypted default;
-a separately provisioned delivery identity is required to import it. Ask for the
-local identity path when missing, never a raw private key in chat. Initialization
-creates a project identity outside the project and re-encrypts the imported
-credentials into project-local `.kobil-sdk/environments.age`. Keep additional
-servers there too. Preserve existing profiles/selectors; package updates do not
-replace them. Set `KOBIL_SDK_CONNECTION` to the returned selector and verify backend
-access separately. See [credential setup](../../docs/credentials.md).
+Call `sdk_onboarding_prepare(project_path)` before configuring a new installation.
+It creates/reuses the project's age identity, keeps its private key outside the
+project, and returns the public recipient, recipient.txt, and a copy-paste email.
+Show the complete draft and public key to the user. The email requests IDP/AST
+and SDK SFTP access encrypted for that recipient. Do not send email automatically.
+Wait for the delivery in `.kobil-sdk/incoming/`, then use the existing age import
+tools with the project identity. Do not ask for plaintext credentials or the
+bundled distribution's private key. Existing configurations remain unchanged.
+The encrypted package bundle remains available for explicitly managed deployments;
+normal onboarding uses a recipient-specific credential delivery.

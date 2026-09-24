@@ -29,9 +29,8 @@ def initialize(project_path, bundle_identity_path=None):
     output = local / 'environments.age'
     selector = local / 'connection.json'
     if bundle_identity_path is None:
-        return {'status': 'delivery_identity_required', 'default_environment': DEFAULT,
-                'project_identity_ready': True, 'connection_changed': False,
-                'next_step': 'Provision the bundled delivery identity separately outside the project, then call sdk_default_initialize with its path. The project recipient key alone cannot decrypt the shipped bundle.'}
+        from .onboarding import prepare
+        return prepare(str(project))
     delivery_identity = absolute(bundle_identity_path).resolve(strict=True)
     if delivery_identity.is_relative_to(project):
         raise CredentialError('CONFIG_INVALID', 'Keep the delivery private identity outside the project')
@@ -95,7 +94,7 @@ def register(mcp):
         """Describe the encrypted default bundled with this package; no decryption or backend calls."""
         cipher = bundle_bytes()
         return {'default_environment': DEFAULT, 'bundled': cipher.startswith(b'age-encryption.org/v1'),
-                'private_key_bundled': False, 'initialization_tool': 'sdk_default_initialize',
+                'private_key_bundled': False, 'initialization_tool': 'sdk_onboarding_prepare',
                 'requires_separately_provisioned_delivery_identity': True}
 
     @mcp.tool()

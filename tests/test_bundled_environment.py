@@ -41,7 +41,7 @@ class DefaultTests(unittest.TestCase):
 
     def test_missing_identity_prepares_project_without_plaintext_or_connection(self):
         result=bundled.initialize(str(self.project))
-        self.assertEqual(result['status'],'delivery_identity_required')
+        self.assertEqual(result['status'],'credential_delivery_requested')
         local=self.project/'.kobil-sdk'
         self.assertTrue((local/'recipient.txt').is_file())
         self.assertFalse((local/'connection.json').exists())
