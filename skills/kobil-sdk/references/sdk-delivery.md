@@ -6,7 +6,9 @@ credentials. The SDK binaries remain outside this repository.
 
 ## Connection and download workflow
 
-1. Resolve the customer-provided hostname, port (normally 22), account and
+1. Ask the user to provide their SDK delivery server and credential setup before
+   connecting. Do not discover or reuse an unrelated local/global delivery account.
+   Resolve the customer-provided hostname, port (normally 22), account and
    approved remote release path. Do not hardcode a shared account, endpoint,
    password or internal path in the skill. An HTTP link in an access email does
    not change the transport: connect with SFTP over SSH, not HTTP or FTP.
@@ -31,14 +33,19 @@ credentials. The SDK binaries remain outside this repository.
    Wait for the selection, then print that SDK's downloaded release changelog
    in the user-facing response following the output contract below.
 
-Select artifact_source=sftp in sdk_plan to require the sftp-artifacts contract,
-marked external_client_required. Credentials and client setup remain separate.
-
-SFTP is a documented delivery workflow, not an implemented download capability
-of the SDK MCP. Use an available approved SFTP client/adapter; do not claim that
-sdk_artifact_info downloads artifacts or that receiving account details proves
-connectivity, directory access or compatibility. Track connection, download,
-artifact inspection, build and runtime verification as separate checkpoints.
+Use sdk_sftp_list and sdk_sftp_download for delivery over SFTP (SSH, port 22).
+Configuration must be explicitly selected by KOBIL_SDK_SFTP_CONNECTION. There is
+no default account or global-file fallback. Without setup the tools return
+SFTP_SETUP_REQUIRED; ask for server, port, account, release directory and credential
+setup. Store the provided secret through the local credential setup mechanism;
+never include it in tool arguments or committed configuration. It declares host, username, remote_root, known_hosts,
+and exactly one provider: password_keyring {service, account}, password_file,
+password_env or private_key. Credentials are resolved inside the MCP.
+Set KOBIL_SDK_DELIVERY to a project-local download directory. Downloads are private,
+read-only on the server, bounded by max_bytes and never overwrite existing files.
+Supply SHA-512 metadata/sidecars where available. Then call sdk_artifact_info;
+inspection and download do not establish runtime compatibility. Legacy SCP protocol
+is not implemented; use the customer's SFTP service over SSH.
 
 ## Review the release before integration
 
