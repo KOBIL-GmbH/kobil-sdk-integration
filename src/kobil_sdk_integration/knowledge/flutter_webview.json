@@ -1,0 +1,100 @@
+{
+  "id": "flutter_webview",
+  "title": "Flutter trusted WebView activation, login and foreground TMS",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "Separately delivered compatible Flutter/native SDK artifacts and customer-configured AST/IDP connection.",
+    "Deployment-selected enrollment/login clients, signed assets and registration user."
+  ],
+  "sequence": [
+    "# Flutter trusted WebView: activation, login and TMS",
+    "## Scope and evidence\nFlutter wrapper 107.0.0 with hardening 21.0.0 was used for an Android mobile test app.\nAndroid SDK startup, manual activation and foreground TMS approval were observed;\nTMS acceptance was independently confirmed through AST status and result. The app\npassed 26 unit/widget tests and Android builds. An unsigned iOS build passed before\nthe final environment/theme change; iOS device behavior is unverified. Returning\nlogin can use cached or refreshed tokens: success alone does not prove a SignedJWT\ngrant. These observations qualify only this test tuple, not every delivery.",
+    "## Setup and activation\n- Select a customer-configured connection explicitly. Keep server URLs, tenants,\n  credentials and signed assets in project-local configuration, outside this recipe.\n  Reuse an appropriate AST app/version and its existing registration user.\n- Package the complete asset folder, referenced certificates and backend-signed\n  SDK JWT. Isolate persistent SDK state per environment. Do not overwrite another\n  environment's device binding when switching assets.\n- This tested profile used useTokenBasedLogin=true, astServerBackend=maverick,\n  AuthenticationMode.pin and maverick.jwtSignKeySecurityPolicy=\n  ALLOW_VIRTUAL_SMART_CARD. This policy was explicitly selected for the test;\n  it is not a universal default and must not silently replace a hardware policy.\n- BDDKEnrollment/BDDKLogin can render HTML inside trusted WebView when the deployed\n  clients support that contract. Inspect bindings and run sdk_native_preflight;\n  passing preflight is not proof of fresh enrollment. Do not substitute SuperApp\n  Login V2 or a generic browser flow that requires an already-registered device.\n- Install warning/runtime/fatal listeners before Start. Gate all operations on\n  successful Start/Restart and the returned state.\n- GetAstClientDataEventT supplies clientData, astClientId and PKCE challenge/method.\n  Preserve the wrapper's actual field spelling (107 uses codeChallange).\n  Send X-KOBIL-ASTCLIENTDATA; send X-KOBIL-ASTCLIENTID only when nonzero. Fresh\n  enrollment may require X-KOBIL-ASTDEVICENAME. Returning WebView login requires\n  X-KOBIL-ASTUSERID from the SDK user list, not the IDP UUID. Never fabricate IDs.\n- Bind authorization requests to the selected client, redirect and PKCE values;\n  validate redirect and state, and consume a code only once. Pass the returned\n  code to SetAuthorisationCodeEventT with that same client/tenant and the selected\n  authentication mode. A successful web page is not SDK activation success.\n- Require SetAuthorisationCodeResult OK. Preserve data across restart and require\n  the persisted user. OfflineLoginEventT handles token reuse/refresh and eligible\n  SignedJWT login internally; use trusted WebView when interactive login is needed.\n- Android device credential authentication needs FlutterFragmentActivity and the\n  delivered biometric bridge initialized before its lifecycle callbacks. Flat AARs\n  may require an explicit androidx.biometric dependency (tested 1.2.0-alpha03).\n  Device PIN entry belongs to Android system UI, not chat or app text fields.",
+    "## Foreground TMS\n1. Handle TriggerBanner, bind its payload/trace context, and show availability.\n2. On Review send StartTransaction; display the exact DisplayConfirmationRequest\n   transactionInformation and remaining time.\n3. Handle a transaction PIN request separately from Android's device PIN. Return\n   the actual user decision and exact information through DisplayConfirmation.\n4. DisplayConfirmationResult is acknowledgement only. Wait for TransactionEnd,\n   inspect status/error, and compare sdk_tms_status and sdk_tms_result.\n5. Prevent duplicate decisions, late results reopening cancelled UI, and SDK\n   restart while a transaction is active. Test deadlines with an injected clock.",
+    "Wrapper 107's inspected StartTransaction possibleResults list was empty, leaving\nits Future unresolved. Verify the actual delivery; the app-local correction\nincludes DisplayConfirmationRequest, TransactionPinRequiredRequest,\nTransactionTokenRequiredRequest and TransactionEnd. Keep the original delivery\nunchanged and do not patch an unrelated wrapper version blindly.",
+    "For this Maverick flow the SDK supplies its stored IAM token internally. Do not\nexport it into Dart to implement TMS. The test user needed ks-users/ast-client;\ninspect the deployment's permission mapping before assigning any role.",
+    "freshness_seconds=0 requires fresh authentication; it does not disable freshness.\nA synthetic test failed with status39/code516004035 and HTTP403 because its token\nwas older than the required time. An explicitly selected 300-second test window\nthen passed. Never relax a real transaction policy merely to make a test pass.",
+    "## Validation and diagnostics\nCapture status, numeric error, description and report ID, without dumping event\nobjects or tokens. HTTP406/missing X-KOBIL-ASTCLIENTID during fresh enrollment\nindicates an incompatible journey prerequisite; do not invent the header.\nAn AST TMS HTTP202 is submission only; a pending result may return HTTP412.\nKeep activation, returning login, observed SignedJWT grant, approve/reject/timeout,\npush and iOS device results separate. Never automate approval of a real transaction.",
+    "Themes change presentation, not the SDK handshake. A copied client/flow may use\nits own theme while the original BDDK definitions remain unchanged. Rendering a\nnew theme does not prove that its authentication submission succeeds.\n"
+  ],
+  "expected_result": "SDK activation and returning login verified separately; terminal TMS result matches backend outcome.",
+  "failure_handling": [
+    "Read warning/runtime/fatal explanations before retrying. Do not infer activation from web success or approval from HTTP202.",
+    "Keep current deployment policy; never invent AST IDs, substitute SuperApp V2 or export IAM tokens into Dart."
+  ],
+  "checklist": [
+    "SDK startup and complete packaged assets verified.",
+    "SetAuthorisationCode succeeds after enrollment.",
+    "Persisted user and returning login succeed after restart.",
+    "SignedJWT grant independently observed if claimed.",
+    "TMS approve, reject and timeout tested independently against backend results.",
+    "iOS device and push delivery tested separately."
+  ],
+  "platform_notes": {
+    "flutter_android": "Manual foreground approval verified on physical Android; device PIN uses system UI.",
+    "flutter_ios": "Shared Dart recipe; final environment and iOS physical-device runtime unverified."
+  },
+  "source_evidence": {
+    "flutter_android": {
+      "kind": "local_integration_validation",
+      "date": "2026-09-24",
+      "wrapper_version": "107.0.0",
+      "hardening_version": "21.0.0",
+      "scope": "26 app tests; Android live foreground TMS approval; unsigned iOS build before final environment change."
+    },
+    "flutter_ios": {
+      "kind": "local_integration_validation",
+      "date": "2026-09-24",
+      "wrapper_version": "107.0.0",
+      "hardening_version": "21.0.0",
+      "scope": "26 app tests; Android live foreground TMS approval; unsigned iOS build before final environment change."
+    }
+  },
+  "qualification": {
+    "level": "partial_device_validation",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Android foreground approval observed. No general version certification or iOS device qualification."
+  },
+  "examples": {
+    "flutter_android": {
+      "language": "dart",
+      "kind": "recipe",
+      "compile_ready": false,
+      "code": "// Follow the bundled sequence using the exact APIs of the supplied wrapper.",
+      "validation": {
+        "executed": false,
+        "scope": "Recipe text; no standalone compiled snippet."
+      }
+    },
+    "flutter_ios": {
+      "language": "dart",
+      "kind": "recipe",
+      "compile_ready": false,
+      "code": "// Follow the bundled sequence using the exact APIs of the supplied wrapper.",
+      "validation": {
+        "executed": false,
+        "scope": "Recipe text; no standalone compiled snippet."
+      }
+    }
+  },
+  "integration_generation": "flutter_mcsdk_trusted_webview",
+  "backend_tools": [
+    "sdk_native_preflight",
+    "sdk_idp_activation_code_generate",
+    "sdk_tms_trigger",
+    "sdk_tms_status",
+    "sdk_tms_result"
+  ],
+  "runtime_acceptance": {
+    "flutter_android": {
+      "foreground_tms_approval": "verified",
+      "ios_device": "not_run",
+      "push": "not_run",
+      "reject_timeout": "not_run",
+      "signed_jwt_grant": "not_independently_observed"
+    },
+    "flutter_ios": null
+  }
+}

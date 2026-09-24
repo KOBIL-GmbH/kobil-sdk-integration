@@ -5,16 +5,20 @@ from .native_policy import POLICY
 
 TOPICS = ("setup", "lifecycle", "activation", "login", "multi_step", "tms", "diagnostics", "logs", "automated_testing")
 
+FLUTTER_TOPICS = ("flutter_webview",)
 
 def get_topic(topic, platform, sdk_family="shift", sdk_version=None):
-    if topic not in TOPICS:
+    if topic not in TOPICS + FLUTTER_TOPICS:
         raise ValueError("Unknown topic; use sdk_knowledge_topics")
-    if platform not in ("android", "ios") or sdk_family != "shift":
+    if sdk_family != "shift" or not (
+        (platform in ("android", "ios") and topic in TOPICS) or
+        (platform in ("flutter_android", "flutter_ios") and topic in FLUTTER_TOPICS)
+    ):
         return {
             "status": "knowledge_gap", "topic": topic, "platform": platform,
             "sdk_family": sdk_family,
-            "reason": "This pack covers native Kotlin/Android and Swift/iOS Shift integration only. "
-                      "No Flutter, SSMS or other family substitution.",
+            "reason": "Select a supported topic/target pair: native android/ios or flutter_webview "
+                      "with flutter_android/flutter_ios. No SDK-family substitution.",
         }
     resource = files("kobil_sdk_integration").joinpath("knowledge", topic + ".json")
     data = json.loads(resource.read_text(encoding="utf-8"))
@@ -39,19 +43,19 @@ def get_topic(topic, platform, sdk_family="shift", sdk_version=None):
 def register(mcp):
     @mcp.tool()
     def sdk_knowledge_topics(platform: str | None = None, sdk_family: str = "shift") -> dict:
-        """List bundled native Android/iOS Shift topics. Unsupported targets report a gap.
+        """List bundled native and Flutter mobile Shift topics. Unsupported targets report a gap.
 
         App-source revisions are not mobile SDK versions. Source review and individual
         example checks do not certify complete recipes or live backend flows.
         """
-        if sdk_family != "shift" or platform not in (None, "android", "ios"):
+        if sdk_family != "shift" or platform not in (None, "android", "ios", "flutter_android", "flutter_ios"):
             return {"status": "knowledge_gap", "topics": [],
                     "platform": platform, "sdk_family": sdk_family}
         return {
-            "status": "source_reviewed_unqualified", "platforms": ["android", "ios"],
+            "status": "source_reviewed_unqualified", "platforms": ["android", "ios", "flutter_android", "flutter_ios"],
             "sdk_family": "shift", "mobile_sdk_versions_verified": [],
             "topics": [{"id": t, "title": get_topic(t, platform or "android")["title"]}
-                       for t in TOPICS],
+                       for t in (FLUTTER_TOPICS if platform in ("flutter_android", "flutter_ios") else TOPICS)],
         }
 
     @mcp.tool()
