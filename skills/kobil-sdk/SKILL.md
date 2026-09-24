@@ -320,3 +320,9 @@ configuration separately. After switching, verify backend authentication and the
 native preflight, select app/version and obtain a new SDK JWT before rebuilding
 apps. Do not reuse assets/JWTs from the previous backend. Older installed versions
 without this tool require a one-time upgrade/reconnect.
+
+## Flutter trusted WebView
+For Flutter Android/iOS activation, token/SignedJWT login and foreground TMS, read
+[Flutter WebView](references/flutter-webview.md) and call
+`sdk_knowledge_get(topic="flutter_webview", platform="flutter_android")`
+(or `flutter_ios`). Keep deployment settings local and respect qualification limits.

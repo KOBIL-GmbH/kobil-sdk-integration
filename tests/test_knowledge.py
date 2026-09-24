@@ -1,7 +1,7 @@
 import json
 from importlib.resources import files
 import unittest
-from kobil_sdk_integration.knowledge_api import TOPICS,get_topic,register
+from kobil_sdk_integration.knowledge_api import TOPICS,FLUTTER_TOPICS,get_topic,register
 
 class Registry:
     def __init__(self):self.tools={}
@@ -50,7 +50,7 @@ class KnowledgeTests(unittest.TestCase):
 
     def test_resource_catalog_has_no_unlisted_files(self):
         resource=files('kobil_sdk_integration').joinpath('knowledge')
-        self.assertEqual({p.name for p in resource.iterdir() if p.name.endswith('.json')},{t+'.json' for t in TOPICS})
+        self.assertEqual({p.name for p in resource.iterdir() if p.name.endswith('.json')},{t+'.json' for t in TOPICS + FLUTTER_TOPICS})
 
     def test_automated_testing_has_no_inherited_device_qualification(self):
         for platform in ('android', 'ios'):
@@ -67,3 +67,18 @@ class KnowledgeTests(unittest.TestCase):
     def test_automated_testing_does_not_substitute_other_sdk_generations(self):
         for platform, family in [('flutter', 'shift'), ('ios', 'ssms')]:
             self.assertEqual(get_topic('automated_testing', platform, family)['status'], 'knowledge_gap')
+
+    def test_flutter_is_explicit_and_does_not_inherit_ios_acceptance(self):
+        for platform in ('flutter_android', 'flutter_ios'):
+            topics=self.tools['sdk_knowledge_topics'](platform)['topics']
+            self.assertEqual([t['id'] for t in topics], ['flutter_webview'])
+            data=get_topic('flutter_webview',platform,sdk_version='unknown')
+            self.assertFalse(data['version_verified'])
+            self.assertFalse(data['qualification']['device_verified'])
+            self.assertNotIn('/Users/',json.dumps(data))
+            checks=self.tools['sdk_integration_checklist']('flutter_webview',platform)
+            self.assertTrue(all(c['status']=='not_run' for c in checks['checks']))
+        self.assertIsNone(get_topic('flutter_webview','flutter_ios')['runtime_acceptance'])
+        self.assertEqual(get_topic('flutter_webview','flutter_android')['runtime_acceptance']['foreground_tms_approval'],'verified')
+        self.assertEqual(get_topic('flutter_webview','android')['status'],'knowledge_gap')
+        self.assertEqual(get_topic('flutter_webview','flutter_android','ssms')['status'],'knowledge_gap')
