@@ -326,3 +326,15 @@ For Flutter Android/iOS activation, token/SignedJWT login and foreground TMS, re
 [Flutter WebView](references/flutter-webview.md) and call
 `sdk_knowledge_get(topic="flutter_webview", platform="flutter_android")`
 (or `flutter_ios`). Keep deployment settings local and respect qualification limits.
+
+## Bundled default server initialization
+
+For a fresh installation, call `sdk_default_status` and
+`sdk_default_initialize(project_path)`. The package ships an encrypted default;
+a separately provisioned delivery identity is required to import it. Ask for the
+local identity path when missing, never a raw private key in chat. Initialization
+creates a project identity outside the project and re-encrypts the imported
+credentials into project-local `.kobil-sdk/environments.age`. Keep additional
+servers there too. Preserve existing profiles/selectors; package updates do not
+replace them. Set `KOBIL_SDK_CONNECTION` to the returned selector and verify backend
+access separately. See [credential setup](../../docs/credentials.md).

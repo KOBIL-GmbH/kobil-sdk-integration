@@ -335,3 +335,36 @@ in the receiving project. The receiver uses its retained identity to list names
 with `sdk_age_store_list`, then imports the selected servers through
 `sdk_age_server_bundle_import`. Use project-local encrypted output settings and
 the `kobil-sdk/import/` namespace. A private key is never part of the handoff.
+
+## Bundled default and project-local servers
+
+Each package contains `bundles/akinci.age`, an encrypted default test-server delivery.
+It contains durable server credentials; it contains no private decryption identity.
+Access to its separately provisioned delivery identity grants access to that delivery.
+Do not include that identity in source control, a wheel, or the project directory.
+
+Two encrypted files serve different purposes:
+
+- **Package bundle:** immutable default delivery, updated through a package release.
+- **Project `.kobil-sdk/environments.age`:** writable local server profiles and
+  credentials, encrypted for this project's own identity. Additional environments
+  use the existing age tools; the packaged bundle is never modified at runtime.
+
+Call `sdk_default_status`, then `sdk_default_initialize(project_path)` on initial
+setup. It prepares the project's identity and reports `delivery_identity_required`.
+Provision the delivery identity through a separate trusted channel outside the
+project, then repeat with `bundle_identity_path`. That key decrypts the shipped
+bundle; the new project key cannot decrypt it on its own. Initialization re-encrypts
+credentials for the project key and writes a selector when none exists.
+
+Initialization never replaces existing server profiles, credentials or connection
+selectors, and never contacts a backend. Rerunning it preserves local changes;
+a newer packaged bundle does not silently rotate an existing installation.
+Select the returned `connection_path` through `KOBIL_SDK_CONNECTION`, then check
+backend status and authenticate separately. The delivery key is not needed for
+normal backend operations after import. Keep the project key outside the project.
+
+AST profiles may explicitly select `oauth_password` with `token_url`, `client_id`,
+`username`, and a `credential` reference. This obtains a fresh access token from
+an already-enabled password-grant client; it does not enable the grant or modify
+roles. Do not persist short-lived bearer tokens in default deliveries.
