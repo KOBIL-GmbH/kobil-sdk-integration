@@ -33,7 +33,7 @@ class StarterTests(unittest.TestCase):
         self.assertIn('sftp-artifacts', result['required_dependencies'])
         self.assertEqual(result['gaps'], [])
         module = next(m for m in result['required_modules'] if m['id'] == 'sftp-artifacts')
-        self.assertEqual(module['status'], 'external_client_required')
+        self.assertEqual(module['status'], 'implemented')
         self.assertFalse(result['ready_to_execute'])
 
     def test_grafana_request_does_not_select_distribution(self):
