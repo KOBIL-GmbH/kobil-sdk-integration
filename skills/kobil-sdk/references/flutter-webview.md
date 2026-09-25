@@ -200,3 +200,13 @@ these fields separately: 755000000 alone does not identify the underlying cause.
 HTTP503 with 'no healthy upstream' during a service rollout is a backend phase
 failure; confirm service readiness and make a bounded retry after recovery.
 Do not restart services merely because a gateway error appears.
+
+### Preserve the selected themed clients
+
+Before choosing enrollment/login client IDs, read the current project choices and
+inspect the deployed clients' login_theme, browser-flow bindings and redirect URIs.
+When the user selected a styled copy of a working flow, retain those client IDs in
+both the WebView request and SDK IAM configuration. Do not revert to BDDK-named
+example clients merely because this recipe uses them as a reference: those may
+select a different theme. Keep the original flow unchanged. Rendering the selected
+theme verifies presentation only; test authentication and SDK completion separately.
