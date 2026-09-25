@@ -246,8 +246,10 @@ class AST:
     def list_versions(self, app_name):
         versions = []
         for row in self._version_rows(app_name):
+            # The server appName query can return related names. Pagination must
+            # finish before filtering; never expose another app's metadata.
             if row['appName'] != app_name:
-                raise BackendError('Version response does not match requested app')
+                continue
             required = ('platform', 'versionStr', 'registerUserId')
             if any(not isinstance(row.get(k), str) or not row[k] for k in required):
                 raise BackendError('Incomplete version registration metadata')

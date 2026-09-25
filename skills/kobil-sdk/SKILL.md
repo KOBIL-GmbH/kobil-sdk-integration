@@ -367,3 +367,16 @@ backend-signed configuration when required; never edit signed JWT contents.
 Preserve the user's previously selected test security policy and flow. Ask only
 for an unresolved binding/policy choice or an actual blocker; do not request the
 same decision repeatedly. A test selection is not a default for other customers.
+
+
+## Signed configuration and retained choices
+Within an authorized app build, request a fresh signed SDK configuration with
+sdk_config_write using the selected environment service map and verified public
+TLS certificates. Do not ask the user to supply a JWT or propose trying an
+unverified sample JWT when the MCP can issue one. If certificates, permissions
+or services are missing, report that concrete prerequisite; never disable TLS
+verification or edit a signed configuration.
+Read project instructions (including CLAUDE.md when present) for previously
+selected test policy before asking again. Reuse an explicit current-project
+ALLOW_VIRTUAL_SMART_CARD/device-PIN decision; do not extend that test choice to
+other projects. This does not authorize changing shared backend security policy.
