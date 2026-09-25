@@ -43,6 +43,34 @@ grant. These observations qualify only this test tuple, not every delivery.
   may require an explicit androidx.biometric dependency (tested 1.2.0-alpha03).
   Device PIN entry belongs to Android system UI, not chat or app text fields.
 
+## Mobile identity and AST registration
+
+Android applicationId and iOS bundle identifier are mobile application identities.
+AST app_name and its registered version identify backend registration records;
+they are not automatically the same identifier. A new mobile bundle ID alone
+neither proves an existing AST registration is incompatible nor proves it reusable.
+Never recommend adopting the SuperApp mobile bundle ID just to reuse its assets.
+
+For an authorized app integration, proceed with sdk_app_list, sdk_app_get and
+sdk_app_versions without asking for another confirmation for these read-only
+checks. Inspect the selected platform/version, registration user, lock state,
+integrity policy, and any signing/package binding required by the supplied SDK
+and deployment. If returned metadata cannot establish a required binding, identify
+that exact gap; do not claim compatibility from the app name or integrity flag alone.
+Reuse a suitable existing app/version and preserve its registration user and
+security policy. Create new records only when none is suitable or the user requests
+separate registration. Do not disable integrity to force reuse.
+
+Do not assert that a delivered sdk_config.jwt is bound to a mobile package or AST
+app/version without inspecting the documented configuration contract and applicable
+claims privately. sdk_config_write in this MCP takes certificates and connection
+service settings, not a mobile bundle ID or AST app_name. Obtain a fresh
+backend-signed configuration when required; never edit signed JWT contents.
+
+Preserve the user's previously selected test security policy and flow. Ask only
+for an unresolved binding/policy choice or an actual blocker; do not request the
+same decision repeatedly. A test selection is not a default for other customers.
+
 ## Foreground TMS
 1. Handle TriggerBanner, bind its payload/trace context, and show availability.
 2. On Review send StartTransaction; display the exact DisplayConfirmationRequest

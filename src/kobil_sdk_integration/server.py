@@ -153,7 +153,10 @@ def _backend_operation(expected_environment, operation):
 
 @mcp.tool()
 def sdk_app_get(expected_environment: str, app_name: str) -> dict:
-    """Read whether a named AST app exists. Does not create or modify resources."""
+    """Read whether a named AST app exists. Does not create or modify resources.
+
+    AST app_name is not automatically the Android applicationId or iOS bundle ID.
+    Inspect versions/integrity and applicable package/signing bindings before reuse."""
     return _backend_operation(expected_environment, lambda b: b.get_app(app_name))
 
 
@@ -163,6 +166,8 @@ def sdk_app_versions(expected_environment: str, app_name: str) -> dict:
 
     Returns only allowlisted metadata, never user credentials or SDK config.
     Use the existing selection for reuse; this does not provision test identities.
+    A new mobile bundle ID alone does not require a new AST app/version. Preserve
+    registration user and integrity policy; missing binding evidence is not approval.
     """
     return _backend_operation(expected_environment, lambda b: b.list_versions(app_name))
 
@@ -198,7 +203,9 @@ def sdk_config_write(expected_environment: str, certificate_paths: list[str], ou
     Supply 1–50 trusted public TLS certificates, one PEM/DER certificate per file.
     Output directory must exist. Returns path/hash, never JWT contents. The SDK
     must verify the signature. On Windows use a user-private directory with ACLs.
-    This does not supply IDP client settings or activate a device.
+    This does not supply IDP client settings or activate a device. It does not take
+    an AST app_name or mobile bundle ID. Do not infer package binding merely from
+    the origin/name of a delivered JWT; verify the actual deployment contract.
     """
     from .sdk_config import write_config
     from .backend import https_url, segment
