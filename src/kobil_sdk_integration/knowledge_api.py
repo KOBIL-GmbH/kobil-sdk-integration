@@ -54,8 +54,11 @@ def register(mcp):
         return {
             "status": "source_reviewed_unqualified", "platforms": ["android", "ios", "flutter_android", "flutter_ios"],
             "sdk_family": "shift", "mobile_sdk_versions_verified": [],
-            "topics": [{"id": t, "title": get_topic(t, platform or "android")["title"]}
-                       for t in (FLUTTER_TOPICS if platform in ("flutter_android", "flutter_ios") else TOPICS)],
+            "topics": [{"id": t,
+                        "title": get_topic(t, "flutter_android" if t in FLUTTER_TOPICS else "android")["title"],
+                        "platforms": ["flutter_android", "flutter_ios"] if t in FLUTTER_TOPICS else ["android", "ios"]}
+                       for t in (TOPICS + FLUTTER_TOPICS if platform is None else
+                                 FLUTTER_TOPICS if platform in ("flutter_android", "flutter_ios") else TOPICS)],
         }
 
     @mcp.tool()

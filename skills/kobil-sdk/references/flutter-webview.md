@@ -121,3 +121,58 @@ Read project instructions (including CLAUDE.md when present) for previously
 selected test policy before asking again. Reuse an explicit current-project
 ALLOW_VIRTUAL_SMART_CARD/device-PIN decision; do not extend that test choice to
 other projects. This does not authorize changing shared backend security policy.
+
+## First-device test: trusted WebView and backend diagnostics
+
+The delivered Flutter549 package contains wrapper106.0.0 and hardening20.1.0.
+Source inspection confirms that its WebViewController.loadRequest defaults to
+certPinningEnabled=false, pinnedCertificates="", and whiteList=[]. SDK Start
+trust configuration is separate from this WebView proxy configuration. For the
+selected trusted-WebView integration, explicitly pass the approved PEM trust
+anchors, certPinningEnabled=true, and the deployment's allowed HTTPS origins.
+Verify the certificate chain and validity first; do not hardcode a public CA for
+all customers, accept invalid certificates, or weaken pinning to make a page load.
+Successful SDK Start/GetAstClientData does not prove WebView TLS is configured.
+
+Install callbacks before loadRequest. Hardening20.1 RunTimeError exposes url,
+errorCode and errorDescription. Retain numeric code, sanitized description,
+origin (strip URL query/fragment/userinfo), phase and timestamp. Do not replace
+these with only "WebView runtime error". Catch asset-read/loadRequest exceptions,
+keep the outcome visible, and guard navigation completion against duplicate error,
+redirect and cancellation callbacks. Never dump authorization URLs, headers or
+entire error objects. SDK and WebView diagnostic channels are separate.
+
+Use explicit checkpoints: SDK Start -> GetAstClientData -> WebView load -> IDP
+redirect/state validation -> SetAuthorisationCode -> persisted-user restart/login.
+If key exchange fails before navigation with an HTTP gateway/service error,
+compare a bounded read-only sdk_backend_auth_test before changing WebView settings.
+A failure in that phase cannot validate or invalidate a later WebView certificate
+fix. Record actual status codes and server response; only diagnose a tunnel or
+origin outage from supporting evidence. Do not repeatedly retry activation or
+consume more codes during a backend outage. No successful page load or activation
+is claimed until the corresponding phase has been observed after recovery.
+
+Wrapper106 also maps StartTransaction to AsyncEventInfo([]), as does the inspected
+107 delivery. Avoid awaiting a Future that has no terminal response mapping.
+Use the documented event receiver with a bounded transaction state machine (and
+handle dispatch failures), or a reviewed app-local mapping adapter. Global events
+must still drive confirmation and TransactionEnd. An unawaited call alone is not
+a complete fix. Do not modify the original supplied SDK delivery.
+
+The mc_config maverick.jwtSignKeySecurityPolicy nesting has source evidence in
+MCSDK configuration tests; binary string search alone does not establish nesting
+or release compatibility. Preserve the selected policy and document the supplied
+release's contract. When only newer source evidence exists, say so explicitly.
+
+Log export acceptance requires reopening the ZIP, confirming nonempty expected
+SDK log entries, and testing recipient access through the platform share flow.
+Showing a share sheet alone does not establish successful delivery. iOS release
+framework selection, hardening prerequisites and Android packaging warnings must
+be checked against the actual delivery; a debug/unsigned build proves compilation
+only, not production readiness or device feature acceptance.
+
+### Trusted WebView allowlist matching
+
+The Android trusted proxy matches each `whiteList` entry as a regular expression against the **complete URL** (`Pattern.matcher(url).matches()`), not just its origin. A bare `https://idp.example.com` therefore rejects `/auth/...`. Build a narrowly scoped pattern from the escaped configured origin, for example `'^${RegExp.escape(idpBaseUrl)}/.*\$'` in Dart. Never use an unrestricted wildcard or disable certificate verification to work around this.
+
+`processReceivedSslError` checks both the proxy certificate and the URL allowlist. If logs say `Proxy set up is correct` followed by `certificate verification failed`, inspect the allowlist before replacing certificates. The latter message alone does not prove a certificate-chain failure.
