@@ -18,7 +18,8 @@
     "freshness_seconds=0 requires fresh authentication; it does not disable freshness.\nA synthetic test failed with status39/code516004035 and HTTP403 because its token\nwas older than the required time. An explicitly selected 300-second test window\nthen passed. Never relax a real transaction policy merely to make a test pass.",
     "## Validation and diagnostics\nCapture status, numeric error, description and report ID, without dumping event\nobjects or tokens. HTTP406/missing X-KOBIL-ASTCLIENTID during fresh enrollment\nindicates an incompatible journey prerequisite; do not invent the header.\nAn AST TMS HTTP202 is submission only; a pending result may return HTTP412.\nKeep activation, returning login, observed SignedJWT grant, approve/reject/timeout,\npush and iOS device results separate. Never automate approval of a real transaction.",
     "Themes change presentation, not the SDK handshake. A copied client/flow may use\nits own theme while the original BDDK definitions remain unchanged. Rendering a\nnew theme does not prove that its authentication submission succeeds.\n",
-    "## First-device test: trusted WebView and backend diagnostics\n\nThe delivered Flutter549 package contains wrapper106.0.0 and hardening20.1.0.\nSource inspection confirms that its WebViewController.loadRequest defaults to\ncertPinningEnabled=false, pinnedCertificates=\"\", and whiteList=[]. SDK Start\ntrust configuration is separate from this WebView proxy configuration. For the\nselected trusted-WebView integration, explicitly pass the approved PEM trust\nanchors, certPinningEnabled=true, and the deployment's allowed HTTPS origins.\nVerify the certificate chain and validity first; do not hardcode a public CA for\nall customers, accept invalid certificates, or weaken pinning to make a page load.\nSuccessful SDK Start/GetAstClientData does not prove WebView TLS is configured.\n\nInstall callbacks before loadRequest. Hardening20.1 RunTimeError exposes url,\nerrorCode and errorDescription. Retain numeric code, sanitized description,\norigin (strip URL query/fragment/userinfo), phase and timestamp. Do not replace\nthese with only \"WebView runtime error\". Catch asset-read/loadRequest exceptions,\nkeep the outcome visible, and guard navigation completion against duplicate error,\nredirect and cancellation callbacks. Never dump authorization URLs, headers or\nentire error objects. SDK and WebView diagnostic channels are separate.\n\nUse explicit checkpoints: SDK Start -> GetAstClientData -> WebView load -> IDP\nredirect/state validation -> SetAuthorisationCode -> persisted-user restart/login.\nIf key exchange fails before navigation with an HTTP gateway/service error,\ncompare a bounded read-only sdk_backend_auth_test before changing WebView settings.\nA failure in that phase cannot validate or invalidate a later WebView certificate\nfix. Record actual status codes and server response; only diagnose a tunnel or\norigin outage from supporting evidence. Do not repeatedly retry activation or\nconsume more codes during a backend outage. No successful page load or activation\nis claimed until the corresponding phase has been observed after recovery.\n\nWrapper106 also maps StartTransaction to AsyncEventInfo([]), as does the inspected\n107 delivery. Avoid awaiting a Future that has no terminal response mapping.\nUse the documented event receiver with a bounded transaction state machine (and\nhandle dispatch failures), or a reviewed app-local mapping adapter. Global events\nmust still drive confirmation and TransactionEnd. An unawaited call alone is not\na complete fix. Do not modify the original supplied SDK delivery.\n\nThe mc_config maverick.jwtSignKeySecurityPolicy nesting has source evidence in\nMCSDK configuration tests; binary string search alone does not establish nesting\nor release compatibility. Preserve the selected policy and document the supplied\nrelease's contract. When only newer source evidence exists, say so explicitly.\n\nLog export acceptance requires reopening the ZIP, confirming nonempty expected\nSDK log entries, and testing recipient access through the platform share flow.\nShowing a share sheet alone does not establish successful delivery. iOS release\nframework selection, hardening prerequisites and Android packaging warnings must\nbe checked against the actual delivery; a debug/unsigned build proves compilation\nonly, not production readiness or device feature acceptance.\n"
+    "## First-device test: trusted WebView and backend diagnostics\n\nThe delivered Flutter549 package contains wrapper106.0.0 and hardening20.1.0.\nSource inspection confirms that its WebViewController.loadRequest defaults to\ncertPinningEnabled=false, pinnedCertificates=\"\", and whiteList=[]. SDK Start\ntrust configuration is separate from this WebView proxy configuration. For the\nselected trusted-WebView integration, explicitly pass the approved PEM trust\nanchors, certPinningEnabled=true, and narrowly scoped full-URL allowlist patterns\nderived from the deployment's approved HTTPS origins.\nVerify the certificate chain and validity first; do not hardcode a public CA for\nall customers, accept invalid certificates, or weaken pinning to make a page load.\nSuccessful SDK Start/GetAstClientData does not prove WebView TLS is configured.\n\nInstall callbacks before loadRequest. Hardening20.1 RunTimeError exposes url,\nerrorCode and errorDescription. Retain numeric code, sanitized description,\norigin (strip URL query/fragment/userinfo), phase and timestamp. Do not replace\nthese with only \"WebView runtime error\". Catch asset-read/loadRequest exceptions,\nkeep the outcome visible, and guard navigation completion against duplicate error,\nredirect and cancellation callbacks. Never dump authorization URLs, headers or\nentire error objects. SDK and WebView diagnostic channels are separate.\n\nUse explicit checkpoints: SDK Start -> GetAstClientData -> WebView load -> IDP\nredirect/state validation -> SetAuthorisationCode -> persisted-user restart/login.\nIf key exchange fails before navigation with an HTTP gateway/service error,\ncompare a bounded read-only sdk_backend_auth_test before changing WebView settings.\nA failure in that phase cannot validate or invalidate a later WebView certificate\nfix. Record actual status codes and server response; only diagnose a tunnel or\norigin outage from supporting evidence. Do not repeatedly retry activation or\nconsume more codes during a backend outage. No successful page load or activation\nis claimed until the corresponding phase has been observed after recovery.\n\nWrapper106 also maps StartTransaction to AsyncEventInfo([]), as does the inspected\n107 delivery. Avoid awaiting a Future that has no terminal response mapping.\nUse the documented event receiver with a bounded transaction state machine (and\nhandle dispatch failures), or a reviewed app-local mapping adapter. Global events\nmust still drive confirmation and TransactionEnd. An unawaited call alone is not\na complete fix. Do not modify the original supplied SDK delivery.\n\nThe mc_config maverick.jwtSignKeySecurityPolicy nesting has source evidence in\nMCSDK configuration tests; binary string search alone does not establish nesting\nor release compatibility. Preserve the selected policy and document the supplied\nrelease's contract. When only newer source evidence exists, say so explicitly.\n\nLog export acceptance requires reopening the ZIP, confirming nonempty expected\nSDK log entries, and testing recipient access through the platform share flow.\nShowing a share sheet alone does not establish successful delivery. iOS release\nframework selection, hardening prerequisites and Android packaging warnings must\nbe checked against the actual delivery; a debug/unsigned build proves compilation\nonly, not production readiness or device feature acceptance.\n",
+    "### Trusted WebView allowlist matching\n\nThe Android trusted proxy matches each `whiteList` entry as a regular expression against the **complete URL** (`Pattern.matcher(url).matches()`), not just its origin. A bare `https://idp.example.com` therefore rejects `/auth/...`. Build a narrowly scoped pattern from the escaped configured origin, for example `'^${RegExp.escape(idpBaseUrl)}/.*\\$'` in Dart. Never use an unrestricted wildcard or disable certificate verification to work around this.\n\n`processReceivedSslError` checks both the proxy certificate and the URL allowlist. If logs say `Proxy set up is correct` followed by `certificate verification failed`, inspect the allowlist before replacing certificates. The latter message alone does not prove a certificate-chain failure."
   ],
   "expected_result": "SDK activation and returning login verified separately; terminal TMS result matches backend outcome.",
   "failure_handling": [
@@ -37,7 +38,9 @@
     "WebView proxy trust anchors, pinning and allowed origins configured independently from SDK Start.",
     "WebView failures preserve numeric error, sanitized explanation and phase; duplicate callbacks and load failures handled.",
     "Backend failure before navigation is distinguished from WebView TLS failure; recovery retested.",
-    "Exported ZIP reopened and receiving-app access verified."
+    "Exported ZIP reopened and receiving-app access verified.",
+    "Trusted WebView full-URL allowlist permits the intended authentication path and rejects other origins; certificate pinning remains enabled.",
+    "Failed result events and ConnectionManagerError inspected alongside Warning/RuntimeError/FatalError; actual log destination checked before export."
   ],
   "platform_notes": {
     "flutter_android": "Manual foreground approval verified on physical Android; device PIN uses system UI.",
@@ -60,7 +63,7 @@
           "source file",
           "source file"
         ],
-        "runtime_scope": "Start and GetAstClientData reported successful by test agent; WebView trust correction awaiting post-outage validation."
+        "runtime_scope": "Physical Android: SDK key exchange HTTP200, trusted proxy certificate verification OK and enrollment page rendered after correcting full-URL allowlist. Activation, returning login and TMS not tested in this run."
       }
     },
     "flutter_ios": {
@@ -79,7 +82,7 @@
           "source file",
           "source file"
         ],
-        "runtime_scope": "Start and GetAstClientData reported successful by test agent; WebView trust correction awaiting post-outage validation."
+        "runtime_scope": "Shared Dart source reviewed; no iOS physical-device validation for wrapper106.0.0/hardening20.1.0. Android runtime results do not qualify iOS."
       }
     }
   },
@@ -131,7 +134,16 @@
       "ios_device": "not_run",
       "push": "not_run",
       "reject_timeout": "not_run",
-      "signed_jwt_grant": "not_independently_observed"
+      "signed_jwt_grant": "not_independently_observed",
+      "delivery_549": {
+        "wrapper_version": "106.0.0",
+        "hardening_version": "20.1.0",
+        "key_exchange": "verified",
+        "trusted_webview_enrollment_page": "verified",
+        "activation": "not_run",
+        "returning_login": "not_run",
+        "tms": "not_run"
+      }
     },
     "flutter_ios": null
   }
