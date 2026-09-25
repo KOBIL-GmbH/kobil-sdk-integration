@@ -129,7 +129,8 @@ Source inspection confirms that its WebViewController.loadRequest defaults to
 certPinningEnabled=false, pinnedCertificates="", and whiteList=[]. SDK Start
 trust configuration is separate from this WebView proxy configuration. For the
 selected trusted-WebView integration, explicitly pass the approved PEM trust
-anchors, certPinningEnabled=true, and the deployment's allowed HTTPS origins.
+anchors, certPinningEnabled=true, and narrowly scoped full-URL allowlist patterns
+derived from the deployment's approved HTTPS origins (see matching below).
 Verify the certificate chain and validity first; do not hardcode a public CA for
 all customers, accept invalid certificates, or weaken pinning to make a page load.
 Successful SDK Start/GetAstClientData does not prove WebView TLS is configured.
@@ -176,3 +177,26 @@ only, not production readiness or device feature acceptance.
 The Android trusted proxy matches each `whiteList` entry as a regular expression against the **complete URL** (`Pattern.matcher(url).matches()`), not just its origin. A bare `https://idp.example.com` therefore rejects `/auth/...`. Build a narrowly scoped pattern from the escaped configured origin, for example `'^${RegExp.escape(idpBaseUrl)}/.*\$'` in Dart. Never use an unrestricted wildcard or disable certificate verification to work around this.
 
 `processReceivedSslError` checks both the proxy certificate and the URL allowlist. If logs say `Proxy set up is correct` followed by `certificate verification failed`, inspect the allowlist before replacing certificates. The latter message alone does not prove a certificate-chain failure. Source: CertPinningProxy `Util.kt`, `urlWhiteListCheckOk` and `processReceivedSslError`.
+
+### Device evidence and error channels
+
+On Android with wrapper106.0.0/hardening20.1.0, the corrected full-URL allowlist
+was tested on a physical device: key exchange returned HTTP200, the trusted proxy
+reported certificate verification OK, and the enrollment page rendered. This
+verifies page loading only; activation, persisted-user login, TMS and iOS runtime
+were not established by this run. Earlier wrapper107 results remain separate.
+
+An existing but empty SDK log directory does not establish that no diagnostic
+output exists. Check the app's configured log destination and capture Android
+logcat for the current app process; the tested debug build emitted native spdlog
+there. Do not clear logs before preserving failure evidence. An empty directory
+cannot satisfy SDK log-export acceptance.
+
+Warning, RuntimeError and FatalError listeners remain required, but a failed
+operation may instead report ConnectionManagerError and a failed result event.
+The observed key-exchange failure was 700000036 (MaverickServerHttpError), with
+server error field 755000000 and separate HTTP530/502/503 responses. Preserve
+these fields separately: 755000000 alone does not identify the underlying cause.
+HTTP503 with 'no healthy upstream' during a service rollout is a backend phase
+failure; confirm service readiness and make a bounded retry after recovery.
+Do not restart services merely because a gateway error appears.
