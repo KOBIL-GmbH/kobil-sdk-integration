@@ -82,3 +82,13 @@ class KnowledgeTests(unittest.TestCase):
         self.assertEqual(get_topic('flutter_webview','flutter_android')['runtime_acceptance']['foreground_tms_approval'],'verified')
         self.assertEqual(get_topic('flutter_webview','android')['status'],'knowledge_gap')
         self.assertEqual(get_topic('flutter_webview','flutter_android','ssms')['status'],'knowledge_gap')
+
+    def test_default_catalog_discovers_every_recipe_on_its_supported_targets(self):
+        topics=self.tools['sdk_knowledge_topics']()['topics']
+        self.assertEqual({t['id'] for t in topics},set(TOPICS+FLUTTER_TOPICS))
+        for topic in topics:
+            for platform in topic['platforms']:
+                data=get_topic(topic['id'],platform)
+                self.assertNotEqual(data['status'],'knowledge_gap')
+                self.assertEqual(data['title'],topic['title'])
+        self.assertNotIn('flutter_webview',{t['id'] for t in self.tools['sdk_knowledge_topics']('ios')['topics']})
