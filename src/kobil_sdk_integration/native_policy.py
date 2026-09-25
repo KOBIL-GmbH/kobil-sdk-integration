@@ -8,6 +8,10 @@ POLICY = {
     "kssidp": {"activation_client": "BDDKEnrollment", "login_client": "BDDKLogin",
                "use_token_based_login": True, "ast_server_backend": "maverick",
                "login_header": "X-KOBIL-ASTUSERID"},
+    "kstrustedwebview": {
+        "client_selection": "Preserve the project's explicitly selected enrollment/login clients, including themed copies. BDDK client names are examples for this path, not defaults.",
+        "theme_selection": "Inspect each selected client's login_theme and browser-flow binding; do not change shared flows or realm theme. An absent client override does not establish the effective realm theme.",
+    },
     "forbidden_flow": "SuperApp Login V2",
     "missing_client_action": "blocked; do not create or substitute a flow",
 }
@@ -46,7 +50,11 @@ def preflight(api, path, activation_client, login_client, use_token_based_login,
             continue
         flow = api.call("GET", "/authentication/flows/" + segment(flow_id))
         alias = flow.get("alias") if isinstance(flow, dict) else None
-        bindings.append({"role": role, "client_id": client_id, "flow_alias": alias})
+        attributes = client.get("attributes") or {}
+        bindings.append({"role": role, "client_id": client_id, "flow_alias": alias,
+                         "login_theme_override": attributes.get("login_theme"),
+                         "theme_source": "client_override" if attributes.get("login_theme") else "realm_default_not_checked",
+                         "redirect_uris": client.get("redirectUris", [])})
         if not alias or "superapp" in alias.casefold():
             errors.append(f"{role}: missing or SuperApp flow is incompatible with this native integration.")
         if path == "kssidp" and alias != {"activation": "BDDK Enrollment", "login": "BDDK Login"}[role]:
@@ -67,7 +75,10 @@ def register(mcp):
 
         KSSIDP requires BDDKEnrollment/BDDKLogin, token-based login=true,
         maverick and X-KOBIL-ASTUSERID. WebView means KSTrustedWebView with
-        explicitly selected deployment clients. Reject missing/substituted clients
+        explicitly selected deployment clients, including user-selected themed copies.
+        Preserve those selections instead of defaulting to the BDDK examples.
+        Returns client theme overrides and redirect URIs for review; an absent
+        override means the realm default is not checked. Reject missing/substituted clients
         and SuperApp bindings. Never mutate flows to make a preflight pass.
         Configuration checked is NOT live acceptance; backend/auth failures propagate.
         """
