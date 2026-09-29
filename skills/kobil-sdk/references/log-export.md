@@ -28,7 +28,7 @@ post-share cleanup still require verification.
 | classic MCSDK 15.16 | Android | SUPPORTED (logs_mPower runtime-observed) |
 | classic MCSDK 15.16 | Swift iOS | SUPPORTED (validated) |
 | shift 549 (ksmastercontrollerwrapperdart 106.0.0, libnb.so) | Flutter/Android | NOT WRITING — accepts logsStorageDirectory at init, writes zero files even at LogDebug (VAL-34, open vendor question) |
-| shift 549 | Flutter/iOS | PENDING — current round completes the matrix |
+| shift 549 | Flutter/iOS | SUPPORTED — validated 2026-09-29 (3 encrypted files, ~696 KB, CRC-clean ZIP; VAL-38: same delivery writes logs on iOS but not Android) |
 
 Acceptance runners mark known NOT-WRITING gaps EXPECTED-FAIL (with the VAL
 reference) instead of probing the device again. EXPECTED-FAIL is not a pass and
