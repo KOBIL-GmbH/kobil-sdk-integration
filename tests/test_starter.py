@@ -22,6 +22,22 @@ class StarterTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 plan(self.profile(targets=[target]), [])
 
+    def test_plan_returns_local_build_preflight_before_long_builds(self):
+        # E08 / VAL-06, VAL-07: toolchain findings belong in preflight, not mid-build
+        text = ' '.join(plan(self.profile(), [])["local_build_preflight"])
+        for token in ('BEFORE any long build', 'never a mid-build surprise',
+                      'Never mutate shared toolchains', 'COMPLETELY installed', 'source.properties',
+                      'NDK 27.2.12479018', 'NOT vendor qualification', 'deployment target',
+                      'Xcode', 'iOS 15 for Xcode 27', 'signing', 'disk space',
+                      'distinct from simulator tests', '2026-09-29'):
+            self.assertIn(token, text, token)
+        android_only = ' '.join(plan(self.profile(framework='kotlin', targets=['android']), [])["local_build_preflight"])
+        self.assertIn('source.properties', android_only)
+        self.assertNotIn('deployment target', android_only)
+        ios_only = ' '.join(plan(self.profile(framework='swift', targets=['ios']), [])["local_build_preflight"])
+        self.assertIn('deployment target', ios_only)
+        self.assertNotIn('source.properties', ios_only)
+
     def test_provider_is_offered_not_required_by_default(self):
         result = plan(self.profile(distribution=["updraft"], observability=["grafana"]), [])
         self.assertEqual({m["id"] for m in result["offered_modules"]}, {"updraft", "grafana"})

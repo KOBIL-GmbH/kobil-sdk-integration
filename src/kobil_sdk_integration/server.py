@@ -25,6 +25,11 @@ def sdk_plan(profile: dict, capabilities: list[str] | None = None) -> dict:
     Profile fields: framework, targets, backend, artifact_source; optional provider
     lists: distribution, observability, diagnostics, testing, infrastructure,
     documentation, issue_tracking. No credentials. Adapter readiness is reported per module.
+    The result includes local_build_preflight: toolchain checks (complete NDK,
+    compiler versions, iOS deployment target vs installed Xcode, signing/device
+    readiness, disk space) to run BEFORE long builds, so incomplete toolchains
+    become precise preflight findings instead of mid-build surprises. It never
+    mutates shared toolchains.
     """
     return plan(profile, capabilities if capabilities is not None else [])
 
