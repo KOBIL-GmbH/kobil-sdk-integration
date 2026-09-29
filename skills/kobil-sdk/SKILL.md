@@ -39,6 +39,12 @@ For native Android/iOS select exactly one path:
   **useTokenBasedLogin=true**, **astServerBackend=maverick**, login header
   **X-KOBIL-ASTUSERID** containing the selected user ID.
 
+Preferred method (user decision, 2026-09-29 validation round): trusted WebView
+enrollment and interactive login with SignedJWT token-based returning login
+(useTokenBasedLogin=true, SE-signed JWT OfflineLogin), protected by device
+biometrics. PIN/password/no-authentication are documented alternatives, not
+defaults; decide the authentication mode explicitly before activation.
+
 Run `sdk_native_preflight` against the actual backend before building or testing.
 Proceed only on `configuration_checked`; missing clients, unknown bindings,
 SuperApp Login V2 or errors are blockers. Do not create/rebind backend flows or
