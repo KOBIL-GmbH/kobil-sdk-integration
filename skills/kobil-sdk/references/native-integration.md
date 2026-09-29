@@ -51,6 +51,47 @@ Flutter and SSMS require separate bindings; do not translate these calls blindly
    its popover anchor. Keep encrypted SDK logs intact and clean temporary archives
    after sharing according to app policy.
 
+## Release-qualified configuration and errors (15.16, verified 2026-09-29)
+
+Qualified tuple: Android MCSDK 15.16.3088426, iOS MCSDK 15.16.803.3089231
+(2026-09-29 validation round). Configuration templates (mc_config/app_config)
+ship in the delivery's GettingStarted asset ZIPs, not in the framework or
+xcframework archive; sdk_artifact_info flags missing templates. The delivered
+mc_config for this tuple contains useScp, useTokenBasedLogin, useSmartScreen,
+astServerBackend, iam {clientId, serverUrl (origin only), redirectUri,
+trustedSslServerCerts} and maverick {mTLS, mKex, useSEKeyForSigningTransactions}.
+Fill values from the selected deployment; other releases need their own
+qualification.
+
+Runtime-verified error knowledge for this tuple:
+
+- 800000133 FatalError ScpParameterError "Tag is empty, but category not": the
+  SDK configuration category/tag is NOT the TMS notification category. Leaving
+  both empty is correct for deployments without that configuration.
+- 800000015 SCP_ERROR_CANNOT_READ_APP_CONFIG: a warning at Start; Start can
+  still succeed. Whether app_config is required for a given deployment remains
+  partially unverified — preserve the warning and investigate, do not assert
+  either semantic.
+- 800000279 "Signed jwt together with mkex or SE for signing transactions is
+  not supported yet": SignedJWT login with maverick.mKex=true or
+  useSEKeyForSigningTransactions=true is rejected. The tested known-good
+  SignedJWT combination used both false; this is a tested combination, not a
+  universal default.
+- iOS 15.16 binary lacks the header-declared +getLogSinkWithLogLevel: selector
+  (unrecognized selector at runtime despite a clean build). Use getLogSink()
+  followed by setSeverityLevel instead (runtime-verified fallback; broader
+  logging diagnostics remain a separate E05 work item).
+
+Preferred method (user decision, 2026-09-29): trusted WebView enrollment and
+interactive login with SignedJWT token-based returning login
+(useTokenBasedLogin=true, SE-signed JWT OfflineLogin), protected by device
+biometrics/face recognition — iOS biometric mode; Android BIOMETRIC_STRONG with
+no device-credential fallback. PIN/password/no-auth are documented alternatives,
+not defaults. On Android the user-authentication policy is bound at Keystore key
+creation and cannot be changed on existing keys: decide the mode BEFORE the
+key-creating activation step; a later change requires discarding keys and a
+fresh activation with a new activation code.
+
 ## User acceptance
 
 Retrieve `sdk_integration_checklist` for each topic and retain observed results.
