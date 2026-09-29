@@ -160,6 +160,16 @@ class TlsChainCheckTests(unittest.TestCase):
         self.assertEqual(Path(asset).read_bytes(), before)
         self.assertEqual(len(load_trust_asset(asset)), 1)
 
+    def test_der_encoding_constant_resolves_on_this_interpreter(self):
+        # Regression for the bundled CPython 3.11 crash: ssl.ENCODING_DER is
+        # not exported there, so the module must resolve the _ssl fallback at
+        # import time instead of failing on every live fetch.
+        import _ssl
+
+        from kobil_sdk_integration import tls_chain
+
+        self.assertEqual(tls_chain._DER_ENCODING, _ssl.ENCODING_DER)
+
 
 if __name__ == "__main__":
     unittest.main()
