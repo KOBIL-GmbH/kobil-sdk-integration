@@ -284,11 +284,19 @@ def sdk_config_write(expected_environment: str, certificate_paths: list[str], ou
 @mcp.tool()
 def sdk_tms_trigger(expected_environment: str, user_uuid: str, text: str,
                     retrieval_timeout_seconds: int, confirmation_timeout_seconds: int,
-                    require_explicit_authentication: bool, freshness_seconds: int) -> dict:
+                    require_explicit_authentication: bool, freshness_seconds: int = 3600) -> dict:
     """Create an authorized AST transaction, foreground only (push skipped).
 
     Writes backend state; do not retry an uncertain creation. Use a Keycloak
     recipient UUID, explicit timeouts/auth policy, and authorized content.
+    freshness_seconds sets requireFreshnessOfAuthentication: the maximum age in
+    seconds of the confirming device's authentication at CONFIRMATION time, not
+    at trigger time. -1 disables the check; the default is 3600. 0 or other
+    values below the observed confirmation latency create a transaction that is
+    guaranteed to fail at confirmation (observed 2026-09-29: HTTP 403 "The
+    access token is 85 seconds older than required", surfaced by the SDK only
+    as errorCode 516004035 "A network error occurred"); such calls still create
+    the transaction but return an explicit warning.
     Returns ID/status only; does not approve the transaction or verify signing.
     """
     from .tms import trigger
@@ -306,7 +314,12 @@ def sdk_tms_status(expected_environment: str, transaction_id: str) -> dict:
 
 @mcp.tool()
 def sdk_tms_result(expected_environment: str, transaction_id: str) -> dict:
-    """Read final AST result metadata; a missing result is not success."""
+    """Read final AST result metadata; a missing result is not success.
+
+    A not-yet-terminal transaction returns status "pending" (lowercase; mapped
+    from this endpoint's HTTP 412, observed 2026-09-29). Pending is not a
+    backend error: keep bounded polling and never re-trigger because of it.
+    """
     from .tms import read
     return _backend_operation(expected_environment, lambda b: read(b, transaction_id, result=True))
 
