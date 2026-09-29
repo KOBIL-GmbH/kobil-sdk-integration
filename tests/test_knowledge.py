@@ -176,3 +176,51 @@ class KnowledgeTests(unittest.TestCase):
                 self.assertNotEqual(data['status'],'knowledge_gap')
                 self.assertEqual(data['title'],topic['title'])
         self.assertNotIn('flutter_webview',{t['id'] for t in self.tools['sdk_knowledge_topics']('ios')['topics']})
+
+    def test_error_capture_and_redaction_invariants(self):
+        # E05 / VAL-04, VAL-11, VAL-13, VAL-15
+        for platform in ('android','ios'):
+            data=get_topic('diagnostics',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('OUTSIDE the secret-redaction boundary','errorCode','sanitized description',
+                          'Execute every sanitizer','swallows the SDK error','BEFORE any cleanup',
+                          'ConnectionManagerError','credential-bearing fields','2026-09-29',
+                          'exact SDK BINARY','runtime smoke test'):
+                self.assertIn(token,text,token)
+        ios_note=get_topic('diagnostics','ios')['platform_notes']
+        for token in ('getLogSinkWithLogLevel','unrecognized selector','getLogSink()',
+                      'setSeverityLevel','15.16.803.3089231','2026-09-29'):
+            self.assertIn(token,ios_note,token)
+        fw=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(fw['failure_handling'])+' '+' '.join(fw['checklist'])).split())
+        for token in ('(?i)','INVALID in Dart RegExp','FormatException','caseSensitive: false',
+                      'survive secret redaction','outside the redaction boundary',
+                      'credential-bearing','authorization URLs','kssidpdart 0.6.0'):
+            self.assertIn(token,text,token)
+        # a sanitizer defect must never be presented as an SDK failure cause
+        self.assertIn('EXECUTE sanitizers in tests',text)
+
+    def test_acceptance_gates_login_paths_and_owner_protocol(self):
+        # E06 / VAL-02, VAL-27, VAL-31 and run-evidence requirements
+        for platform in ('android','ios'):
+            data=self.tools['sdk_knowledge_get']('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])+' '+data['expected_result']).split())
+            for token in ('gate separation','CONCRETE adapter','observed SDK Start event',
+                          'never pass gates 2-6','Report scaffold tests separately',
+                          'TWO distinct paths','SEPARATE acceptance rows','OfflineLogin/SignedJWT',
+                          'interactive trusted-WebView login','never be attributed to biometric',
+                          'user-preferred primary path','PASS/FAIL/BLOCKED/NOT_RUN',
+                          'asset fingerprint','fixture ownership','readback',
+                          '~60s','2-17s','per-device lock','never two test runners on one phone',
+                          'NOT touch the live confirmation dialog','invalidates the case',
+                          'REOPENED','nonempty encrypted SDK log entries',
+                          'Never mark a blocked case passed','2026-09-29'):
+                self.assertIn(token,text,token)
+            # separate checklist rows per returning-login path, both still not_run
+            checks=self.tools['sdk_integration_checklist']('automated_testing',platform)['checks']
+            token_rows=[c for c in checks if 'OfflineLogin/SignedJWT token path' in c['description']]
+            interactive_rows=[c for c in checks if 'Interactive trusted-WebView returning login' in c['description']]
+            self.assertEqual(len(token_rows),1)
+            self.assertEqual(len(interactive_rows),1)
+            self.assertNotEqual(token_rows[0]['id'],interactive_rows[0]['id'])
+            self.assertTrue(all(c['status']=='not_run' for c in checks))
