@@ -275,3 +275,13 @@ class KnowledgeTests(unittest.TestCase):
             testing_text=' '.join(get_topic('automated_testing',platform)['sequence'])
             self.assertIn('freshness_seconds default 3600',testing_text)
             self.assertIn('"pending" (mapped from HTTP 412)',testing_text)
+
+    def test_tls_chain_preflight_is_cross_referenced(self):
+        # E12 / VAL-16, VAL-36: the served-chain preflight belongs next to every trust-asset step
+        for topic,platform in [('setup','android'),('setup','ios'),
+                               ('flutter_webview','flutter_android'),('flutter_webview','flutter_ios')]:
+            data=get_topic(topic,platform)
+            text=' '.join(data['sequence'])
+            for token in ('sdk_tls_chain_check','missing','ISRG Root X2','VAL-16','VAL-36'):
+                self.assertIn(token,text,(topic,token))
+            self.assertIn('sdk_tls_chain_check',data['backend_tools'])

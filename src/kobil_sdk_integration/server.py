@@ -287,6 +287,30 @@ def sdk_config_write(expected_environment: str, certificate_paths: list[str], ou
 
 
 @mcp.tool()
+def sdk_tls_chain_check(hosts: list[str], trust_asset_path: str) -> dict:
+    """Compare the TLS chains servers actually serve against a local trust asset.
+
+    Run this BEFORE any device round whenever trust anchors are prepared for
+    SDK Start (mc_config iam.trustedSslServerCerts) or trusted-WebView pinning
+    (certsDataForValidation). Pass environment https:// base URLs or host[:port]
+    entries plus the local PEM bundle / DER certificate the app will pin.
+    For each host the served chain (subject/issuer/SHA-256 per certificate),
+    the required anchor subjects, matched anchors and MISSING anchors are
+    reported. Mobile clients may terminate a cross-signed chain at the
+    SELF-SIGNED variant of the top CA subject (verified 2026-09-29: akinci
+    served leaf<-YE2<-Root YE<-ISRG Root X2 with X2 cross-signed by X1; iOS
+    built to system X2, so an X1-only asset MUST be reported as missing X2 -
+    VAL-16/VAL-36, two device rounds lost to this gap). Chain fetching alone
+    skips validation so rejected chains are still visible; this tool makes no
+    trust decision and NEVER disables or weakens verification in the SDK, app
+    or WebView. One host's served chain does not prove other hosts or future
+    deployments; check every environment host the app contacts.
+    """
+    from .tls_chain import check
+    return check(hosts, trust_asset_path)
+
+
+@mcp.tool()
 def sdk_tms_trigger(expected_environment: str, user_uuid: str, text: str,
                     retrieval_timeout_seconds: int, confirmation_timeout_seconds: int,
                     require_explicit_authentication: bool, freshness_seconds: int = 3600) -> dict:
