@@ -123,6 +123,41 @@ or older signatures — a signature mismatch silently fails to override.
   `sdk_ast_find_client`): a stalled or failed enrollment can consume the
   activation code and create a password credential or partial AST client.
 
+## Mobile certificate-chain coverage and pinning diagnostics (verified 2026-09-29)
+
+SDK Start trust (mc_config `iam.trustedSslServerCerts`; for iOS also pass the IAM
+chain explicitly at Start) is separate from the trusted WebView trust
+(`KsTrustedWebViewConfiguration.certsDataForValidation`). Configure and verify
+both independently, matching each API's DER/PEM contract; never disable
+certificate or hostname verification.
+
+The mobile TLS client may build a DIFFERENT chain than desktop verification.
+Verified on iOS simulator and physical device (2026-09-29, MCSDK
+15.16.803.3089231, KSTrustedWebView 9.7.3000479): TWV runs SecTrust, which
+succeeds, then pins against the chain iOS built — for a Let's Encrypt chain iOS
+ends at the self-signed system root ISRG Root X2, not X1 via the cross-sign.
+Pinning X1 alone gives `onURLBlocked` reason 1 (KS_CERTIFICATE_ERROR), subsystem
+1500000 and the log line "servercert validation endresult failed". Fix: pin the
+authentic X2 (from the system root store, fingerprint-checked) alongside X1.
+Derive approved trust anchors from the chains actually negotiated by the mobile
+clients per platform and environment; never hard-code one CA for all
+environments, and never weaken pinning to make a page load.
+
+Diagnostics: `KsTrustedWebView.setLogListener` plus a temporary
+`KsTwvLog.setLogLevel(debug)` shows the per-certificate validation steps; lower
+the level again after diagnosis. The Android trusted-proxy full-URL allowlist
+matching fix is already part of this pack (see the Flutter WebView reference); it
+is a separate failure mode from chain coverage.
+
+Candidate tooling (not adopted): branch feature/ticket-ios-tooling-review commit
+773afbe carries a TLS-chain reader/root-certificate writer that saves the IDP
+host's verified root and checks every configured backend host against it. It fits
+this repo's connection-file schema, but it selects only the root of the chain the
+LOCAL (desktop) trust store verified — exactly the single-chain assumption this
+section corrects — and would have produced X1-only pinning here. Adopt it only
+after extending it to enumerate mobile-negotiated roots (or accept multiple
+anchors) with the caveats above.
+
 ## User acceptance
 
 Retrieve `sdk_integration_checklist` for each topic and retain observed results.

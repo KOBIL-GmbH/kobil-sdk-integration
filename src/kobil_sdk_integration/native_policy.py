@@ -61,7 +61,7 @@ def preflight(api, path, activation_client, login_client, use_token_based_login,
             errors.append(f"{role}: unexpected BDDK flow binding; do not proceed.")
     return {"status": "blocked" if errors else "configuration_checked", "errors": errors,
             "bindings": bindings, "runtime_verified": False,
-            "limits": "Checks client availability and flow bindings, not every authenticator configuration, PIN policy or live app behavior. WebView uses KSTrustedWebView; verify its selected journey separately."}
+            "limits": "Checks client availability and flow bindings, not every authenticator configuration, PIN policy or live app behavior. TLS trust anchors and certificate-chain coverage are not verified here; derive them from the chains actually negotiated by the mobile TLS clients. WebView uses KSTrustedWebView; verify its selected journey separately."}
 
 
 def register(mcp):
