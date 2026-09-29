@@ -97,9 +97,13 @@ existing registration user with the device activation identity.
 
 - `sdk_tms_trigger` creates one authorized transaction for a Keycloak recipient
   UUID with explicit retrieval/confirmation timeouts in seconds and explicit
-  authentication/freshness settings. This first adapter skips push and accepts
+  authentication/freshness settings; freshness_seconds is optional and defaults
+  to a confirmation-time budget of 3600 seconds, with a warning on unconfirmably
+  low values. This first adapter skips push and accepts
   plain text; it does not support arbitrary structured payloads or display messages.
 - `sdk_tms_status` reads progress; `sdk_tms_result` reads final result metadata.
+  A not-yet-terminal transaction (HTTP 412 from the result endpoint) is reported
+  as status `pending`, not as a backend error.
   Returned data excludes transaction payloads, recipient identities and signatures.
   No-result/404 is ambiguous (pending, unknown or expired); it is never success.
 - `sdk_tms_cancel` requests cancellation; query the final result separately.

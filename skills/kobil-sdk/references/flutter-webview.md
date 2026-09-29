@@ -103,6 +103,7 @@ export it into Dart to implement TMS. The test user needed ks-users/ast-client;
 inspect the deployment's permission mapping before assigning any role.
 
 freshness_seconds=0 requires fresh authentication; it does not disable freshness.
+When unset it defaults to a 3600-second confirmation-time budget (E10).
 A synthetic test failed with status39/code516004035 and HTTP403 because its token
 was older than the required time. An explicitly selected 300-second test window
 then passed. Never relax a real transaction policy merely to make a test pass.
