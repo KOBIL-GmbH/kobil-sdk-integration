@@ -360,3 +360,17 @@ class KnowledgeTests(unittest.TestCase):
                           'slug-to-ID mapping','never renumber','2026-09-29'):
                 self.assertIn(token,text,token)
             self.assertTrue(any('descriptive slugs only' in c for c in data['checklist']))
+
+    def test_share_sheet_export_predeclares_destination_and_taps(self):
+        # E06 extension: no live share sheet without a declared destination + tap sequence
+        for platform in ('android','ios'):
+            data=get_topic('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['checklist'])).split())
+            for token in ('pre-declare','export destination','exact owner tap sequence',
+                          "Send To -> Save to Files -> <declared path>",'BEFORE opening',
+                          'verify the exported ZIP at the declared destination',
+                          'blocked step, not a failed export','2026-09-29'):
+                self.assertIn(token,text,token)
+            logs_text=' '.join(get_topic('logs',platform)['sequence'])
+            self.assertIn('Send To -> Save to Files -> <declared path>',logs_text)
+            self.assertIn('BEFORE opening',logs_text)

@@ -55,6 +55,12 @@ on the exact delivery; never assume family parity.
 6. Let the user save/share the validated ZIP. Keep it until the receiving share
    operation finishes, then clean up the export copy according to retention
    policy. Preserve source logs and existing activation/device state.
+7. Owner-assisted device tests (E06 extension): pre-declare the export
+   destination and the exact owner tap sequence — for example
+   `Send To → Save to Files → <declared path>` — in the owner channel BEFORE
+   opening the share sheet, then verify the ZIP at the declared destination
+   afterwards (reopen it, confirm nonempty encrypted SDK entries). An
+   unannounced share sheet left open is a blocked step, not a failed export.
 
 ## Kotlin / Android
 
