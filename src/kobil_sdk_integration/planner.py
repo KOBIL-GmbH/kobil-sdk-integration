@@ -74,4 +74,28 @@ def plan(profile: dict, capabilities: list[str]) -> dict:
             gaps.append({"capability": capability, "reason": "No provider selected"})
     return {"required_modules": required, "offered_modules": offered,
             "required_dependencies": sorted({m["dependency"] for m in required}),
-            "gaps": gaps, "execution": "plan_only", "ready_to_execute": False}
+            "gaps": gaps, "execution": "plan_only", "ready_to_execute": False,
+            "local_build_preflight": _build_preflight(targets)}
+
+
+def _build_preflight(targets):
+    """Local toolchain checks to run BEFORE long builds (2026-09-29 validation round)."""
+    checks = ["Run these local toolchain checks BEFORE any long build or device run: an "
+              "unsupported or incomplete toolchain must yield a precise preflight finding, "
+              "never a mid-build surprise. Never mutate shared toolchains (SDK/NDK installs, "
+              "global Xcode settings) automatically; report findings to the owner."]
+    if "android" in targets:
+        checks.append("android: verify the selected NDK version is COMPLETELY installed "
+                      "(source.properties and toolchain binaries present, not merely listed). "
+                      "VAL-06 (2026-09-29): a half-installed NDK 26.3 failed mid-build; the locally "
+                      "installed NDK 27.2.12479018 compiled - a local workaround, NOT vendor "
+                      "qualification of the SDK/NDK combination.")
+    if "ios" in targets:
+        checks.append("ios: validate the app/Pods deployment target against the installed Xcode "
+                      "minimum before compiling (VAL-07, 2026-09-29: Flutter Runner/Pods raised to "
+                      "iOS 15 for Xcode 27, discovered only during compilation) and resolve signing "
+                      "identity/provisioning and physical-device readiness first.")
+    checks.append("all targets: confirm the installed compiler versions are supported by the "
+                  "delivered SDK artifacts and that disk space suffices for build products and "
+                  "result bundles. Physical-device tests remain distinct from simulator tests.")
+    return checks

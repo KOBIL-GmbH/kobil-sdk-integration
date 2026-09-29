@@ -39,6 +39,12 @@ For native Android/iOS select exactly one path:
   **useTokenBasedLogin=true**, **astServerBackend=maverick**, login header
   **X-KOBIL-ASTUSERID** containing the selected user ID.
 
+Preferred method (user decision, 2026-09-29 validation round): trusted WebView
+enrollment and interactive login with SignedJWT token-based returning login
+(useTokenBasedLogin=true, SE-signed JWT OfflineLogin), protected by device
+biometrics. PIN/password/no-authentication are documented alternatives, not
+defaults; decide the authentication mode explicitly before activation.
+
 Run `sdk_native_preflight` against the actual backend before building or testing.
 Proceed only on `configuration_checked`; missing clients, unknown bindings,
 SuperApp Login V2 or errors are blockers. Do not create/rebind backend flows or
@@ -91,6 +97,10 @@ runner and app UI selectors to the actual project. Provision dedicated fixtures
 through MCP tools, use bounded event waits, test cold returning login without
 clearing activation data, and collect SDK errors/logs before cleanup. Preserve
 source-noted gaps, ignored tests and unexecuted cases in the result report.
+During device rounds maintain the live owner/worker channel: write
+`AWAITING_OWNER: <exact action>` to `<app>/OWNER_CHANNEL.md` at every
+device-blocking step and poll it for the owner's reply — device acceptance must
+never stall silently on an unannounced owner action (no secrets in the file).
 See [automated testing](../../docs/automated-testing.md).
 
 ## Modules
@@ -320,3 +330,63 @@ configuration separately. After switching, verify backend authentication and the
 native preflight, select app/version and obtain a new SDK JWT before rebuilding
 apps. Do not reuse assets/JWTs from the previous backend. Older installed versions
 without this tool require a one-time upgrade/reconnect.
+
+## Flutter trusted WebView
+For Flutter Android/iOS activation, token/SignedJWT login and foreground TMS, read
+[Flutter WebView](references/flutter-webview.md) and call
+`sdk_knowledge_get(topic="flutter_webview", platform="flutter_android")`
+(or `flutter_ios`). Keep deployment settings local and respect qualification limits.
+
+## First-start credential onboarding
+
+Call `sdk_onboarding_prepare(project_path)` before configuring a new installation.
+It creates/reuses the project's age identity, keeps its private key outside the
+project, and returns the public recipient, recipient.txt, and a copy-paste email.
+Show the complete draft and public key to the user. The email requests IDP/AST
+and SDK SFTP access encrypted for that recipient. Do not send email automatically.
+Wait for the delivery in `.kobil-sdk/incoming/`, then use the existing age import
+tools with the project identity. Do not ask for plaintext credentials or the
+bundled distribution's private key. Existing configurations remain unchanged.
+The encrypted package bundle remains available for explicitly managed deployments;
+normal onboarding uses a recipient-specific credential delivery.
+
+## Mobile identity and AST registration
+
+Android applicationId and iOS bundle identifier are mobile application identities.
+AST app_name and its registered version identify backend registration records;
+they are not automatically the same identifier. A new mobile bundle ID alone
+neither proves an existing AST registration is incompatible nor proves it reusable.
+Never recommend adopting the SuperApp mobile bundle ID just to reuse its assets.
+
+For an authorized app integration, proceed with sdk_app_list, sdk_app_get and
+sdk_app_versions without asking for another confirmation for these read-only
+checks. Inspect the selected platform/version, registration user, lock state,
+integrity policy, and any signing/package binding required by the supplied SDK
+and deployment. If returned metadata cannot establish a required binding, identify
+that exact gap; do not claim compatibility from the app name or integrity flag alone.
+Reuse a suitable existing app/version and preserve its registration user and
+security policy. Create new records only when none is suitable or the user requests
+separate registration. Do not disable integrity to force reuse.
+
+Do not assert that a delivered sdk_config.jwt is bound to a mobile package or AST
+app/version without inspecting the documented configuration contract and applicable
+claims privately. sdk_config_write in this MCP takes certificates and connection
+service settings, not a mobile bundle ID or AST app_name. Obtain a fresh
+backend-signed configuration when required; never edit signed JWT contents.
+
+Preserve the user's previously selected test security policy and flow. Ask only
+for an unresolved binding/policy choice or an actual blocker; do not request the
+same decision repeatedly. A test selection is not a default for other customers.
+
+
+## Signed configuration and retained choices
+Within an authorized app build, request a fresh signed SDK configuration with
+sdk_config_write using the selected environment service map and verified public
+TLS certificates. Do not ask the user to supply a JWT or propose trying an
+unverified sample JWT when the MCP can issue one. If certificates, permissions
+or services are missing, report that concrete prerequisite; never disable TLS
+verification or edit a signed configuration.
+Read project instructions (including CLAUDE.md when present) for previously
+selected test policy before asking again. Reuse an explicit current-project
+ALLOW_VIRTUAL_SMART_CARD/device-PIN decision; do not extend that test choice to
+other projects. This does not authorize changing shared backend security policy.

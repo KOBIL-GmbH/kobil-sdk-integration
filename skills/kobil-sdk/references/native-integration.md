@@ -51,6 +51,178 @@ Flutter and SSMS require separate bindings; do not translate these calls blindly
    its popover anchor. Keep encrypted SDK logs intact and clean temporary archives
    after sharing according to app policy.
 
+## Local toolchain preflight before long builds (2026-09-29 validation round)
+
+Verify the local toolchain completely BEFORE starting a long build or device
+run; an unsupported or half-installed toolchain must be a precise preflight
+finding, never a mid-build surprise. `sdk_plan` returns these checks as
+`local_build_preflight`. Never mutate shared toolchains (SDK/NDK installs,
+global Xcode settings) automatically — report the finding and let the owner fix
+the shared installation.
+
+- Android NDK: check the selected NDK version is COMPLETELY installed
+  (`source.properties` and toolchain binaries present), not merely listed.
+  VAL-06: a half-installed NDK 26.3 was only discovered mid-build; the build
+  then succeeded with the locally installed NDK 27.2.12479018. That is a local
+  workaround, not vendor qualification of the SDK/NDK combination — record it
+  as such and keep the vendor-supported combination question open.
+- Compiler/toolchain versions: confirm the installed compiler versions are
+  supported by the delivered SDK artifacts before building.
+- iOS deployment target: validate the app/Pods deployment target against the
+  installed Xcode's minimum before compiling. VAL-07: the Flutter Runner/Pods
+  target had to be raised to iOS 15 for Xcode 27; this surfaced during
+  compilation instead of preflight.
+- Signing and device readiness: signing identity/provisioning resolved and the
+  selected physical device visible and authorized before a device build.
+- Disk space: enough free space for build products and result bundles.
+
+Physical-device tests remain distinct from simulator tests; a passing simulator
+build/run does not discharge any physical preflight item.
+
+## Release-qualified configuration and errors (15.16, verified 2026-09-29)
+
+Qualified tuple: Android MCSDK 15.16.3088426, iOS MCSDK 15.16.803.3089231
+(2026-09-29 validation round). Configuration templates (mc_config/app_config)
+ship in the delivery's GettingStarted asset ZIPs, not in the framework or
+xcframework archive; sdk_artifact_info flags missing templates. The delivered
+mc_config for this tuple contains useScp, useTokenBasedLogin, useSmartScreen,
+astServerBackend, iam {clientId, serverUrl (origin only), redirectUri,
+trustedSslServerCerts} and maverick {mTLS, mKex, useSEKeyForSigningTransactions}.
+Fill values from the selected deployment; other releases need their own
+qualification.
+
+Runtime-verified error knowledge for this tuple:
+
+- 800000133 FatalError ScpParameterError "Tag is empty, but category not": the
+  SDK configuration category/tag is NOT the TMS notification category. Leaving
+  both empty is correct for deployments without that configuration.
+- 800000015 SCP_ERROR_CANNOT_READ_APP_CONFIG: a warning at Start; Start can
+  still succeed. Whether app_config is required for a given deployment remains
+  partially unverified — preserve the warning and investigate, do not assert
+  either semantic.
+- 800000279 "Signed jwt together with mkex or SE for signing transactions is
+  not supported yet": SignedJWT login with maverick.mKex=true or
+  useSEKeyForSigningTransactions=true is rejected. The tested known-good
+  SignedJWT combination used both false; this is a tested combination, not a
+  universal default.
+- iOS 15.16 binary lacks the header-declared +getLogSinkWithLogLevel: selector
+  (unrecognized selector at runtime despite a clean build). Use getLogSink()
+  followed by setSeverityLevel(.info) instead (runtime-verified fallback,
+  iOS MCSDK 15.16.803.3089231, 2026-09-29). Qualify logger and diagnostic
+  APIs against the exact shipped BINARY, not only headers, and keep a runtime
+  smoke test for logger initialization; see "Error capture and redaction" below.
+
+Preferred method (user decision, 2026-09-29): trusted WebView enrollment and
+interactive login with SignedJWT token-based returning login
+(useTokenBasedLogin=true, SE-signed JWT OfflineLogin), protected by device
+biometrics/face recognition — iOS biometric mode; Android BIOMETRIC_STRONG with
+no device-credential fallback. PIN/password/no-auth are documented alternatives,
+not defaults. On Android the user-authentication policy is bound at Keystore key
+creation and cannot be changed on existing keys: decide the mode BEFORE the
+key-creating activation step; a later change requires discarding keys and a
+fresh activation with a new activation code.
+
+## Native trusted WebView callback contract (verified 2026-09-29)
+
+Record the callback contract from the ACTUAL delivered interfaces (javap/bytecode
+on Android, `xcrun swift-synthesize-interface` on iOS); never code against assumed
+or older signatures — a signature mismatch silently fails to override.
+
+- Android (TWV Proxy 20.1 with MCSDK 15.16.3088426): the delivered `TWVClient`
+  only calls `sendOpenIdRedirectUriCode` from
+  `shouldOverrideUrlLoading(WebView, String)` and `onReceivedSslError`. Android
+  WebView does NOT invoke `shouldOverrideUrlLoading` for POST-initiated
+  navigations, so the redirect after the enrollment POST is never delivered:
+  activation stalls while the activation code is consumed. Verified fix: a
+  `TWVClient` subclass intercepts the registered redirect URI in
+  `shouldInterceptRequest`/`shouldOverrideUrlLoading` before any network request,
+  matching the delivered nullable parameter signatures exactly. The second attempt
+  returned SetAuthorisationCodeResult OK/error 0 on a physical device.
+- iOS (KSTrustedWebView 9.7.3000479 with MCSDK 15.16.803.3089231): ALL
+  `KsTrustedWebViewDelegate` methods are required — the 15.16 header declares no
+  `@optional` methods. Implement every one.
+- Redirect validation on both platforms: exact scheme, host, effective port
+  (explicit or scheme default) and path plus the state parameter; deliver the
+  authorization code exactly once, ignore duplicate callbacks, then hand it to
+  SetAuthorisationCode with the same client/tenant and authentication mode.
+- Never diagnose an enrollment HTTP 406 from the status alone; inspect sanitized
+  header propagation first (Flutter evidence: comma-joined ASTCLIENTDATA →
+  513/4002 "Invalid AST Client ID"; the SDK ASTCLIENTID including the null ULID
+  must be forwarded unchanged).
+- Before any retry, read back the backend fixture (`sdk_idp_user_credentials_list`,
+  `sdk_ast_find_client`): a stalled or failed enrollment can consume the
+  activation code and create a password credential or partial AST client.
+
+## Error capture and redaction (2026-09-29 validation round)
+
+Qualified tuple: Android MCSDK 15.16.3088426 / iOS MCSDK 15.16.803.3089231,
+kssidpdart 0.6.0 for Flutter.
+
+- Qualify logger/diagnostic APIs against the exact shipped binary, not headers:
+  the iOS 15.16 header declares `+getLogSinkWithLogLevel:` but the binary does
+  not implement it (unrecognized-selector crash at first use). The verified
+  fallback is `getLogSink()` then `setSeverityLevel(.info)`. Keep a runtime
+  smoke test for logger initialization.
+- Redaction invariant (Swift evidence, VAL round): a redactor matching generic
+  `code=` fields erased the numeric error evidence together with the secrets.
+  Keep the numeric SDK status/errorCode/type under a distinct key such as
+  `errorCode` OUTSIDE the redaction boundary; the sanitized description must
+  also survive redaction.
+- Dart: the inline `(?i)` flag is invalid in `RegExp` and throws
+  `FormatException` at construction — a sanitizer that throws swallows the SDK
+  error it should report. Use `RegExp(pattern, caseSensitive: false)` and
+  EXECUTE every sanitizer in tests against representative errors and
+  secret-bearing inputs.
+- Capture Warning/RuntimeError/FatalError AND failed result events,
+  ConnectionManagerError and WebView error channels BEFORE cleanup/teardown;
+  teardown must not destroy the only failure evidence.
+- UI automation must filter credential-bearing fields (passwords, activation
+  codes, OTP inputs) before emitting output. Raw evidence stays private; never
+  log plaintext credentials or authorization URLs.
+
+## Mobile certificate-chain coverage and pinning diagnostics (verified 2026-09-29)
+
+SDK Start trust (mc_config `iam.trustedSslServerCerts`; for iOS also pass the IAM
+chain explicitly at Start) is separate from the trusted WebView trust
+(`KsTrustedWebViewConfiguration.certsDataForValidation`). Configure and verify
+both independently, matching each API's DER/PEM contract; never disable
+certificate or hostname verification.
+
+The mobile TLS client may build a DIFFERENT chain than desktop verification.
+Verified on iOS simulator and physical device (2026-09-29, MCSDK
+15.16.803.3089231, KSTrustedWebView 9.7.3000479): TWV runs SecTrust, which
+succeeds, then pins against the chain iOS built — for a Let's Encrypt chain iOS
+ends at the self-signed system root ISRG Root X2, not X1 via the cross-sign.
+Pinning X1 alone gives `onURLBlocked` reason 1 (KS_CERTIFICATE_ERROR), subsystem
+1500000 and the log line "servercert validation endresult failed". Fix: pin the
+authentic X2 (from the system root store, fingerprint-checked) alongside X1.
+Derive approved trust anchors from the chains actually negotiated by the mobile
+clients per platform and environment; never hard-code one CA for all
+environments, and never weaken pinning to make a page load.
+
+Diagnostics: `KsTrustedWebView.setLogListener` plus a temporary
+`KsTwvLog.setLogLevel(debug)` shows the per-certificate validation steps; lower
+the level again after diagnosis. The Android trusted-proxy full-URL allowlist
+matching fix is already part of this pack (see the Flutter WebView reference); it
+is a separate failure mode from chain coverage.
+
+Never blank-fail the trusted WebView (VAL-36): a pinning failure must never end
+in a silent blank page. Wire the load-failure delegate methods and
+`onURLBlocked`/KS_CERTIFICATE_ERROR callbacks to a visible in-app diagnostic
+view replacing the WebView content — numeric error code, phase and a sanitized
+hint, no URLs, hostnames, tokens or secrets. A blank page must be impossible in
+the reference integration; tests force a trust failure and assert the error
+surface exists. Surfacing the error never means weakening validation.
+
+Candidate tooling (not adopted): branch feature/ticket-ios-tooling-review commit
+773afbe carries a TLS-chain reader/root-certificate writer that saves the IDP
+host's verified root and checks every configured backend host against it. It fits
+this repo's connection-file schema, but it selects only the root of the chain the
+LOCAL (desktop) trust store verified — exactly the single-chain assumption this
+section corrects — and would have produced X1-only pinning here. Adopt it only
+after extending it to enumerate mobile-negotiated roots (or accept multiple
+anchors) with the caveats above.
+
 ## User acceptance
 
 Retrieve `sdk_integration_checklist` for each topic and retain observed results.

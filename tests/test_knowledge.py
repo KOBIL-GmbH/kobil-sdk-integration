@@ -1,7 +1,7 @@
 import json
 from importlib.resources import files
 import unittest
-from kobil_sdk_integration.knowledge_api import TOPICS,get_topic,register
+from kobil_sdk_integration.knowledge_api import TOPICS,FLUTTER_TOPICS,get_topic,register
 
 class Registry:
     def __init__(self):self.tools={}
@@ -50,7 +50,7 @@ class KnowledgeTests(unittest.TestCase):
 
     def test_resource_catalog_has_no_unlisted_files(self):
         resource=files('kobil_sdk_integration').joinpath('knowledge')
-        self.assertEqual({p.name for p in resource.iterdir() if p.name.endswith('.json')},{t+'.json' for t in TOPICS})
+        self.assertEqual({p.name for p in resource.iterdir() if p.name.endswith('.json')},{t+'.json' for t in TOPICS + FLUTTER_TOPICS})
 
     def test_automated_testing_has_no_inherited_device_qualification(self):
         for platform in ('android', 'ios'):
@@ -67,3 +67,310 @@ class KnowledgeTests(unittest.TestCase):
     def test_automated_testing_does_not_substitute_other_sdk_generations(self):
         for platform, family in [('flutter', 'shift'), ('ios', 'ssms')]:
             self.assertEqual(get_topic('automated_testing', platform, family)['status'], 'knowledge_gap')
+
+    def test_release_qualified_configuration_and_error_codes(self):
+        setup=get_topic('setup','android')
+        text=' '.join((' '.join(setup['sequence'])+' '+' '.join(setup['failure_handling'])+' '+' '.join(setup['checklist'])).split())
+        for token in ('useScp','useTokenBasedLogin','useSmartScreen','astServerBackend',
+                      'clientId','redirectUri','trustedSslServerCerts','mTLS','mKex',
+                      'useSEKeyForSigningTransactions','GettingStarted','800000133',
+                      '800000015','800000279','15.16.3088426','15.16.803.3089231','2026-09-29'):
+            self.assertIn(token,text,token)
+        self.assertIn('Tag is empty, but category not',text)
+        self.assertIn('not the TMS notification category'.lower(),text.lower())
+        self.assertIn('partially unverified',text)
+        self.assertIn('not a universal default',text)
+        self.assertIn('mKex=false and useSEKeyForSigningTransactions=false',text)
+
+    def test_authentication_mode_matrix_and_preferred_method(self):
+        for platform in ('android','ios'):
+            activation=get_topic('activation',platform)
+            text=' '.join((' '.join(activation['prerequisites'])+' '+' '.join(activation['sequence'])+' '+' '.join(activation['failure_handling'])).split())
+            for token in ('KSMAuthenticationMode','no PIN mode','Keystore KEY CREATION',
+                          'new activation code','BIOMETRIC_STRONG','SignedJWT',
+                          'useTokenBasedLogin=true','OfflineLogin','2026-09-29'):
+                self.assertIn(token,text,token)
+            self.assertIn('alternatives, not defaults',text)
+            self.assertIn('before the key-creating activation step',text)
+            self.assertTrue(any('authentication-mode decision' in c for c in activation['checklist']))
+        checks=self.tools['sdk_integration_checklist']('activation','android')['checks']
+        self.assertTrue(any('authentication-mode decision' in c['description'] for c in checks))
+        self.assertTrue(all(c['status']=='not_run' for c in checks))
+
+    def test_flutter_preferred_path_and_signedjwt_compatibility(self):
+        data=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])).split())
+        for token in ('Preferred integration path','SignedJWT','useTokenBasedLogin=true',
+                      'BIOMETRIC_STRONG','800000279','mKex=false','Keystore key creation','2026-09-29'):
+            self.assertIn(token,text,token)
+        self.assertIn('not a universal default',text)
+
+    def test_trusted_webview_authorization_contract_invariants(self):
+        data=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+        for token in ('NO separator','join()','HTTP 406','513/4002','Invalid AST Client ID',
+                      'null ULID','513/4036','state/nonce/S256','effective port',
+                      'exactly once','duplicate callbacks','SetAuthorisationCode',
+                      'sdk_idp_user_credentials_list','sdk_ast_find_client',
+                      'unit-verified','device retest','15.16.3088426','15.16.803.3089231'):
+            self.assertIn(token,text,token)
+        # regressions VAL-17/VAL-19: comma insertion and null-ID omission must stay rejected
+        self.assertNotIn('only when nonzero',text)
+        self.assertIn('Comma-joining',text)
+        self.assertIn('INCLUDING the all-zero null ULID',text)
+        # VAL-21: no diagnosis from status alone; mandatory fixture readback before retry
+        self.assertIn('status code alone',text)
+        self.assertIn('read back',text.lower())
+
+    def test_native_trusted_webview_callback_contract(self):
+        for platform in ('android','ios'):
+            data=get_topic('activation',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('TWVClient','shouldOverrideUrlLoading','shouldInterceptRequest',
+                          'POST-initiated','nullable','KsTrustedWebViewDelegate','@optional',
+                          'exactly once','effective port','2026-09-29','15.16.3088426','15.16.803.3089231'):
+                self.assertIn(token,text,token)
+            self.assertIn('read back',text.lower())
+        login_text=' '.join(get_topic('login','android')['failure_handling'])
+        self.assertIn('KsTrustedWebViewDelegate',login_text)
+        self.assertIn('consume once',login_text)
+
+    def test_mobile_certificate_chain_coverage_and_diagnostics(self):
+        for platform in ('android','ios'):
+            data=get_topic('setup',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('ISRG Root X2','X1','cross-sign','KS_CERTIFICATE_ERROR','1500000',
+                          'servercert validation endresult failed','setLogListener','KsTwvLog',
+                          'trustedSslServerCerts','fingerprint-checked','NEVER disable','2026-09-29'):
+                self.assertIn(token,text,token)
+        fw=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(fw['sequence'])+' '+' '.join(fw['failure_handling'])+' '+' '.join(fw['checklist'])).split())
+        for token in ('certsDataForValidation','ISRG Root X2','onURLBlocked reason 1','1500000',
+                      'system root store','never hard-code','DER/PEM','setLogListener','NEVER disable'):
+            self.assertIn(token,text,token)
+        # the anchored full-URL allowlist fix remains installed knowledge, distinct from chain coverage
+        self.assertIn('RegExp.escape',text)
+        self.assertIn('already part of this knowledge pack',text)
+
+    def test_flutter_is_explicit_and_does_not_inherit_ios_acceptance(self):
+        for platform in ('flutter_android', 'flutter_ios'):
+            topics=self.tools['sdk_knowledge_topics'](platform)['topics']
+            self.assertEqual([t['id'] for t in topics], ['flutter_webview'])
+            data=get_topic('flutter_webview',platform,sdk_version='unknown')
+            self.assertFalse(data['version_verified'])
+            self.assertFalse(data['qualification']['device_verified'])
+            self.assertNotIn('/Users/',json.dumps(data))
+            checks=self.tools['sdk_integration_checklist']('flutter_webview',platform)
+            self.assertTrue(all(c['status']=='not_run' for c in checks['checks']))
+        self.assertIsNone(get_topic('flutter_webview','flutter_ios')['runtime_acceptance'])
+        self.assertEqual(get_topic('flutter_webview','flutter_android')['runtime_acceptance']['foreground_tms_approval'],'verified')
+        self.assertEqual(get_topic('flutter_webview','android')['status'],'knowledge_gap')
+        self.assertEqual(get_topic('flutter_webview','flutter_android','ssms')['status'],'knowledge_gap')
+
+    def test_default_catalog_discovers_every_recipe_on_its_supported_targets(self):
+        topics=self.tools['sdk_knowledge_topics']()['topics']
+        self.assertEqual({t['id'] for t in topics},set(TOPICS+FLUTTER_TOPICS))
+        for topic in topics:
+            for platform in topic['platforms']:
+                data=get_topic(topic['id'],platform)
+                self.assertNotEqual(data['status'],'knowledge_gap')
+                self.assertEqual(data['title'],topic['title'])
+        self.assertNotIn('flutter_webview',{t['id'] for t in self.tools['sdk_knowledge_topics']('ios')['topics']})
+
+    def test_error_capture_and_redaction_invariants(self):
+        # E05 / VAL-04, VAL-11, VAL-13, VAL-15
+        for platform in ('android','ios'):
+            data=get_topic('diagnostics',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('OUTSIDE the secret-redaction boundary','errorCode','sanitized description',
+                          'Execute every sanitizer','swallows the SDK error','BEFORE any cleanup',
+                          'ConnectionManagerError','credential-bearing fields','2026-09-29',
+                          'exact SDK BINARY','runtime smoke test'):
+                self.assertIn(token,text,token)
+        ios_note=get_topic('diagnostics','ios')['platform_notes']
+        for token in ('getLogSinkWithLogLevel','unrecognized selector','getLogSink()',
+                      'setSeverityLevel','15.16.803.3089231','2026-09-29'):
+            self.assertIn(token,ios_note,token)
+        fw=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(fw['failure_handling'])+' '+' '.join(fw['checklist'])).split())
+        for token in ('(?i)','INVALID in Dart RegExp','FormatException','caseSensitive: false',
+                      'survive secret redaction','outside the redaction boundary',
+                      'credential-bearing','authorization URLs','kssidpdart 0.6.0'):
+            self.assertIn(token,text,token)
+        # a sanitizer defect must never be presented as an SDK failure cause
+        self.assertIn('EXECUTE sanitizers in tests',text)
+
+    def test_acceptance_gates_login_paths_and_owner_protocol(self):
+        # E06 / VAL-02, VAL-27, VAL-31 and run-evidence requirements
+        for platform in ('android','ios'):
+            data=self.tools['sdk_knowledge_get']('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])+' '+data['expected_result']).split())
+            for token in ('gate separation','CONCRETE adapter','observed SDK Start event',
+                          'never pass gates 2-6','Report scaffold tests separately',
+                          'TWO distinct paths','SEPARATE acceptance rows','OfflineLogin/SignedJWT',
+                          'interactive trusted-WebView login','never be attributed to biometric',
+                          'user-preferred primary path','PASS/FAIL/BLOCKED/NOT_RUN',
+                          'asset fingerprint','fixture ownership','readback',
+                          '~60s','2-17s','PER-DEVICE lease','never two test runners on ONE phone',
+                          'NOT touch the live confirmation dialog','invalidates the case',
+                          'REOPENED','nonempty encrypted SDK log entries',
+                          'Never mark a blocked case passed','2026-09-29'):
+                self.assertIn(token,text,token)
+            # separate checklist rows per returning-login path, both still not_run
+            checks=self.tools['sdk_integration_checklist']('automated_testing',platform)['checks']
+            token_rows=[c for c in checks if 'OfflineLogin/SignedJWT token path' in c['description']]
+            interactive_rows=[c for c in checks if 'Interactive trusted-WebView returning login' in c['description']]
+            self.assertEqual(len(token_rows),1)
+            self.assertEqual(len(interactive_rows),1)
+            self.assertNotEqual(token_rows[0]['id'],interactive_rows[0]['id'])
+            self.assertTrue(all(c['status']=='not_run' for c in checks))
+
+    def test_toolchain_preflight_and_interrupted_run_cleanup(self):
+        # E08 / VAL-06, VAL-07, VAL-32
+        for platform in ('android','ios'):
+            setup=get_topic('setup',platform)
+            text=' '.join((' '.join(setup['prerequisites'])+' '+' '.join(setup['failure_handling'])+' '+' '.join(setup['checklist'])).split())
+            for token in ('BEFORE long builds','COMPLETELY installed','source.properties',
+                          'never a mid-build surprise','Never mutate shared toolchains',
+                          'NDK 27.2.12479018','LOCAL WORKAROUND, not vendor qualification',
+                          'iOS 15 for Xcode 27','signing','disk space',
+                          'VAL-06','VAL-07','2026-09-29'):
+                self.assertIn(token,text,token)
+            testing=get_topic('automated_testing',platform)
+            text=' '.join(testing['failure_handling'])
+            for token in ('PROCESS ALIVE','devicectl device process terminate --pid <exact PID>',
+                          'never name-based kills','never terminate processes another session owns',
+                          'Preserve the .xcresult','insufficient for post-mortem','diagnostics.jsonl',
+                          'distinct from simulator tests','VAL-32','2026-09-29'):
+                self.assertIn(token,text,token)
+        fw=get_topic('flutter_webview','flutter_ios')
+        text=' '.join(fw['failure_handling'])
+        for token in ('half-installed Android NDK','local workaround, not vendor qualification',
+                      'iOS 15 for Xcode 27','never mutate shared toolchains'):
+            self.assertIn(token,text,token)
+
+    def test_per_device_lease_protocol(self):
+        # E09 / VAL-26; refined user decision 2026-09-29: per-device locks
+        for platform in ('android','ios'):
+            data=get_topic('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('PER-DEVICE lease BEFORE any physical interaction',
+                          'SEPARATE phones are allowed','never two test runners on ONE phone',
+                          '"owner"','"state"','"updated"','"reason"','no daemon',
+                          'MUST refuse','PROCESS CHECK','exact PID','retain app data',
+                          'distinguishable app labels','Never touch a system authentication prompt',
+                          'remains UNPROVEN','documentation only','no lease-file helper tool'):
+                self.assertIn(token,text,token)
+
+    def test_tms_freshness_and_pending_knowledge(self):
+        # E10 / VAL-28, VAL-29, VAL-30
+        for platform in ('android','ios'):
+            tms=get_topic('tms',platform)
+            text=' '.join(tms['failure_handling'])
+            for token in ('516004035','A network error occurred','HTTP 403',
+                          '85 seconds older than required','embedded HTTP body',
+                          'CONFIRMATION time, not at trigger time','default 3600','-1',
+                          'HTTP 412','"pending"','never re-trigger','15.16.803.3089231','2026-09-29'):
+                self.assertIn(token,text,token)
+            testing_text=' '.join(get_topic('automated_testing',platform)['sequence'])
+            self.assertIn('freshness_seconds default 3600',testing_text)
+            self.assertIn('"pending" (mapped from HTTP 412)',testing_text)
+
+    def test_tls_chain_preflight_is_cross_referenced(self):
+        # E12 / VAL-16, VAL-36: the served-chain preflight belongs next to every trust-asset step
+        for topic,platform in [('setup','android'),('setup','ios'),
+                               ('flutter_webview','flutter_android'),('flutter_webview','flutter_ios')]:
+            data=get_topic(topic,platform)
+            text=' '.join(data['sequence'])
+            for token in ('sdk_tls_chain_check','missing','ISRG Root X2','VAL-16','VAL-36'):
+                self.assertIn(token,text,(topic,token))
+            self.assertIn('sdk_tls_chain_check',data['backend_tools'])
+
+    def test_webview_failures_are_never_blank(self):
+        # E13 / VAL-36: a pinning failure rendered a silent blank page
+        for topic,platform in [('setup','android'),('setup','ios'),('activation','android'),
+                               ('activation','ios'),('flutter_webview','flutter_android'),
+                               ('flutter_webview','flutter_ios')]:
+            data=get_topic(topic,platform)
+            text=' '.join((' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('blank page must be IMPOSSIBLE','VAL-36','visible in-app diagnostic',
+                          'numeric error code','sanitized hint','never URLs, hostnames, tokens',
+                          'never means weakening','force a trust failure'):
+                self.assertIn(token,text,(topic,token))
+        fw=get_topic('flutter_webview','flutter_android')
+        self.assertIn('onWebResourceError',' '.join(fw['failure_handling']))
+        self.assertTrue(any('impossible in the reference integration' in c for c in fw['checklist']))
+        self.assertTrue(any('impossible in the reference integration' in c
+                            for c in get_topic('activation','ios')['checklist']))
+
+    def test_auth_mode_decision_gate_before_activation(self):
+        # E16: explicit mode decision REQUIRED; Android binds it at Keystore key creation
+        for platform in ('android','ios'):
+            data=get_topic('activation',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['checklist'])).split())
+            for token in ('REQUIRED before activation','BLOCKING prompt','silent default',
+                          'no=0, biometric=1, password=2, pin=3','uninstall plus a fresh activation code',
+                          'preferred method is biometric'):
+                self.assertIn(token,text,token)
+            self.assertTrue(any('blocks activation with a prompt' in c for c in data['checklist']))
+        fw=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(fw['sequence'])+' '+' '.join(fw['checklist'])).split())
+        self.assertIn('no=0, biometric=1, password=2, pin=3',text)
+        self.assertIn('BLOCKING prompt',text)
+        self.assertTrue(any('blocking prompt, not a silent default' in c for c in fw['checklist']))
+
+    def test_log_capability_matrix_and_expected_fail_guidance(self):
+        # E14 / VAL-34: per SDK family x platform encrypted-file-logging status
+        for platform in ('android','ios'):
+            logs=get_topic('logs',platform)
+            text=' '.join((' '.join(logs['failure_handling'])+' '+' '.join(logs['checklist'])+' '+logs['platform_notes']).split())
+            for token in ('capability matrix','classic MCSDK 15.16 Android = SUPPORTED',
+                          'classic MCSDK 15.16 Swift iOS = SUPPORTED',
+                          'shift delivery 549 Flutter/Android','NOT WRITING','ZERO encrypted log files',
+                          'VAL-34','open vendor question','Flutter/iOS = SUPPORTED',
+                          'EXPECTED-FAIL','not a pass','never by assuming family parity','2026-09-29'):
+                self.assertIn(token,text,token)
+            self.assertIn('SUPPORTED',logs['platform_notes'])
+            testing=' '.join(get_topic('automated_testing',platform)['failure_handling'])
+            for token in ('EXPECTED-FAIL','VAL-34','instead of probing the device again','EXPECTED-FAIL is not a pass'):
+                self.assertIn(token,testing,token)
+        fw_text=' '.join(get_topic('flutter_webview','flutter_android')['failure_handling'])
+        for token in ('NOT WRITING','logsStorageDirectory','VAL-34','EXPECTED-FAIL'):
+            self.assertIn(token,fw_text,token)
+
+    def test_owner_channel_live_coordination_protocol(self):
+        # E11: device-blocking steps must surface within seconds via the status file
+        for platform in ('android','ios'):
+            data=get_topic('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['checklist'])).split())
+            for token in ('OWNER_CHANNEL.md','AWAITING_OWNER: <exact action>','BEFORE blocking',
+                          'polls the same file','tails the file','within seconds',
+                          'no credentials, codes, tokens or URLs','complements, never replaces',
+                          '40-60 minutes','2026-09-29'):
+                self.assertIn(token,text,token)
+            self.assertTrue(any('OWNER_CHANNEL.md' in c for c in data['checklist']))
+
+    def test_issue_id_registry_convention(self):
+        # E15: workers use descriptive slugs; the supervisor assigns central VAL-nn
+        for platform in ('android','ios'):
+            data=get_topic('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['checklist'])).split())
+            for token in ('never mint central VAL-nn','DESCRIPTIVE SLUGS',
+                          'flutter-android-sdk-no-encrypted-log-files','reconciliation',
+                          'slug-to-ID mapping','never renumber','2026-09-29'):
+                self.assertIn(token,text,token)
+            self.assertTrue(any('descriptive slugs only' in c for c in data['checklist']))
+
+    def test_share_sheet_export_predeclares_destination_and_taps(self):
+        # E06 extension: no live share sheet without a declared destination + tap sequence
+        for platform in ('android','ios'):
+            data=get_topic('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['checklist'])).split())
+            for token in ('pre-declare','export destination','exact owner tap sequence',
+                          "Send To -> Save to Files -> <declared path>",'BEFORE opening',
+                          'verify the exported ZIP at the declared destination',
+                          'blocked step, not a failed export','2026-09-29'):
+                self.assertIn(token,text,token)
+            logs_text=' '.join(get_topic('logs',platform)['sequence'])
+            self.assertIn('Send To -> Save to Files -> <declared path>',logs_text)
+            self.assertIn('BEFORE opening',logs_text)

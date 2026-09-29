@@ -266,3 +266,25 @@ class ConfigTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class VersionNameFilterTests(unittest.TestCase):
+    client = BackendTests.client
+    def test_related_app_names_are_filtered_after_all_pages(self):
+        base={'appName':'sample','platform':'Android','versionStr':'1.0.0',
+              'registerUserId':'register','isCheckIntegrity':False,'versionLock':False}
+        seen=[]
+        def handler(req):
+            self.assertEqual(req.method,'GET')
+            page=int(req.url.params['page']);seen.append(page)
+            rows=[dict(base,appName='sample_huawei')]*100 if page==1 else [base]
+            return httpx.Response(200,json={'data':rows,'totalCount':101})
+        result=self.client(handler).list_versions('sample')
+        self.assertEqual(seen,[1,2])
+        self.assertEqual(len(result['versions']),1)
+        self.assertEqual(result['app_name'],'sample')
+
+    def test_related_only_results_do_not_leak_into_requested_app(self):
+        rows=[{'appName':'sample_huawei','platform':'Android','versionStr':'1.0.0'}]
+        result=self.client(lambda req:httpx.Response(200,json={'data':rows,'totalCount':1})).list_versions('sample')
+        self.assertEqual(result['versions'],[])

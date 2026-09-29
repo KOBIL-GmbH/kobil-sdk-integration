@@ -48,6 +48,14 @@ class ActivationCodeTests(unittest.TestCase):
         idp_secrets.register(registry)
         self.generate=registry.tools['sdk_idp_activation_code_generate']
 
+    def test_description_carries_auth_mode_decision_gate(self):
+        # E16: the activation-code tool warns before the mode-binding activation
+        doc=self.generate.__doc__
+        for token in ('EXPLICIT local authentication-mode','no=0, biometric=1, password=2, pin=3',
+                      'Keystore','KEY CREATION','FRESH activation code','block',
+                      'never proceed on a silent default','preferred:','biometric'):
+            self.assertIn(token,doc,token)
+
     def test_generate_stores_credential_without_profile_or_flow_changes(self):
         import json
         with patch.object(idp_secrets,'Admin') as admin:
@@ -87,3 +95,65 @@ class ActivationCodeTests(unittest.TestCase):
                     self.generate('test',self.uid)
                 self.assertNotIn('secret echoed',str(caught.exception))
                 self.assertEqual(sum(c.args[0]=='PUT' for c in api.raw.call_args_list),1)
+
+
+class PrivateOutputDiagnosticsTests(unittest.TestCase):
+    """E07: metadata-only setup diagnostics for credential-reference outputs."""
+    uid='12345678-1234-4234-8234-123456789abc'
+
+    def setUp(self):
+        registry=Registry()
+        idp_secrets.register(registry)
+        self.tools=registry.tools
+
+    def test_existing_destination_reports_local_setup_and_no_backend_request(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(idp_secrets,'Admin') as admin:
+            api=admin.return_value.__enter__.return_value
+            output=Path(directory)/'secret.json'
+            output.write_text('keep')
+            with self.assertRaises(ValueError) as caught:
+                self.tools['sdk_idp_client_secret_write']('test','client',str(output))
+            message=str(caught.exception)
+            self.assertIn('already exists',message)
+            self.assertIn('NOT sent',message)
+            self.assertIn('no plaintext fallback',message)
+            api.raw.assert_not_called()
+            self.assertEqual(output.read_text(),'keep')
+
+    def test_missing_parent_directory_is_identified(self):
+        with tempfile.TemporaryDirectory() as directory:
+            missing=Path(directory)/'absent'/'secret.json'
+            with self.assertRaises(ValueError) as caught:
+                with idp_secrets.output_file(str(missing)):pass
+            message=str(caught.exception)
+            self.assertIn('does not exist',message)
+            self.assertIn(str(missing.parent),message)
+            self.assertIn('backend',message)
+
+    @unittest.skipUnless(idp_secrets.os.name=='posix','POSIX permissions')
+    def test_unwritable_parent_reports_permissions_without_secrets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            parent=Path(directory)/'locked'
+            parent.mkdir(mode=0o500)
+            try:
+                with self.assertRaises(ValueError) as caught:
+                    with idp_secrets.output_file(str(parent/'secret.json')):pass
+                message=str(caught.exception)
+                self.assertIn('permission',message.lower())
+                self.assertIn(str(parent),message)
+                self.assertIn('LOCAL destination problem',message)
+            finally:
+                parent.chmod(0o700)
+
+    def test_activation_code_reference_failure_is_local_and_does_not_write(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(idp_secrets,'Admin') as admin:
+            api=admin.return_value.__enter__.return_value
+            api.raw.return_value={'id':self.uid}
+            ref=idp_secrets.CredentialRef(provider='file',path=str(Path(directory)/'missing-code'))
+            with self.assertRaises(ValueError) as caught:
+                self.tools['sdk_idp_activation_code_set']('test',self.uid,ref)
+            message=str(caught.exception)
+            self.assertIn('does not exist',message)
+            self.assertIn('no backend contacted',message)
+            self.assertNotIn('may have succeeded',message)
+            self.assertEqual(sum(c.args[0]=='PUT' for c in api.raw.call_args_list),0)

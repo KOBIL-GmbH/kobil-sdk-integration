@@ -26,7 +26,8 @@
     "A successful token request or webpage is not sufficient proof of SDK login.",
     "Different SDK generations use different wrappers; match the shipped headers/API.",
     "Never disable useTokenBasedLogin to work around ast_login_with_unactivated_client; this skips IAM setup and can cause CannotAcquireTokenData(50). Investigate the selected native backend flow instead.",
-    "Swift: switch on KssIdpStatus.success/eventFailed/requestFailed; never infer success from text containing accept. Preserve detailed callback status, errorCode and underlying event without logging tokens or credentials."
+    "Swift: switch on KssIdpStatus.success/eventFailed/requestFailed; never infer success from text containing accept. Preserve detailed callback status, errorCode and underlying event without logging tokens or credentials.",
+    "Interactive trusted WebView returning login follows the same redirect-interception and single-use authorization-code contract as activation (verified 2026-09-29, MCSDK 15.16): validate scheme/host/effective port/path plus state, consume once, and match the delivered native callback signatures (Android TWVClient POST-redirect limitation; all iOS KsTrustedWebViewDelegate methods required)."
   ],
   "platform_notes": {
     "android": "NativeLoginViewModel and SubsequentLoginViewModel are separate entry points.",

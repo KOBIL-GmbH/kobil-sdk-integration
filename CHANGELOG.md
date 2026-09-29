@@ -1,16 +1,38 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-09-29
 
+Enhancements E01–E16 from the 2026-09-29 multiplatform validation round
+(Android MCSDK 15.16.3088426, iOS MCSDK 15.16.803.3089231, Flutter delivery 549),
+plus the environment-transfer work from the previous development line.
+
+- E01: sdk_sftp_list reports the configured remote_root/requested path and that a scoped listing is not the account inventory; sdk_artifact_info classifies ZIP deliveries (android_native/ios_native/flutter) and flags missing mc_config/app_config templates before scaffolding.
+- E02: release-qualified mc_config/app_config recipes with verified key structure and error semantics (800000133 category/tag, 800000015 app-config warning, 800000279 SignedJWT+mKex/SE rejection) and the iOS/Android authentication-mode matrix.
+- E03: exact trusted WebView authorization contract — ASTCLIENTDATA fragments concatenate with NO separator, the SDK ASTCLIENTID (including the all-zero null ULID) is forwarded unchanged, one PKCE state/nonce/S256 pair per attempt, exact redirect validation with single code consumption, and mandatory backend fixture readback before enrollment retry.
+- E04: trust anchors derive from the chains actually negotiated by mobile TLS clients (iOS builds to ISRG Root X2 while desktop sees X1 via the cross-sign); SDK Start trust and WebView pinning stay separate inputs and verification is never disabled.
+- E05: error capture/redaction hardening — iOS logger qualified against the shipped binary (getLogSink()+setSeverityLevel fallback), invalid Dart inline (?i) RegExp flag documented, sanitizers must execute in tests and preserve numeric errorCode/type with sanitized descriptions.
+- E06: evidence-based acceptance gates with separate scaffold/Start/activation/returning-login/TMS/log-export rows, two NAMED returning-login paths (OfflineLogin/SignedJWT token vs interactive trusted WebView), owner do-not-touch protocol for unattended TMS, and share-sheet log export that pre-declares the destination and exact owner tap sequence before opening the sheet and verifies the ZIP afterwards.
+- E07: credential-output setup failures return metadata-only diagnostics distinguishing destination permissions/ownership/provider support, without credential values or plaintext fallback.
+- E08: sdk_plan returns a local_build_preflight (complete NDK, compiler versions, iOS deployment target vs Xcode, signing/device readiness, disk space) and interrupted device runs are cleaned up by exact PID with .xcresult preserved and diagnostics.jsonl as the post-mortem channel.
+- E09: per-device lease protocol for physical test runs (exclusive lease before interaction, second-runner refusal, explicit handoff, process check before steal/reuse) — documentation only, no lease helper tool.
+- E10: sdk_tms_trigger freshness_seconds documents confirmation-time semantics and defaults to 3600 with a warning on unconfirmably low values (0 produced HTTP 403 wrapped as SDK 516004035 "A network error occurred"); sdk_tms_result maps the result endpoint's HTTP 412 to an explicit lowercase "pending" status instead of a backend error.
+- E11: OWNER_CHANNEL.md live owner/worker coordination — the worker writes "AWAITING_OWNER: <exact action>" before every device-blocking step and polls for the owner reply, so blocking steps surface within seconds instead of via agent-turn boundaries.
+- E12: new sdk_tls_chain_check tool fetches each host's actually-served TLS chain, reports per-certificate subject/issuer/SHA-256 and names MISSING anchors against the local PEM/DER trust asset before any device run (an X1-only asset against an X2-rooted serving reports missing X2); fetching never weakens any verification.
+- E13: a blank WebView failure is impossible in reference integrations — onWebResourceError/onURLBlocked/TLS failures render a visible sanitized in-app diagnostic (numeric code + hint, no URLs or secrets), asserted by forced-trust-failure tests.
+- E14: encrypted-file-logging capability matrix per SDK family × platform (classic 15.16 Android/iOS supported; shift 549 Flutter/Android not writing — open vendor question VAL-34; shift 549 Flutter/iOS supported, validated on device); acceptance runners mark known gaps EXPECTED-FAIL instead of probing.
+- E15: workers use descriptive issue slugs only; the supervisor assigns central VAL-nn identifiers at reconciliation.
+- E16: explicit authentication-mode decision gate before activation (enum no=0, biometric=1, password=2, pin=3; preferred biometric) — Android binds the mode at Keystore key creation, so a missing decision blocks with a prompt instead of a silent default; the warning also ships in the sdk_idp_activation_code_generate description.
+- Preferred integration method recorded across recipes (user decision): trusted WebView enrollment and interactive login with SignedJWT token-based returning login (useTokenBasedLogin=true, SE-signed JWT OfflineLogin), protected by device biometrics; PIN/password/no-authentication remain documented alternatives, not defaults.
 - Enforce stable project identity naming through sdk_age_project_identity, with collision-resistant project IDs and reuse of existing keys.
-
 - Retrieve the receiver public age key with sdk_age_identity_public_key for a two-chat encrypted server handoff.
-
 - Identify inaccessible age identities versus encrypted bundles without exposing secrets; document project-local deliveries and separate recipient identities.
-
 - Transfer multiple AST/IDP server profiles and credentials in a single recipient-encrypted age bundle; import selected environments with recipient-local references.
 - Isolate imported credentials under kobil-sdk/import/; reject collisions, preserve local services and report incomplete rollback without exposing secrets.
 - Validate macOS Keychain round trips with disposable credentials. Windows native runtime validation remains pending.
+
+Compatibility: 191 MCP tools. Behavior changes called out per version policy: sdk_tms_trigger freshness_seconds is now optional (default 3600) and warns on unconfirmably low values; sdk_tms_result returns status "pending" for the result endpoint's HTTP 412 instead of raising a backend error. The dependency lockfile now includes paramiko (previously missing, breaking `uv run` installs). MCP/plugin version 0.6.0 is separate from mobile SDK versions; SDK binaries and credentials remain separately supplied.
+
+Validation: 245 tests, 3 skipped, green via `uv run python -m unittest discover -s tests` and the PYTHONPATH source path. Device evidence in recipes is scoped to the 2026-09-29 validation round (physical Android/iOS classic 15.16, Flutter Android delivery 549 including biometric activation, SignedJWT cold login and 4/4 TMS with backend readback); Flutter iOS acceptance passed in full (biometric activation, SignedJWT cold login, 4/4 TMS, encrypted log export verified); the shift-549 Android logging vendor question (VAL-34, sharpened by VAL-38: iOS writes logs, Android does not) remains open. The sdk_tls_chain_check live check against a deployment host is fixture-verified only in this package.
 
 ## 0.5.1 — 2026-09-22
 
