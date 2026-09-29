@@ -51,6 +51,34 @@ Flutter and SSMS require separate bindings; do not translate these calls blindly
    its popover anchor. Keep encrypted SDK logs intact and clean temporary archives
    after sharing according to app policy.
 
+## Local toolchain preflight before long builds (2026-09-29 validation round)
+
+Verify the local toolchain completely BEFORE starting a long build or device
+run; an unsupported or half-installed toolchain must be a precise preflight
+finding, never a mid-build surprise. `sdk_plan` returns these checks as
+`local_build_preflight`. Never mutate shared toolchains (SDK/NDK installs,
+global Xcode settings) automatically — report the finding and let the owner fix
+the shared installation.
+
+- Android NDK: check the selected NDK version is COMPLETELY installed
+  (`source.properties` and toolchain binaries present), not merely listed.
+  VAL-06: a half-installed NDK 26.3 was only discovered mid-build; the build
+  then succeeded with the locally installed NDK 27.2.12479018. That is a local
+  workaround, not vendor qualification of the SDK/NDK combination — record it
+  as such and keep the vendor-supported combination question open.
+- Compiler/toolchain versions: confirm the installed compiler versions are
+  supported by the delivered SDK artifacts before building.
+- iOS deployment target: validate the app/Pods deployment target against the
+  installed Xcode's minimum before compiling. VAL-07: the Flutter Runner/Pods
+  target had to be raised to iOS 15 for Xcode 27; this surfaced during
+  compilation instead of preflight.
+- Signing and device readiness: signing identity/provisioning resolved and the
+  selected physical device visible and authorized before a device build.
+- Disk space: enough free space for build products and result bundles.
+
+Physical-device tests remain distinct from simulator tests; a passing simulator
+build/run does not discharge any physical preflight item.
+
 ## Release-qualified configuration and errors (15.16, verified 2026-09-29)
 
 Qualified tuple: Android MCSDK 15.16.3088426, iOS MCSDK 15.16.803.3089231

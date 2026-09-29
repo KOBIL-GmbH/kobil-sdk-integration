@@ -39,6 +39,16 @@ evidence before any retry. Reserve each physical device explicitly (per-device
 lock): parallel runs on separate phones are fine, never two runners on one
 phone; keep apps and fixtures isolated.
 
+Interrupted-run cleanup (VAL-32, 2026-09-29): an interrupted xcodebuild device
+run can leave the app process alive on the physical device. Clean up by exact
+PID only — list processes with devicectl and use
+`devicectl device process terminate --pid <exact PID>` for the task-owned
+runner/app; never name-based kills and never processes owned by another session.
+Preserve the .xcresult bundle, but do not rely on its UI snapshots for
+post-mortem diagnosis: an app-private diagnostics file (for example a
+diagnostics.jsonl pulled from the app container) is the effective diagnosis
+channel. Physical-device tests remain distinct from simulator tests.
+
 Owner-interaction protocol (VAL-31): announce required user interaction
 (PIN/biometric/OTP) immediately before triggering it. For unattended TMS cases
 (confirmation timeout, server cancel) announce beforehand that the owner must
