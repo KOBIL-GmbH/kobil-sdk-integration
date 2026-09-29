@@ -206,6 +206,14 @@ the level again after diagnosis. The Android trusted-proxy full-URL allowlist
 matching fix is already part of this pack (see the Flutter WebView reference); it
 is a separate failure mode from chain coverage.
 
+Never blank-fail the trusted WebView (VAL-36): a pinning failure must never end
+in a silent blank page. Wire the load-failure delegate methods and
+`onURLBlocked`/KS_CERTIFICATE_ERROR callbacks to a visible in-app diagnostic
+view replacing the WebView content — numeric error code, phase and a sanitized
+hint, no URLs, hostnames, tokens or secrets. A blank page must be impossible in
+the reference integration; tests force a trust failure and assert the error
+surface exists. Surfacing the error never means weakening validation.
+
 Candidate tooling (not adopted): branch feature/ticket-ios-tooling-review commit
 773afbe carries a TLS-chain reader/root-certificate writer that saves the IDP
 host's verified root and checks every configured backend host against it. It fits

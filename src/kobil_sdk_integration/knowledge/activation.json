@@ -29,7 +29,8 @@
     "Activation user is not confused with the application registration user.",
     "Mobile bundle/package identity and AST app/version are distinguished; reuse decision is supported by registration, integrity and applicable binding evidence.",
     "Authentication mode decided and recorded before the key-creating activation step; on Android a mode change requires key discard plus fresh activation with a new activation code.",
-    "Redirect interception delivers the authorization code exactly once with validated scheme/host/effective port/path and state; callback signatures match the delivered interface."
+    "Redirect interception delivers the authorization code exactly once with validated scheme/host/effective port/path and state; callback signatures match the delivered interface.",
+    "Forced trust/load failure in the trusted WebView shows a visible sanitized diagnostic (numeric error code + hint, no URLs or secrets); a blank page is impossible in the reference integration."
   ],
   "failure_handling": [
     "A server-issued code is required; device UI status cannot generate one.",
@@ -38,7 +39,8 @@
     "Never disable useTokenBasedLogin to work around ast_login_with_unactivated_client; this skips IAM setup and can cause CannotAcquireTokenData(50). Investigate the selected native backend flow instead.",
     "Swift: switch on KssIdpStatus.success/eventFailed/requestFailed; never infer success from text containing accept. Preserve detailed callback status, errorCode and underlying event without logging tokens or credentials.",
     "A later authentication-mode change on Android is not a configuration edit: the policy is bound at Keystore key creation. Discard keys and perform a fresh activation with a new activation code; never reuse a consumed code (runtime-verified, 2026-09-29 validation round).",
-    "Activation stalls after the enrollment POST with no redirect callback: verified Android cause is the delivered TWVClient not receiving shouldOverrideUrlLoading for POST navigations (TWV Proxy 20.1); intercept the registered redirect URI with exact delivered signatures. Read back fixture state before consuming another activation code."
+    "Activation stalls after the enrollment POST with no redirect callback: verified Android cause is the delivered TWVClient not receiving shouldOverrideUrlLoading for POST navigations (TWV Proxy 20.1); intercept the registered redirect URI with exact delivered signatures. Read back fixture state before consuming another activation code.",
+    "Never blank-fail the WebView (VAL-36, 2026-09-29): the X1-only pinning failure on Flutter iOS rendered a SILENT white/blank page with no user-visible error, and the gap was only found by chain inspection. In the reference integration a blank page must be IMPOSSIBLE: wire onWebResourceError/onWebResourceHttpError (Flutter NavigationDelegate), the trusted-WebView failure callbacks (onURLBlocked/KS_CERTIFICATE_ERROR, load-failure delegate methods) and every TLS-failure path to a visible in-app diagnostic view that replaces the WebView content and shows the numeric error code, the phase and a sanitized hint (for example 'certificate validation failed - check the pinned trust anchors'), never URLs, hostnames, tokens or other secrets. Surfacing the error never means weakening or disabling validation. Tests must force a trust failure and assert the diagnostic view appears instead of a blank page."
   ],
   "platform_notes": {
     "android": "NativeActivationViewModel handles SetAuthorisationCodeResultEvent; IdpNativeInterfaces defines activation input mappings.",

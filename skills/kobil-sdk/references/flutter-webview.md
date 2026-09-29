@@ -256,6 +256,16 @@ The full-URL allowlist fix above is already installed knowledge; a
 KS_CERTIFICATE_ERROR is not automatically an allowlist recurrence nor
 automatically a chain gap — check both against the actual logs.
 
+Never blank-fail the WebView (VAL-36): the X1-only pinning failure surfaced as a
+SILENT white page. Wire `onWebResourceError`/`onWebResourceHttpError` on the
+Flutter `NavigationDelegate`, the trusted-WebView failure callbacks
+(`onURLBlocked`/KS_CERTIFICATE_ERROR) and every TLS-failure path to a visible
+in-app diagnostic view that replaces the WebView content: numeric error code,
+phase and a sanitized hint — no URLs, hostnames, tokens or secrets. A blank
+page must be impossible in the reference integration; tests force a trust
+failure and assert the diagnostic view appears. Surfacing the error never means
+weakening validation.
+
 ### Device evidence and error channels
 
 On Android with wrapper106.0.0/hardening20.1.0, the corrected full-URL allowlist
