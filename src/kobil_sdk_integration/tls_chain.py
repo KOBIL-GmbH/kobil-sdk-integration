@@ -22,6 +22,15 @@ from cryptography.hazmat.primitives import hashes
 
 _PEM_MARKER = b"-----BEGIN CERTIFICATE-----"
 
+# ssl.ENCODING_DER is not exported by every supported interpreter (absent on
+# the bundled CPython 3.11); the _ssl constant is the stable fallback.
+try:
+    _DER_ENCODING = ssl.ENCODING_DER
+except AttributeError:  # pragma: no cover - depends on the interpreter build
+    import _ssl
+
+    _DER_ENCODING = _ssl.ENCODING_DER
+
 VERIFICATION_NOTE = (
     "Chain fetching intentionally performs no certificate validation so that it can "
     "report exactly what the server serves; this tool makes no trust decision and "
@@ -94,7 +103,7 @@ def fetch_served_chain(host, port, timeout=15.0):
             chain = getter() or []
             der = []
             for certificate in chain:
-                data = certificate.public_bytes(ssl.ENCODING_DER) if hasattr(certificate, "public_bytes") else certificate
+                data = certificate.public_bytes(_DER_ENCODING) if hasattr(certificate, "public_bytes") else certificate
                 der.append(bytes(data))
             if not der:
                 raise RuntimeError("The server returned no certificate chain")

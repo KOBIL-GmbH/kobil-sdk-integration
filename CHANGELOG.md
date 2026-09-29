@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.1 — 2026-09-29
+
+- Fix sdk_tls_chain_check crashing on interpreters that do not export ssl.ENCODING_DER (bundled CPython 3.11): resolve the DER encoding constant with the _ssl fallback at import time; regression test added. Found in the v0.6.0 retest round (slug tls-chain-check-py311-ssl-encoding-der-crash); chain-comparison logic itself was verified correct against akinci (X1+X2 ok, X1-only reports missing ISRG Root X2).
+- E08 completion: local build preflight now includes the ON-DEVICE trust state of the iOS signing team — a Developer App Certificate trust failure appears only at launch while install and codesign verify pass silently (VAL-35).
+
 ## 0.6.0 — 2026-09-29
 
 Enhancements E01–E16 from the 2026-09-29 multiplatform validation round
