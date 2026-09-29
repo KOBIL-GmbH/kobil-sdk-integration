@@ -35,9 +35,8 @@ encrypted SDK entries verified.
 
 Use bounded waits sized from evidence: the first TMS confirmation took ~60s from
 trigger to presentation (2026-09-29; later ones 2–17s). Preserve failure
-evidence before any retry. Reserve each physical device explicitly (per-device
-lock): parallel runs on separate phones are fine, never two runners on one
-phone; keep apps and fixtures isolated.
+evidence before any retry. Reserve each physical device explicitly through the
+per-device lease protocol below; keep apps and fixtures isolated.
 
 Interrupted-run cleanup (VAL-32, 2026-09-29): an interrupted xcodebuild device
 run can leave the app process alive on the physical device. Clean up by exact
@@ -54,6 +53,35 @@ Owner-interaction protocol (VAL-31): announce required user interaction
 (confirmation timeout, server cancel) announce beforehand that the owner must
 not touch the live confirmation dialog; owner interaction invalidates the case —
 preserve its evidence and retry cleanly.
+
+## Per-device lease protocol (2026-09-29 user decision)
+
+Acquire an exclusive per-device lease before any physical interaction (install,
+launch, UI command, log pull). Parallel runs on separate phones are allowed;
+never two test runners on one phone. The protocol is a shared JSON lease file
+per test round — no daemon, one entry per device id:
+
+```json
+{"leases": {"<device-id>": {"owner": "<session-name>", "state": "active",
+            "updated": "<ISO-8601>", "reason": "<test purpose>"}}}
+```
+
+- A second runner refuses all operations on a device whose lease is active and
+  owned by someone else.
+- Handoff is explicit: the owner sets `state: released` with a fresh `updated`
+  timestamp and stops only its known task-owned processes by exact PID. App
+  data (activation state) is retained unless the case owns its deletion. Use
+  distinguishable app labels so resident apps are attributable.
+- Steal an expired/stale lease, or recover from a failed session, only after a
+  process check confirms no runner/app processes of the previous owner remain.
+- System authentication prompts (device PIN/biometric dialogs) stay untouched
+  by automation and cleanup; they belong to the announced owner interaction.
+
+This protocol is motivated by the VAL-26 collision report; the audit found
+overlapping resident apps, not two active runners, and concurrent-runner
+causation of the observed authentication-prompt cancellation remains unproven.
+The MCP ships this protocol as documentation only — it provides no lease-file
+helper tool; runners maintain the shared lease file themselves.
 
 Provision unique users and activation codes through the configured MCP; backend
 admin credentials stay out of app/test code. Register the app version and its

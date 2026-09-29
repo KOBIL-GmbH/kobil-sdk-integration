@@ -211,7 +211,7 @@ class KnowledgeTests(unittest.TestCase):
                           'interactive trusted-WebView login','never be attributed to biometric',
                           'user-preferred primary path','PASS/FAIL/BLOCKED/NOT_RUN',
                           'asset fingerprint','fixture ownership','readback',
-                          '~60s','2-17s','per-device lock','never two test runners on one phone',
+                          '~60s','2-17s','PER-DEVICE lease','never two test runners on ONE phone',
                           'NOT touch the live confirmation dialog','invalidates the case',
                           'REOPENED','nonempty encrypted SDK log entries',
                           'Never mark a blocked case passed','2026-09-29'):
