@@ -23,6 +23,7 @@ class NativePolicyTests(unittest.TestCase):
         api=API();r=self.run_check(api)
         self.assertEqual(r['status'],'configuration_checked');self.assertFalse(r['runtime_verified'])
         self.assertEqual(len(api.calls),4)
+        self.assertIn('certificate-chain coverage are not verified here',r['limits'])
     def test_incident_client_names_cannot_be_reused(self):
         api=API();r=self.run_check(api,login_client='AK539SdkValidationLogin')
         self.assertEqual(r['status'],'blocked');self.assertEqual(api.calls,[])
