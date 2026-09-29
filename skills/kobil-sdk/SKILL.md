@@ -91,6 +91,10 @@ runner and app UI selectors to the actual project. Provision dedicated fixtures
 through MCP tools, use bounded event waits, test cold returning login without
 clearing activation data, and collect SDK errors/logs before cleanup. Preserve
 source-noted gaps, ignored tests and unexecuted cases in the result report.
+During device rounds maintain the live owner/worker channel: write
+`AWAITING_OWNER: <exact action>` to `<app>/OWNER_CHANNEL.md` at every
+device-blocking step and poll it for the owner's reply — device acceptance must
+never stall silently on an unannounced owner action (no secrets in the file).
 See [automated testing](../../docs/automated-testing.md).
 
 ## Modules

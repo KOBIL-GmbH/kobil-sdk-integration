@@ -337,3 +337,15 @@ class KnowledgeTests(unittest.TestCase):
         fw_text=' '.join(get_topic('flutter_webview','flutter_android')['failure_handling'])
         for token in ('NOT WRITING','logsStorageDirectory','VAL-34','EXPECTED-FAIL'):
             self.assertIn(token,fw_text,token)
+
+    def test_owner_channel_live_coordination_protocol(self):
+        # E11: device-blocking steps must surface within seconds via the status file
+        for platform in ('android','ios'):
+            data=get_topic('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['checklist'])).split())
+            for token in ('OWNER_CHANNEL.md','AWAITING_OWNER: <exact action>','BEFORE blocking',
+                          'polls the same file','tails the file','within seconds',
+                          'no credentials, codes, tokens or URLs','complements, never replaces',
+                          '40-60 minutes','2026-09-29'):
+                self.assertIn(token,text,token)
+            self.assertTrue(any('OWNER_CHANNEL.md' in c for c in data['checklist']))
