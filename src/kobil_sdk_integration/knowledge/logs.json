@@ -19,15 +19,17 @@
     "Archive exists, is nonempty and contains SDK log entries.",
     "A recipient can open the archive without needing app-private filesystem paths.",
     "Missing directories and copy/zip failures are reported.",
-    "Export is distinguished from decryption."
+    "Export is distinguished from decryption.",
+    "Log-export acceptance consulted the encrypted-file-logging capability matrix first: known NOT-WRITING targets (shift 549 Flutter/Android, VAL-34) are marked EXPECTED-FAIL, not probed repeatedly and not marked passed."
   ],
   "failure_handling": [
     "Do not place backend secrets or app configuration exports into the log archive.",
-    "Do not assume identical paths or permissions on Android and iOS."
+    "Do not assume identical paths or permissions on Android and iOS.",
+    "Encrypted-file-logging capability matrix per SDK family x platform (2026-09-29 validation round): classic MCSDK 15.16 Android = SUPPORTED (logs_mPower written, runtime-observed); classic MCSDK 15.16 Swift iOS = SUPPORTED (validated); shift delivery 549 Flutter/Android (ksmastercontrollerwrapperdart 106.0.0, libnb.so core) = NOT WRITING - it accepts logsStorageDirectory at init but writes ZERO encrypted log files even at LogDebug (VAL-34, open vendor question; H-LOG-1 stands after the H-LOG-2 probe refuted the last public knob); shift 549 Flutter/iOS = PENDING (current validation round completes the matrix). Acceptance runners must mark a known NOT-WRITING gap as EXPECTED-FAIL instead of probing the device again; an EXPECTED-FAIL is not a pass and does not close the vendor question. Update this matrix only from runtime evidence on the exact delivery, never by assuming family parity."
   ],
   "platform_notes": {
-    "android": "The inspected exporter selects stageOneLogs and logs_mPower and shares a ZIP using FileProvider. Prefer app-controlled output and verify URI grants for the chosen Android target. MCSDK 15.16 SynchronousEventHandler.getLogsPath() exposes its log path; use runtime evidence instead of assuming the sample directory layout.",
-    "ios": "LoggingModel archives Documents/logs_mPower using NSFileCoordinator with forUploading and moves the archive to a temporary location."
+    "android": "The inspected exporter selects stageOneLogs and logs_mPower and shares a ZIP using FileProvider. Prefer app-controlled output and verify URI grants for the chosen Android target. MCSDK 15.16 SynchronousEventHandler.getLogsPath() exposes its log path; use runtime evidence instead of assuming the sample directory layout. Encrypted-file logging on classic MCSDK 15.16 Android is SUPPORTED (logs_mPower observed 2026-09-29); see the capability matrix in failure handling for other families.",
+    "ios": "LoggingModel archives Documents/logs_mPower using NSFileCoordinator with forUploading and moves the archive to a temporary location. Encrypted-file logging on classic MCSDK 15.16 iOS is SUPPORTED (validated 2026-09-29); see the capability matrix in failure handling for other families."
   },
   "source_evidence": {
     "ios": {

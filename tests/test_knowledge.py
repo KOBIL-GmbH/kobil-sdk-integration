@@ -318,3 +318,22 @@ class KnowledgeTests(unittest.TestCase):
         self.assertIn('no=0, biometric=1, password=2, pin=3',text)
         self.assertIn('BLOCKING prompt',text)
         self.assertTrue(any('blocking prompt, not a silent default' in c for c in fw['checklist']))
+
+    def test_log_capability_matrix_and_expected_fail_guidance(self):
+        # E14 / VAL-34: per SDK family x platform encrypted-file-logging status
+        for platform in ('android','ios'):
+            logs=get_topic('logs',platform)
+            text=' '.join((' '.join(logs['failure_handling'])+' '+' '.join(logs['checklist'])+' '+logs['platform_notes']).split())
+            for token in ('capability matrix','classic MCSDK 15.16 Android = SUPPORTED',
+                          'classic MCSDK 15.16 Swift iOS = SUPPORTED',
+                          'shift delivery 549 Flutter/Android','NOT WRITING','ZERO encrypted log files',
+                          'VAL-34','open vendor question','Flutter/iOS = PENDING',
+                          'EXPECTED-FAIL','not a pass','never by assuming family parity','2026-09-29'):
+                self.assertIn(token,text,token)
+            self.assertIn('SUPPORTED',logs['platform_notes'])
+            testing=' '.join(get_topic('automated_testing',platform)['failure_handling'])
+            for token in ('EXPECTED-FAIL','VAL-34','instead of probing the device again','EXPECTED-FAIL is not a pass'):
+                self.assertIn(token,testing,token)
+        fw_text=' '.join(get_topic('flutter_webview','flutter_android')['failure_handling'])
+        for token in ('NOT WRITING','logsStorageDirectory','VAL-34','EXPECTED-FAIL'):
+            self.assertIn(token,fw_text,token)
