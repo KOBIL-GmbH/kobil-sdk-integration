@@ -18,7 +18,7 @@
     "Add SDK libraries and required assets to the app target/package.",
     "Load the selected configuration from the actual runtime bundle/assets directory. Fail with an actionable missing-file error.",
     "Pass the configuration, backend type and trust material to the version-specific SDK start API.",
-    "## Trust anchors from mobile-negotiated chains (verified 2026-09-29, Android MCSDK 15.16.3088426 / iOS MCSDK 15.16.803.3089231)\n\nDerive approved trust anchors (mc_config iam.trustedSslServerCerts for SDK Start;\nthe separate WebView trust input for the trusted WebView) from the certificate\nchains ACTUALLY negotiated by the mobile TLS clients, not from a desktop TLS\ncheck alone: iOS builds Let's Encrypt chains to the self-signed system root\nISRG Root X2 while desktop verification sees ISRG Root X1 via the cross-sign.\nPin the fingerprint-checked authentic X2 alongside X1 when both can appear.\nMatch each API's expected DER/PEM contract, never hard-code one CA for all\nenvironments, and NEVER disable certificate or hostname verification. For iOS,\npackage AND explicitly pass the IAM certificate chain at Start."
+    "## Trust anchors from mobile-negotiated chains (verified 2026-09-29, Android MCSDK 15.16.3088426 / iOS MCSDK 15.16.803.3089231)\n\nDerive approved trust anchors (mc_config iam.trustedSslServerCerts for SDK Start;\nthe separate WebView trust input for the trusted WebView) from the certificate\nchains ACTUALLY negotiated by the mobile TLS clients, not from a desktop TLS\ncheck alone: iOS builds Let's Encrypt chains to the self-signed system root\nISRG Root X2 while desktop verification sees ISRG Root X1 via the cross-sign.\nPin the fingerprint-checked authentic X2 alongside X1 when both can appear.\nMatch each API's expected DER/PEM contract, never hard-code one CA for all\nenvironments, and NEVER disable certificate or hostname verification. For iOS,\npackage AND explicitly pass the IAM certificate chain at Start.\n\nBefore any device run, compare the served chains against the prepared trust\nasset with sdk_tls_chain_check: it fetches each host's actually-served chain,\nreports subject/issuer/SHA-256 per certificate and names the MISSING anchors\n(verified evidence 2026-09-29: akinci served leaf<-YE2<-Root YE<-ISRG Root X2\nwith X2 cross-signed by X1; an X1-only asset is reported as missing X2 -\nVAL-16/VAL-36, two device rounds lost). The check makes no trust decision and\nnever replaces or weakens the app's own verification."
   ],
   "expected_result": "Required assets exist in the installed application, not just the project directory.",
   "checklist": [
@@ -116,7 +116,8 @@
     "sdk_app_ensure",
     "sdk_app_version_ensure",
     "sdk_config_write",
-    "sdk_app_list"
+    "sdk_app_list",
+    "sdk_tls_chain_check"
   ],
   "runtime_acceptance": {
     "android": {
