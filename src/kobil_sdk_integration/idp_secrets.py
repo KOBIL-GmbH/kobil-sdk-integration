@@ -45,14 +45,39 @@ def output_file(path):
     p=Path(path).expanduser()
     try:
         fd=os.open(p,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
-    except OSError:
-        raise ValueError('Output must be a new file in an existing private directory') from None
+    except OSError as error:
+        raise ValueError(_output_diagnosis(p,error)) from None
     try:
         with os.fdopen(fd,'w') as stream:
             yield stream,p
     except BaseException:
         p.unlink(missing_ok=True)
         raise
+
+
+def _output_diagnosis(path,error):
+    """Metadata-only private-output diagnosis; never inspects or reveals credential values."""
+    import errno
+    parent=path.parent
+    detail={
+        errno.EEXIST:'a file already exists at the destination; a NEW file is required so an existing private result is never overwritten',
+        errno.ENOENT:'the parent directory %r does not exist; create a private directory first'%str(parent),
+        errno.ENOTDIR:'a parent path component of %r is not a directory'%str(parent),
+        errno.EACCES:'permission denied creating the file; check write permission and ownership of %r'%str(parent),
+        errno.EPERM:'the operation is not permitted on this destination; check ownership of %r and provider/filesystem support'%str(parent),
+        errno.EROFS:'the destination filesystem is read-only',
+    }.get(getattr(error,'errno',None),'the destination file could not be created; verify the path, permissions and filesystem support')
+    ownership=''
+    try:
+        info=parent.stat()
+        if os.name=='posix' and info.st_uid!=os.getuid():
+            ownership=' The parent directory is not owned by the current user.'
+    except OSError:
+        pass
+    return ('Private output setup failed: '+detail+'.'+ownership+
+            ' This is a LOCAL destination problem, not a backend failure: the backend request of this tool'
+            ' was NOT sent, so no backend state was changed. There is no plaintext fallback; fix the'
+            ' destination and rerun. No credential values are included in this diagnostic.')
 
 
 def write_result(stream,path,result):
@@ -108,7 +133,7 @@ def register(mcp):
     def sdk_idp_activation_code_set(expected_environment: str, user_uuid: str,
                                      code: CredentialRef, valid_for: str = '60d',
                                      realm: str | None = None) -> dict:
-        """Store an explicitly supplied activation code from an env/keyring/private-file reference. Same existing-user and readback checks as generation; no default code or automatic retry. Returns metadata only. May replace a previous activation code."""
+        """Store an explicitly supplied activation code from an env/keyring/private-file reference. Same existing-user and readback checks as generation; no default code or automatic retry. Returns metadata only. May replace a previous activation code. A failing code reference or private-file setup reports a metadata-only local diagnostic (permissions/ownership/existence) BEFORE any backend write is dispatched; the uncertain-write warning appears only after dispatch. No plaintext fallback exists."""
         result=sdk_idp_activation_code_generate(expected_environment,user_uuid,valid_for,realm=realm,code_reference=code)
         result.pop('activation_code',None)
         return result
@@ -124,7 +149,7 @@ def register(mcp):
 
     @mcp.tool()
     def sdk_idp_client_secret_write(expected_environment: str, client_uuid: str, output_path: str, realm: str | None = None) -> dict:
-        """Read a confidential client's existing secret into a NEW private JSON file. Requires client administration; does not rotate it. Use internal client UUID, not public clientId. Returns file metadata only."""
+        """Read a confidential client's existing secret into a NEW private JSON file. Requires client administration; does not rotate it. Use internal client UUID, not public clientId. Returns file metadata only. A failing output destination reports a metadata-only diagnostic (permissions/ownership/existence/provider support) and states that the backend request was not sent; no plaintext fallback."""
         with Admin(expected_environment,realm) as api, output_file(output_path) as (stream,path):
             result=api.raw('GET','/clients/'+segment(client_uuid)+'/client-secret')
             if not isinstance(result,dict) or not result.get('value'):raise BackendError('Client did not return a secret')
@@ -132,7 +157,7 @@ def register(mcp):
 
     @mcp.tool()
     def sdk_idp_client_secret_rotate(expected_environment: str, client_uuid: str, output_path: str, realm: str | None = None) -> dict:
-        """Rotate one confidential client's secret and save the new value to a NEW private JSON file. Changes authentication for consumers. Never automatically retry an uncertain rotation; inspect server state first."""
+        """Rotate one confidential client's secret and save the new value to a NEW private JSON file. Changes authentication for consumers. Never automatically retry an uncertain rotation; inspect server state first. Output-destination failures are diagnosed with metadata only BEFORE the rotation request is sent (local setup error, backend unchanged); only a post-dispatch failure reports an uncertain backend change."""
         dispatched = False
         try:
             with Admin(expected_environment,realm) as api, output_file(output_path) as (stream,path):
