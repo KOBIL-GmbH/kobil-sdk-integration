@@ -92,6 +92,37 @@ creation and cannot be changed on existing keys: decide the mode BEFORE the
 key-creating activation step; a later change requires discarding keys and a
 fresh activation with a new activation code.
 
+## Native trusted WebView callback contract (verified 2026-09-29)
+
+Record the callback contract from the ACTUAL delivered interfaces (javap/bytecode
+on Android, `xcrun swift-synthesize-interface` on iOS); never code against assumed
+or older signatures — a signature mismatch silently fails to override.
+
+- Android (TWV Proxy 20.1 with MCSDK 15.16.3088426): the delivered `TWVClient`
+  only calls `sendOpenIdRedirectUriCode` from
+  `shouldOverrideUrlLoading(WebView, String)` and `onReceivedSslError`. Android
+  WebView does NOT invoke `shouldOverrideUrlLoading` for POST-initiated
+  navigations, so the redirect after the enrollment POST is never delivered:
+  activation stalls while the activation code is consumed. Verified fix: a
+  `TWVClient` subclass intercepts the registered redirect URI in
+  `shouldInterceptRequest`/`shouldOverrideUrlLoading` before any network request,
+  matching the delivered nullable parameter signatures exactly. The second attempt
+  returned SetAuthorisationCodeResult OK/error 0 on a physical device.
+- iOS (KSTrustedWebView 9.7.3000479 with MCSDK 15.16.803.3089231): ALL
+  `KsTrustedWebViewDelegate` methods are required — the 15.16 header declares no
+  `@optional` methods. Implement every one.
+- Redirect validation on both platforms: exact scheme, host, effective port
+  (explicit or scheme default) and path plus the state parameter; deliver the
+  authorization code exactly once, ignore duplicate callbacks, then hand it to
+  SetAuthorisationCode with the same client/tenant and authentication mode.
+- Never diagnose an enrollment HTTP 406 from the status alone; inspect sanitized
+  header propagation first (Flutter evidence: comma-joined ASTCLIENTDATA →
+  513/4002 "Invalid AST Client ID"; the SDK ASTCLIENTID including the null ULID
+  must be forwarded unchanged).
+- Before any retry, read back the backend fixture (`sdk_idp_user_credentials_list`,
+  `sdk_ast_find_client`): a stalled or failed enrollment can consume the
+  activation code and create a password credential or partial AST client.
+
 ## User acceptance
 
 Retrieve `sdk_integration_checklist` for each topic and retain observed results.

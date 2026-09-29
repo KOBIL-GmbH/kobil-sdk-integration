@@ -28,8 +28,9 @@ grant. These observations qualify only this test tuple, not every delivery.
   successful Start/Restart and the returned state.
 - GetAstClientDataEventT supplies clientData, astClientId and PKCE challenge/method.
   Preserve the wrapper's actual field spelling (107 uses codeChallange).
-  Send X-KOBIL-ASTCLIENTDATA; send X-KOBIL-ASTCLIENTID only when nonzero. Fresh
-  enrollment may require X-KOBIL-ASTDEVICENAME. Returning WebView login requires
+  Send X-KOBIL-ASTCLIENTDATA and forward X-KOBIL-ASTCLIENTID exactly as the SDK
+  returns it, including the all-zero null ULID on fresh activation (see the
+  authorization contract below). Fresh enrollment may require X-KOBIL-ASTDEVICENAME. Returning WebView login requires
   X-KOBIL-ASTUSERID from the SDK user list, not the IDP UUID. Never fabricate IDs.
 - Bind authorization requests to the selected client, redirect and PKCE values;
   validate redirect and state, and consume a code only once. Pass the returned
@@ -97,10 +98,44 @@ A synthetic test failed with status39/code516004035 and HTTP403 because its toke
 was older than the required time. An explicitly selected 300-second test window
 then passed. Never relax a real transaction policy merely to make a test pass.
 
+## Exact trusted WebView authorization contract (unit-verified 2026-09-29, device retest pending)
+
+Qualified tuple: Android MCSDK 15.16.3088426 / iOS MCSDK 15.16.803.3089231,
+Flutter delivery 549 (wrapper 106.0.0, kssidpdart 0.6.0), 2026-09-29 validation round.
+
+- **X-KOBIL-ASTCLIENTDATA encoding.** The SDK returns clientData as a LIST of
+  string fragments (1188 elements observed). The delivered kssidpdart 0.6.0
+  contract concatenates them with `join()` — NO separator. Comma-joining
+  (`join(',')`) caused the enrollment POST to fail with HTTP 406 and page error
+  513/4002 "Invalid AST Client ID". The no-separator fix is unit-verified; the
+  device retest is still pending, so do not claim runtime acceptance from it alone.
+- **X-KOBIL-ASTCLIENTID.** Forward the SDK-provided value unchanged whenever it is
+  a non-empty string, INCLUDING the all-zero null ULID on fresh activation.
+  Historical branch evidence: omitting the header yields 513/4036. Never omit,
+  rewrite or fabricate the ID to "fix" a 406.
+- **One PKCE pair per attempt.** Generate a single state/nonce/S256 code challenge
+  per authorization attempt and keep it unchanged through the initial GET and the
+  submit POST; regenerate only for a genuinely new attempt.
+- **Redirect interception.** Validate the exact redirect scheme, host, effective
+  port (explicit port or scheme default), path AND the state parameter. Reject
+  different-port or foreign-origin redirects. Consume the authorization code
+  exactly once, ignore duplicate callbacks after consumption, then hand it to
+  SetAuthorisationCode with the same client/tenant and authentication mode.
+- **Header propagation.** Headers passed to `loadRequest` apply to the initial GET;
+  POST propagation is native WebView behavior — verify with sanitized evidence.
+- **Mandatory backend fixture readback before retry.** A failed enrollment can
+  still consume the activation code and create a password credential or partial
+  AST client. Read back your own fixture state (`sdk_idp_user_credentials_list`,
+  `sdk_ast_find_client`, `sdk_ast_device_list`) before generating a new code or
+  retrying any write.
+
 ## Validation and diagnostics
 Capture status, numeric error, description and report ID, without dumping event
-objects or tokens. HTTP406/missing X-KOBIL-ASTCLIENTID during fresh enrollment
-indicates an incompatible journey prerequisite; do not invent the header.
+objects or tokens. Never diagnose an enrollment HTTP406 from the status code
+alone: verified causes include header-encoding defects (comma-joined
+ASTCLIENTDATA → 513/4002) besides journey prerequisites. Inspect sanitized
+POST/header propagation evidence (fragment counts, length ranges, character
+classes — never values) before changing anything; never invent or drop AST headers.
 An AST TMS HTTP202 is submission only; a pending result may return HTTP412.
 Keep activation, returning login, observed SignedJWT grant, approve/reject/timeout,
 push and iOS device results separate. Never automate approval of a real transaction.
