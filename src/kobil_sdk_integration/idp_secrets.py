@@ -91,7 +91,14 @@ def register(mcp):
     def sdk_idp_activation_code_generate(expected_environment: str, user_uuid: str,
                                          valid_for: str = '60d', digits: int = 8,
                                          realm: str | None = None, code_reference: CredentialRef | None = None) -> dict:
-        """Generate and store a numeric KOBIL ACTIVATION_CODE for an existing user UUID. Requires manage-users and server support for this credential type. Returns the generated secret once for app activation; never log or commit it. May replace an existing activation code. Does not create users, choose flows or activate devices. Credential-type readback cannot prove the exact new value was stored. Never automatically retry an uncertain write."""
+        """Generate and store a numeric KOBIL ACTIVATION_CODE for an existing user UUID. Requires manage-users and server support for this credential type. Returns the generated secret once for app activation; never log or commit it. May replace an existing activation code. Does not create users, choose flows or activate devices. Credential-type readback cannot prove the exact new value was stored. Never automatically retry an uncertain write.
+
+        Before this code is used on a device, an EXPLICIT local authentication-mode
+        decision is required (enum no=0, biometric=1, password=2, pin=3; preferred:
+        biometric - user decision 2026-09-29). Android binds the mode at Keystore
+        KEY CREATION during activation: switching later means uninstall/key discard
+        plus a FRESH activation code. Guidance without a declared mode must block
+        with a prompt, never proceed on a silent default."""
         try:
             UUID(user_uuid)
         except (ValueError, TypeError, AttributeError):

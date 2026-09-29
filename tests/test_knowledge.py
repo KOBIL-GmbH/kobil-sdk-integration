@@ -92,9 +92,9 @@ class KnowledgeTests(unittest.TestCase):
                 self.assertIn(token,text,token)
             self.assertIn('alternatives, not defaults',text)
             self.assertIn('before the key-creating activation step',text)
-            self.assertTrue(any('Authentication mode decided' in c for c in activation['checklist']))
+            self.assertTrue(any('authentication-mode decision' in c for c in activation['checklist']))
         checks=self.tools['sdk_integration_checklist']('activation','android')['checks']
-        self.assertTrue(any('Authentication mode decided' in c['description'] for c in checks))
+        self.assertTrue(any('authentication-mode decision' in c['description'] for c in checks))
         self.assertTrue(all(c['status']=='not_run' for c in checks))
 
     def test_flutter_preferred_path_and_signedjwt_compatibility(self):
@@ -302,3 +302,19 @@ class KnowledgeTests(unittest.TestCase):
         self.assertTrue(any('impossible in the reference integration' in c for c in fw['checklist']))
         self.assertTrue(any('impossible in the reference integration' in c
                             for c in get_topic('activation','ios')['checklist']))
+
+    def test_auth_mode_decision_gate_before_activation(self):
+        # E16: explicit mode decision REQUIRED; Android binds it at Keystore key creation
+        for platform in ('android','ios'):
+            data=get_topic('activation',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['checklist'])).split())
+            for token in ('REQUIRED before activation','BLOCKING prompt','silent default',
+                          'no=0, biometric=1, password=2, pin=3','uninstall plus a fresh activation code',
+                          'preferred method is biometric'):
+                self.assertIn(token,text,token)
+            self.assertTrue(any('blocks activation with a prompt' in c for c in data['checklist']))
+        fw=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(fw['sequence'])+' '+' '.join(fw['checklist'])).split())
+        self.assertIn('no=0, biometric=1, password=2, pin=3',text)
+        self.assertIn('BLOCKING prompt',text)
+        self.assertTrue(any('blocking prompt, not a silent default' in c for c in fw['checklist']))
