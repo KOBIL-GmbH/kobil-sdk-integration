@@ -3,6 +3,7 @@ import hashlib
 from pathlib import Path
 import tempfile
 import unittest
+import zipfile
 
 from kobil_sdk_integration.planner import plan
 from kobil_sdk_integration.server import mcp, sdk_artifact_info, sdk_targets
@@ -70,6 +71,45 @@ class StarterTests(unittest.TestCase):
         for path in ("private.key", "missing.dll"):
             with self.assertRaises(ValueError):
                 sdk_artifact_info(path)
+
+    def test_zip_inventory_flags_missing_config_templates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "ios-frameworks.zip"
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("Frameworks/KSMasterController.xcframework/Info.plist", "fixture")
+            result = sdk_artifact_info(str(path))
+            inventory = result["delivery_inventory"]
+            self.assertTrue(inventory["inspected"])
+            self.assertEqual(inventory["platform_kinds"], ["ios_native"])
+            self.assertEqual(inventory["config_templates_present"], [])
+            self.assertEqual(inventory["config_templates_missing"], ["mc_config", "app_config"])
+            self.assertIn("GettingStarted", inventory["note"])
+            self.assertIn("account-wide", inventory["note"])
+            self.assertNotIn("fixture", str(inventory))
+
+    def test_zip_inventory_classifies_platforms_and_present_templates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "delivery.zip"
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("libs/mcsdk.aar", "fixture")
+                archive.writestr("flutter_wrapper/pubspec.yaml", "fixture")
+                archive.writestr("assets/mc_config.json", "fixture")
+                archive.writestr("assets/app_config.json", "fixture")
+            inventory = sdk_artifact_info(str(path))["delivery_inventory"]
+            self.assertEqual(inventory["platform_kinds"], ["android_native", "flutter"])
+            self.assertEqual(inventory["config_templates_present"], ["app_config", "mc_config"])
+            self.assertEqual(inventory["config_templates_missing"], [])
+
+    def test_non_zip_artifact_has_no_inventory_and_bad_zip_is_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plain = Path(directory) / "fixture.dll"
+            plain.write_bytes(b"fixture")
+            self.assertNotIn("delivery_inventory", sdk_artifact_info(str(plain)))
+            broken = Path(directory) / "broken.zip"
+            broken.write_bytes(b"not a zip archive")
+            inventory = sdk_artifact_info(str(broken))["delivery_inventory"]
+            self.assertFalse(inventory["inspected"])
+            self.assertEqual(inventory["platform_kinds"], ["unknown"])
 
     def test_mcp_tools_registered(self):
         names = {tool.name for tool in asyncio.run(mcp.list_tools())}

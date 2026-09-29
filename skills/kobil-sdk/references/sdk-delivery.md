@@ -47,6 +47,33 @@ Supply SHA-512 metadata/sidecars where available. Then call sdk_artifact_info;
 inspection and download do not establish runtime compatibility. Legacy SCP protocol
 is not implemented; use the customer's SFTP service over SSH.
 
+## Delivery scope and native artifact discovery
+
+Every sdk_sftp_list response reports the effective configured `remote_root`, the
+requested relative path and a scope note. Listings are confined to that root;
+they are NOT the full account inventory. A profile whose root shows only Flutter
+archives never justifies reporting "native SDK unavailable account-wide"
+(verified 2026-09-29: an account whose default profile listed two Flutter
+archives held Android 15.16.3088426 and iOS 15.16.803.3089231 releases under a
+wider authorized root).
+
+To inspect another user-authorized delivery area, create a separate connection
+profile file — for example a read-only reference profile with `remote_root: "/"`
+— and select it explicitly with KOBIL_SDK_SFTP_CONNECTION. Reuse the same
+credential reference (password_keyring/password_file/password_env/private_key)
+and the same verified known_hosts; never copy secrets into the profile, never
+disable host-key verification, and never edit an existing profile to silently
+broaden its root. Downloads always stay within the explicitly selected root, and
+existing local deliveries (including .age files and archives) are never modified.
+
+After download, sdk_artifact_info on a ZIP returns a delivery_inventory built
+from member names only: native Android (.aar) vs iOS (.xcframework) vs Flutter
+classification and whether mc_config/app_config templates are present. Framework
+archives legitimately contain no configuration templates — the iOS 15.16
+xcframeworks ZIP carries none (verified 2026-09-29); templates ship in the
+GettingStarted asset ZIPs of the same delivery. Resolve flagged missing template
+assets from the delivery before app scaffolding instead of guessing schemas.
+
 ## Review the release before integration
 
 Read both CHANGELOG and platform README, plus component/version metadata inside
