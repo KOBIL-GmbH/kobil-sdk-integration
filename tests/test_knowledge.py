@@ -224,3 +224,54 @@ class KnowledgeTests(unittest.TestCase):
             self.assertEqual(len(interactive_rows),1)
             self.assertNotEqual(token_rows[0]['id'],interactive_rows[0]['id'])
             self.assertTrue(all(c['status']=='not_run' for c in checks))
+
+    def test_toolchain_preflight_and_interrupted_run_cleanup(self):
+        # E08 / VAL-06, VAL-07, VAL-32
+        for platform in ('android','ios'):
+            setup=get_topic('setup',platform)
+            text=' '.join((' '.join(setup['prerequisites'])+' '+' '.join(setup['failure_handling'])+' '+' '.join(setup['checklist'])).split())
+            for token in ('BEFORE long builds','COMPLETELY installed','source.properties',
+                          'never a mid-build surprise','Never mutate shared toolchains',
+                          'NDK 27.2.12479018','LOCAL WORKAROUND, not vendor qualification',
+                          'iOS 15 for Xcode 27','signing','disk space',
+                          'VAL-06','VAL-07','2026-09-29'):
+                self.assertIn(token,text,token)
+            testing=get_topic('automated_testing',platform)
+            text=' '.join(testing['failure_handling'])
+            for token in ('PROCESS ALIVE','devicectl device process terminate --pid <exact PID>',
+                          'never name-based kills','never terminate processes another session owns',
+                          'Preserve the .xcresult','insufficient for post-mortem','diagnostics.jsonl',
+                          'distinct from simulator tests','VAL-32','2026-09-29'):
+                self.assertIn(token,text,token)
+        fw=get_topic('flutter_webview','flutter_ios')
+        text=' '.join(fw['failure_handling'])
+        for token in ('half-installed Android NDK','local workaround, not vendor qualification',
+                      'iOS 15 for Xcode 27','never mutate shared toolchains'):
+            self.assertIn(token,text,token)
+
+    def test_per_device_lease_protocol(self):
+        # E09 / VAL-26; refined user decision 2026-09-29: per-device locks
+        for platform in ('android','ios'):
+            data=get_topic('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('PER-DEVICE lease BEFORE any physical interaction',
+                          'SEPARATE phones are allowed','never two test runners on ONE phone',
+                          '"owner"','"state"','"updated"','"reason"','no daemon',
+                          'MUST refuse','PROCESS CHECK','exact PID','retain app data',
+                          'distinguishable app labels','Never touch a system authentication prompt',
+                          'remains UNPROVEN','documentation only','no lease-file helper tool'):
+                self.assertIn(token,text,token)
+
+    def test_tms_freshness_and_pending_knowledge(self):
+        # E10 / VAL-28, VAL-29, VAL-30
+        for platform in ('android','ios'):
+            tms=get_topic('tms',platform)
+            text=' '.join(tms['failure_handling'])
+            for token in ('516004035','A network error occurred','HTTP 403',
+                          '85 seconds older than required','embedded HTTP body',
+                          'CONFIRMATION time, not at trigger time','default 3600','-1',
+                          'HTTP 412','"pending"','never re-trigger','15.16.803.3089231','2026-09-29'):
+                self.assertIn(token,text,token)
+            testing_text=' '.join(get_topic('automated_testing',platform)['sequence'])
+            self.assertIn('freshness_seconds default 3600',testing_text)
+            self.assertIn('"pending" (mapped from HTTP 412)',testing_text)
