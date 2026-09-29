@@ -105,6 +105,53 @@ class KnowledgeTests(unittest.TestCase):
             self.assertIn(token,text,token)
         self.assertIn('not a universal default',text)
 
+    def test_trusted_webview_authorization_contract_invariants(self):
+        data=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+        for token in ('NO separator','join()','HTTP 406','513/4002','Invalid AST Client ID',
+                      'null ULID','513/4036','state/nonce/S256','effective port',
+                      'exactly once','duplicate callbacks','SetAuthorisationCode',
+                      'sdk_idp_user_credentials_list','sdk_ast_find_client',
+                      'unit-verified','device retest','15.16.3088426','15.16.803.3089231'):
+            self.assertIn(token,text,token)
+        # regressions VAL-17/VAL-19: comma insertion and null-ID omission must stay rejected
+        self.assertNotIn('only when nonzero',text)
+        self.assertIn('Comma-joining',text)
+        self.assertIn('INCLUDING the all-zero null ULID',text)
+        # VAL-21: no diagnosis from status alone; mandatory fixture readback before retry
+        self.assertIn('status code alone',text)
+        self.assertIn('read back',text.lower())
+
+    def test_native_trusted_webview_callback_contract(self):
+        for platform in ('android','ios'):
+            data=get_topic('activation',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('TWVClient','shouldOverrideUrlLoading','shouldInterceptRequest',
+                          'POST-initiated','nullable','KsTrustedWebViewDelegate','@optional',
+                          'exactly once','effective port','2026-09-29','15.16.3088426','15.16.803.3089231'):
+                self.assertIn(token,text,token)
+            self.assertIn('read back',text.lower())
+        login_text=' '.join(get_topic('login','android')['failure_handling'])
+        self.assertIn('KsTrustedWebViewDelegate',login_text)
+        self.assertIn('consume once',login_text)
+
+    def test_mobile_certificate_chain_coverage_and_diagnostics(self):
+        for platform in ('android','ios'):
+            data=get_topic('setup',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('ISRG Root X2','X1','cross-sign','KS_CERTIFICATE_ERROR','1500000',
+                          'servercert validation endresult failed','setLogListener','KsTwvLog',
+                          'trustedSslServerCerts','fingerprint-checked','NEVER disable','2026-09-29'):
+                self.assertIn(token,text,token)
+        fw=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(fw['sequence'])+' '+' '.join(fw['failure_handling'])+' '+' '.join(fw['checklist'])).split())
+        for token in ('certsDataForValidation','ISRG Root X2','onURLBlocked reason 1','1500000',
+                      'system root store','never hard-code','DER/PEM','setLogListener','NEVER disable'):
+            self.assertIn(token,text,token)
+        # the anchored full-URL allowlist fix remains installed knowledge, distinct from chain coverage
+        self.assertIn('RegExp.escape',text)
+        self.assertIn('already part of this knowledge pack',text)
+
     def test_flutter_is_explicit_and_does_not_inherit_ios_acceptance(self):
         for platform in ('flutter_android', 'flutter_ios'):
             topics=self.tools['sdk_knowledge_topics'](platform)['topics']
