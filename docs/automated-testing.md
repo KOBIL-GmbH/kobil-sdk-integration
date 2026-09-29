@@ -54,6 +54,17 @@ Owner-interaction protocol (VAL-31): announce required user interaction
 not touch the live confirmation dialog; owner interaction invalidates the case —
 preserve its evidence and retry cleanly.
 
+Live coordination channel (E11): agent-turn message delivery can lag 40–60
+minutes, so the worker maintains a live status file — for example
+`<app>/OWNER_CHANNEL.md` — next to the app under test. At every device-blocking
+step it appends `AWAITING_OWNER: <exact action>` with a timestamp before
+blocking, and polls the same file for the owner's written reply before and after
+each device step; the supervisor tails the file and answers inline. Blocking
+steps must surface within seconds via the file, never only via turn boundaries.
+Actions and status only — no credentials, codes, tokens or URLs. This
+complements, never replaces, the announce-before-trigger protocol above and the
+per-device lease below.
+
 ## Per-device lease protocol (2026-09-29 user decision)
 
 Acquire an exclusive per-device lease before any physical interaction (install,
