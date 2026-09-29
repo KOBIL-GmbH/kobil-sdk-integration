@@ -25,6 +25,13 @@ returning login and foreground TMS have passed; see the version-scoped
 [platform](skills/kobil-sdk/references/platforms.md) and
 [TMS](skills/kobil-sdk/references/tms.md) evidence.
 
+Preferred integration method (user decision, 2026-09-29 validation round):
+trusted WebView enrollment and interactive login with SignedJWT token-based
+returning login (useTokenBasedLogin=true, SE-signed JWT OfflineLogin), protected
+by device biometrics. PIN/password/no-authentication remain documented
+alternatives, not defaults; the authentication mode must be decided explicitly
+before activation.
+
 Pending: SSMS and optional provider adapters,
 automatic module installation, complete SDK feature recipes and end-to-end
 platform validation. The AST module includes backend tools; other module
@@ -34,7 +41,7 @@ history are included.
 ## Install a fixed release
 
 Use [versioned installation](docs/releases.md) for a fixed MCP and skill version.
-The current release is **v0.5.1**. Upgrades are explicit; install a tag rather than a moving branch.
+The current release is **v0.6.0**. Upgrades are explicit; install a tag rather than a moving branch.
 
 ## Run from a development checkout
 
@@ -62,6 +69,7 @@ Tools:
 | sdk_app_ensure | Reuse or create a configured tenant's AST app |
 | sdk_app_version_ensure | Reuse or create an AST app version with explicit registration/integrity settings |
 | sdk_config_write | Request signed SDK configuration and write a new private JWT file |
+| sdk_tls_chain_check | Compare served TLS chains against the local trust asset; report missing anchors |
 | sdk_tms_trigger | Create an authorized foreground transaction with explicit policy |
 | sdk_tms_status / sdk_tms_result | Read redacted progress and final-result metadata |
 | sdk_tms_cancel | Request cancellation; final result checked separately |
@@ -115,7 +123,7 @@ See [server profiles and native keystore setup](docs/credentials.md) for AST/IDP
 
 ### Self-contained native knowledge
 
-The MCP bundles [eight native Shift integration topics](docs/native-knowledge.md),
+The MCP bundles [nine native Shift integration topics](docs/native-knowledge.md),
 retrieved with `sdk_knowledge_topics`, `sdk_knowledge_get` and
 `sdk_integration_checklist`. They include source-reviewed guidance and illustrative
 Kotlin/Swift snippets. No external skills or repositories are required. Runtime

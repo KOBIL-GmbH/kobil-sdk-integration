@@ -29,7 +29,7 @@ def summary(value, transaction_id=None):
 
 
 def trigger(backend, user_uuid, text, retrieval_timeout_seconds, confirmation_timeout_seconds,
-            require_explicit_authentication, freshness_seconds):
+            require_explicit_authentication, freshness_seconds=3600):
     try:
         user_uuid = str(UUID(user_uuid))
     except (ValueError, TypeError, AttributeError):
@@ -47,12 +47,32 @@ def trigger(backend, user_uuid, text, retrieval_timeout_seconds, confirmation_ti
         'requireExplicitAuthentication': require_explicit_authentication,
         'requireFreshnessOfAuthentication': freshness_seconds,
         'push': {'skip': True}, 'auditMessage': 'SDK integration transaction test'})
-    return summary(result)
+    response = summary(result)
+    if 0 <= freshness_seconds < 120:
+        response['warning'] = (
+            'freshness_seconds=%d is below the observed confirmation latency and the transaction is '
+            'likely to fail AT CONFIRMATION: with 0, confirmation was rejected with HTTP 403 "The access '
+            'token is 85 seconds older than required", surfaced by the SDK only as errorCode 516004035 '
+            '"A network error occurred" (observed 2026-09-29, iOS MCSDK 15.16.803.3089231). The '
+            'transaction WAS created and will be presented on the device. Unless this failure is the '
+            'intended test, cancel it and re-trigger with the default 3600, a larger value, or -1 '
+            '(freshness check disabled).' % freshness_seconds)
+    return response
 
 
 def read(backend, transaction_id, result=False):
     identifier(transaction_id)
-    value = backend.request('GET', '/tms/' + transaction_id + ('/result' if result else '/status'), allow_not_found=result)
+    try:
+        value = backend.request('GET', '/tms/' + transaction_id + ('/result' if result else '/status'), allow_not_found=result)
+    except BackendError as error:
+        if result and getattr(error, 'status_code', None) == 412:
+            # Observed 2026-09-29 during bounded-wait polling: the result endpoint answers
+            # HTTP 412 while the transaction is not yet terminal. Map it to an explicit
+            # pending state (lowercase, so it cannot be confused with backend [A-Z_] statuses).
+            return {'transaction_id': transaction_id, 'status': 'pending', 'result_available': False,
+                    'note': 'Not yet terminal (HTTP 412 on the result endpoint), not a backend error. '
+                            'Keep bounded polling and do not re-trigger; inspect sdk_tms_status for progress.'}
+        raise
     if value is None:
         return {'transaction_id': transaction_id, 'result_available': False,
                 'note': 'No result returned (not ready, expired or unknown ID); inspect status'}

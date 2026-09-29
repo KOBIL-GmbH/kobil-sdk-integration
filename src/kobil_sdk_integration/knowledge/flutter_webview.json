@@ -1,0 +1,169 @@
+{
+  "id": "flutter_webview",
+  "title": "Flutter trusted WebView activation, login and foreground TMS",
+  "sdk_family": "shift",
+  "prerequisites": [
+    "Separately delivered compatible Flutter/native SDK artifacts and customer-configured AST/IDP connection.",
+    "Deployment-selected enrollment/login clients, signed assets and registration user."
+  ],
+  "sequence": [
+    "## Mobile identity and AST registration\n\nAndroid applicationId and iOS bundle identifier are mobile application identities.\nAST app_name and its registered version identify backend registration records;\nthey are not automatically the same identifier. A new mobile bundle ID alone\nneither proves an existing AST registration is incompatible nor proves it reusable.\nNever recommend adopting the SuperApp mobile bundle ID just to reuse its assets.\n\nFor an authorized app integration, proceed with sdk_app_list, sdk_app_get and\nsdk_app_versions without asking for another confirmation for these read-only\nchecks. Inspect the selected platform/version, registration user, lock state,\nintegrity policy, and any signing/package binding required by the supplied SDK\nand deployment. If returned metadata cannot establish a required binding, identify\nthat exact gap; do not claim compatibility from the app name or integrity flag alone.\nReuse a suitable existing app/version and preserve its registration user and\nsecurity policy. Create new records only when none is suitable or the user requests\nseparate registration. Do not disable integrity to force reuse.\n\nDo not assert that a delivered sdk_config.jwt is bound to a mobile package or AST\napp/version without inspecting the documented configuration contract and applicable\nclaims privately. sdk_config_write in this MCP takes certificates and connection\nservice settings, not a mobile bundle ID or AST app_name. Obtain a fresh\nbackend-signed configuration when required; never edit signed JWT contents.\n\nPreserve the user's previously selected test security policy and flow. Ask only\nfor an unresolved binding/policy choice or an actual blocker; do not request the\nsame decision repeatedly. A test selection is not a default for other customers.\n",
+    "\n## Signed configuration and retained choices\nWithin an authorized app build, request a fresh signed SDK configuration with\nsdk_config_write using the selected environment service map and verified public\nTLS certificates. Do not ask the user to supply a JWT or propose trying an\nunverified sample JWT when the MCP can issue one. If certificates, permissions\nor services are missing, report that concrete prerequisite; never disable TLS\nverification or edit a signed configuration.\nRead project instructions (including CLAUDE.md when present) for previously\nselected test policy before asking again. Reuse an explicit current-project\nALLOW_VIRTUAL_SMART_CARD/device-PIN decision; do not extend that test choice to\nother projects. This does not authorize changing shared backend security policy.\n",
+    "## Preferred integration path (user decision, 2026-09-29 validation round)\n\nTrusted WebView enrollment and interactive login with SignedJWT token-based\nreturning login (useTokenBasedLogin=true, SE-signed JWT OfflineLogin) is the\nprimary documented path, protected by device biometrics/face recognition (iOS\nbiometric mode; Android BIOMETRIC_STRONG, no device-credential fallback).\nPIN/password/no-authentication are alternatives, not defaults. On Android the\nauthentication policy is bound at Keystore key creation: decide the mode BEFORE\nthe key-creating activation step; changing it later requires discarding keys and\na fresh activation code.\n\nmc_config compatibility on the qualified tuple (Android MCSDK 15.16.3088426 / iOS MCSDK 15.16.803.3089231): the release rejects\nSignedJWT combined with maverick.mKex=true or useSEKeyForSigningTransactions=true\nwith 800000279 (\"Signed jwt together with mkex or SE for signing transactions is\nnot supported yet\", Start NOT_SUPPORTED). The tested known-good SignedJWT\ncombination used mKex=false and useSEKeyForSigningTransactions=false\n(runtime-verified on physical Android, 2026-09-29 validation round); a tested combination, not a\nuniversal default.\n\n\nDecision gate (Android PIN-prompt surprise, 2026-09-29 round): an explicit\nauthentication-mode decision is REQUIRED before activation. Activation guidance\nor automation without a declared mode must produce a BLOCKING prompt/warning to\nthe user - never proceed on a silent default, because the first activation binds\nthe policy (on Android at Keystore key creation) and an unwanted mode costs an\nuninstall plus a fresh activation code to undo. Authentication-mode enum values:\nno=0, biometric=1, password=2, pin=3 (iOS 15.16 exposes no PIN mode). The\npreferred method is biometric (user decision); record the chosen mode with the\nrun evidence.",
+    "# Flutter trusted WebView: activation, login and TMS",
+    "## Scope and evidence\nFlutter wrapper 107.0.0 with hardening 21.0.0 was used for an Android mobile test app.\nAndroid SDK startup, manual activation and foreground TMS approval were observed;\nTMS acceptance was independently confirmed through AST status and result. The app\npassed 26 unit/widget tests and Android builds. An unsigned iOS build passed before\nthe final environment/theme change; iOS device behavior is unverified. Returning\nlogin can use cached or refreshed tokens: success alone does not prove a SignedJWT\ngrant. These observations qualify only this test tuple, not every delivery.",
+    "## Setup and activation\n- Select a customer-configured connection explicitly. Keep server URLs, tenants,\n  credentials and signed assets in project-local configuration, outside this recipe.\n  Reuse an appropriate AST app/version and its existing registration user.\n- Package the complete asset folder, referenced certificates and backend-signed\n  SDK JWT. Isolate persistent SDK state per environment. Do not overwrite another\n  environment's device binding when switching assets.\n- This tested profile used useTokenBasedLogin=true, astServerBackend=maverick,\n  AuthenticationMode.pin and maverick.jwtSignKeySecurityPolicy=\n  ALLOW_VIRTUAL_SMART_CARD. This policy was explicitly selected for the test;\n  it is not a universal default and must not silently replace a hardware policy.\n- BDDKEnrollment/BDDKLogin can render HTML inside trusted WebView when the deployed\n  clients support that contract. Inspect bindings and run sdk_native_preflight;\n  passing preflight is not proof of fresh enrollment. Do not substitute SuperApp\n  Login V2 or a generic browser flow that requires an already-registered device.\n- Install warning/runtime/fatal listeners before Start. Gate all operations on\n  successful Start/Restart and the returned state.\n- GetAstClientDataEventT supplies clientData, astClientId and PKCE challenge/method.\n  Preserve the wrapper's actual field spelling (107 uses codeChallange).\n  Send X-KOBIL-ASTCLIENTDATA and forward X-KOBIL-ASTCLIENTID exactly as the SDK\n  returns it, including the all-zero null ULID on fresh activation. Fresh\n  enrollment may require X-KOBIL-ASTDEVICENAME. Returning WebView login requires\n  X-KOBIL-ASTUSERID from the SDK user list, not the IDP UUID. Never fabricate IDs.\n- Bind authorization requests to the selected client, redirect and PKCE values;\n  validate redirect and state, and consume a code only once. Pass the returned\n  code to SetAuthorisationCodeEventT with that same client/tenant and the selected\n  authentication mode. A successful web page is not SDK activation success.\n- Require SetAuthorisationCodeResult OK. Preserve data across restart and require\n  the persisted user. OfflineLoginEventT handles token reuse/refresh and eligible\n  SignedJWT login internally; use trusted WebView when interactive login is needed.\n- Android device credential authentication needs FlutterFragmentActivity and the\n  delivered biometric bridge initialized before its lifecycle callbacks. Flat AARs\n  may require an explicit androidx.biometric dependency (tested 1.2.0-alpha03).\n  Device PIN entry belongs to Android system UI, not chat or app text fields.",
+    "## Foreground TMS\n1. Handle TriggerBanner, bind its payload/trace context, and show availability.\n2. On Review send StartTransaction; display the exact DisplayConfirmationRequest\n   transactionInformation and remaining time.\n3. Handle a transaction PIN request separately from Android's device PIN. Return\n   the actual user decision and exact information through DisplayConfirmation.\n4. DisplayConfirmationResult is acknowledgement only. Wait for TransactionEnd,\n   inspect status/error, and compare sdk_tms_status and sdk_tms_result.\n5. Prevent duplicate decisions, late results reopening cancelled UI, and SDK\n   restart while a transaction is active. Test deadlines with an injected clock.",
+    "Wrapper 107's inspected StartTransaction possibleResults list was empty, leaving\nits Future unresolved. Verify the actual delivery; the app-local correction\nincludes DisplayConfirmationRequest, TransactionPinRequiredRequest,\nTransactionTokenRequiredRequest and TransactionEnd. Keep the original delivery\nunchanged and do not patch an unrelated wrapper version blindly.",
+    "For this Maverick flow the SDK supplies its stored IAM token internally. Do not\nexport it into Dart to implement TMS. The test user needed ks-users/ast-client;\ninspect the deployment's permission mapping before assigning any role.",
+    "freshness_seconds=0 requires fresh authentication; it does not disable freshness.\nA synthetic test failed with status39/code516004035 and HTTP403 because its token\nwas older than the required time. An explicitly selected 300-second test window\nthen passed. Never relax a real transaction policy merely to make a test pass.",
+    "## Validation and diagnostics\nCapture status, numeric error, description and report ID, without dumping event\nobjects or tokens. Never diagnose an enrollment HTTP406 from the status code alone: verified causes\ninclude header-encoding defects (comma-joined ASTCLIENTDATA -> backend 513/4002\n\"Invalid AST Client ID\") besides journey prerequisites. Inspect sanitized\nPOST/header propagation evidence (fragment counts, length ranges, character\nclasses - never values) before changing anything; never invent or drop AST headers.\nAn AST TMS HTTP202 is submission only; a pending result may return HTTP412.\nKeep activation, returning login, observed SignedJWT grant, approve/reject/timeout,\npush and iOS device results separate. Never automate approval of a real transaction.",
+    "## Exact trusted WebView authorization contract (unit-verified 2026-09-29, device retest pending)\n\nQualified tuple: Android MCSDK 15.16.3088426 / iOS MCSDK 15.16.803.3089231,\nFlutter delivery 549 (wrapper 106.0.0, kssidpdart 0.6.0), 2026-09-29 validation round.\n\n- X-KOBIL-ASTCLIENTDATA encoding: the SDK returns clientData as a LIST of string\n  fragments (1188 elements observed). The delivered kssidpdart 0.6.0 contract\n  concatenates them with join() and NO separator. Comma-joining (join(',')) caused\n  enrollment POST HTTP 406 with page error 513/4002 \"Invalid AST Client ID\".\n  The no-separator encoding fix is unit-verified; the device retest is still\n  pending, so do not claim runtime acceptance from the encoding fix alone.\n- X-KOBIL-ASTCLIENTID: forward the SDK-provided value unchanged whenever it is a\n  non-empty string, INCLUDING the all-zero null ULID on fresh activation. Historical\n  branch evidence: omitting the header yields 513/4036; do not omit, rewrite or\n  fabricate the ID to \"fix\" a 406.\n- One PKCE pair per attempt: generate a single state/nonce/S256 code challenge per\n  authorization attempt and keep it unchanged through the initial GET and the\n  submit POST. Regenerate only for a genuinely new attempt.\n- Redirect interception: validate the exact redirect scheme, host, effective port\n  (explicit port or the scheme default), path AND the state parameter. Reject a\n  redirect on a different port or foreign origin. Consume the authorization code\n  exactly once, ignore duplicate callbacks after consumption, then hand the code to\n  SetAuthorisationCode with the same client/tenant and selected authentication mode.\n- Header propagation: headers passed to loadRequest apply to the initial GET; POST\n  propagation is native WebView behavior. Verify with sanitized evidence, not\n  assumptions.\n- MANDATORY backend fixture readback before any retry: a failed enrollment can\n  still consume the activation code and create a password credential or partial\n  AST client. Read back your own fixture state (sdk_idp_user_credentials_list,\n  sdk_ast_find_client, sdk_ast_device_list) before generating a new code or\n  retrying a write.",
+    "Themes change presentation, not the SDK handshake. A copied client/flow may use\nits own theme while the original BDDK definitions remain unchanged. Rendering a\nnew theme does not prove that its authentication submission succeeds.\n",
+    "## First-device test: trusted WebView and backend diagnostics\n\nThe delivered Flutter549 package contains wrapper106.0.0 and hardening20.1.0.\nSource inspection confirms that its WebViewController.loadRequest defaults to\ncertPinningEnabled=false, pinnedCertificates=\"\", and whiteList=[]. SDK Start\ntrust configuration is separate from this WebView proxy configuration. For the\nselected trusted-WebView integration, explicitly pass the approved PEM trust\nanchors, certPinningEnabled=true, and narrowly scoped full-URL allowlist patterns\nderived from the deployment's approved HTTPS origins.\nVerify the certificate chain and validity first; do not hardcode a public CA for\nall customers, accept invalid certificates, or weaken pinning to make a page load.\nSuccessful SDK Start/GetAstClientData does not prove WebView TLS is configured.\n\nInstall callbacks before loadRequest. Hardening20.1 RunTimeError exposes url,\nerrorCode and errorDescription. Retain numeric code, sanitized description,\norigin (strip URL query/fragment/userinfo), phase and timestamp. Do not replace\nthese with only \"WebView runtime error\". Catch asset-read/loadRequest exceptions,\nkeep the outcome visible, and guard navigation completion against duplicate error,\nredirect and cancellation callbacks. Never dump authorization URLs, headers or\nentire error objects. SDK and WebView diagnostic channels are separate.\n\nUse explicit checkpoints: SDK Start -> GetAstClientData -> WebView load -> IDP\nredirect/state validation -> SetAuthorisationCode -> persisted-user restart/login.\nIf key exchange fails before navigation with an HTTP gateway/service error,\ncompare a bounded read-only sdk_backend_auth_test before changing WebView settings.\nA failure in that phase cannot validate or invalidate a later WebView certificate\nfix. Record actual status codes and server response; only diagnose a tunnel or\norigin outage from supporting evidence. Do not repeatedly retry activation or\nconsume more codes during a backend outage. No successful page load or activation\nis claimed until the corresponding phase has been observed after recovery.\n\nWrapper106 also maps StartTransaction to AsyncEventInfo([]), as does the inspected\n107 delivery. Avoid awaiting a Future that has no terminal response mapping.\nUse the documented event receiver with a bounded transaction state machine (and\nhandle dispatch failures), or a reviewed app-local mapping adapter. Global events\nmust still drive confirmation and TransactionEnd. An unawaited call alone is not\na complete fix. Do not modify the original supplied SDK delivery.\n\nThe mc_config maverick.jwtSignKeySecurityPolicy nesting has source evidence in\nMCSDK configuration tests; binary string search alone does not establish nesting\nor release compatibility. Preserve the selected policy and document the supplied\nrelease's contract. When only newer source evidence exists, say so explicitly.\n\nLog export acceptance requires reopening the ZIP, confirming nonempty expected\nSDK log entries, and testing recipient access through the platform share flow.\nShowing a share sheet alone does not establish successful delivery. iOS release\nframework selection, hardening prerequisites and Android packaging warnings must\nbe checked against the actual delivery; a debug/unsigned build proves compilation\nonly, not production readiness or device feature acceptance.\n",
+    "### Trusted WebView allowlist matching\n\nThe Android trusted proxy matches each `whiteList` entry as a regular expression against the **complete URL** (`Pattern.matcher(url).matches()`), not just its origin. A bare `https://idp.example.com` therefore rejects `/auth/...`. Build a narrowly scoped pattern from the escaped configured origin, for example `'^${RegExp.escape(idpBaseUrl)}/.*\\$'` in Dart. Never use an unrestricted wildcard or disable certificate verification to work around this.\n\n`processReceivedSslError` checks both the proxy certificate and the URL allowlist. If logs say `Proxy set up is correct` followed by `certificate verification failed`, inspect the allowlist before replacing certificates. The latter message alone does not prove a certificate-chain failure. Source: CertPinningProxy `Util.kt`, `urlWhiteListCheckOk` and `processReceivedSslError`.\n\n### Device evidence and error channels\n\nOn Android with wrapper106.0.0/hardening20.1.0, the corrected full-URL allowlist\nwas tested on a physical device: key exchange returned HTTP200, the trusted proxy\nreported certificate verification OK, and the enrollment page rendered. This\nverifies page loading only; activation, persisted-user login, TMS and iOS runtime\nwere not established by this run. Earlier wrapper107 results remain separate.\n\nAn existing but empty SDK log directory does not establish that no diagnostic\noutput exists. Check the app's configured log destination and capture Android\nlogcat for the current app process; the tested debug build emitted native spdlog\nthere. Do not clear logs before preserving failure evidence. An empty directory\ncannot satisfy SDK log-export acceptance.\n\nWarning, RuntimeError and FatalError listeners remain required, but a failed\noperation may instead report ConnectionManagerError and a failed result event.\nThe observed key-exchange failure was 700000036 (MaverickServerHttpError), with\nserver error field 755000000 and separate HTTP530/502/503 responses. Preserve\nthese fields separately: 755000000 alone does not identify the underlying cause.\nHTTP503 with 'no healthy upstream' during a service rollout is a backend phase\nfailure; confirm service readiness and make a bounded retry after recovery.\nDo not restart services merely because a gateway error appears.\n",
+    "## Mobile certificate-chain coverage and pinning diagnostics (verified 2026-09-29, Android MCSDK 15.16.3088426 / iOS MCSDK 15.16.803.3089231)\n\nSDK Start trust (mc_config iam.trustedSslServerCerts, passed to the version-specific\nStart API) is SEPARATE from WebView proxy trust (Flutter pinnedCertificates/\ncertPinningEnabled; iOS KsTrustedWebViewConfiguration.certsDataForValidation).\nConfigure and verify both independently, matching each API's expected DER/PEM\ncontract. NEVER disable certificate or hostname verification.\n\nThe mobile TLS client may negotiate or build a DIFFERENT chain than desktop\nverification. Verified on iOS (simulator and physical device, 2026-09-29): for a\nLet's Encrypt chain, iOS builds the chain to the self-signed system root\nISRG Root X2, while desktop verification sees ISRG Root X1 via the cross-sign.\nPinning X1 alone produces KS_CERTIFICATE_ERROR (onURLBlocked reason 1, subsystem\n1500000, log line \"servercert validation endresult failed\") even though SecTrust\nitself succeeds. Fix: pin the authentic X2 (taken from the system root store and\nfingerprint-checked) ALONGSIDE X1 - do not weaken pinning.\n\nDerive approved trust anchors from the chains actually negotiated by the mobile\nTLS clients on each target platform; never hard-code one CA for all environments,\nand never assume one observed chain applies everywhere.\n\nPinning diagnostics on iOS: KsTrustedWebView.setLogListener plus\nKsTwvLog.setLogLevel(debug) - temporarily, remove after diagnosis - shows the\nper-certificate validation steps.\n\nThe Android trusted-proxy full-URL allowlist matching fix (anchored escaped-origin\nregex, see the allowlist section) is already part of this knowledge pack; a\nKS_CERTIFICATE_ERROR is not automatically that allowlist issue nor automatically a\nchain issue - check both with the actual logs.\n\nPreflight before every device round: run sdk_tls_chain_check with the\nenvironment hosts and the exact certsDataForValidation / trustedSslServerCerts\nasset the app will ship. An X1-only asset against the akinci-style\nleaf<-YE2<-Root YE<-ISRG Root X2 serving is reported as missing X2 BEFORE a\nphone is touched (VAL-16/VAL-36). The tool only reads served chains; it never\ndisables pinning or verification.",
+    "\n### Preserve the selected themed clients\n\nBefore choosing enrollment/login client IDs, read the current project choices and\ninspect the deployed clients' login_theme, browser-flow bindings and redirect URIs.\nWhen the user selected a styled copy of a working flow, retain those client IDs in\nboth the WebView request and SDK IAM configuration. Do not revert to BDDK-named\nexample clients merely because this recipe uses them as a reference: those may\nselect a different theme. Keep the original flow unchanged. Rendering the selected\ntheme verifies presentation only; test authentication and SDK completion separately.\n"
+  ],
+  "expected_result": "SDK activation and returning login verified separately; terminal TMS result matches backend outcome.",
+  "failure_handling": [
+    "Read warning/runtime/fatal explanations before retrying. Do not infer activation from web success or approval from HTTP202.",
+    "Keep current deployment policy; never invent AST IDs, substitute SuperApp V2 or export IAM tokens into Dart.",
+    "Android trusted WebView whiteList entries are full-URL regular expressions. Escape the configured HTTPS origin and permit its path; a bare origin rejects /auth/... . Keep certificate pinning enabled. If Proxy set up is correct precedes certificate verification failed, inspect the URL allowlist: processReceivedSslError combines both checks, so that message alone does not establish a certificate-chain failure.",
+    "800000279 at Start: unsupported SignedJWT + mKex/SE-signing combination in mc_config. Set maverick.mKex=false and useSEKeyForSigningTransactions=false for the SignedJWT path on the qualified 15.16 tuple (runtime-verified, 2026-09-29 validation round); preserve the numeric error fields and check the device log — the explanation may appear only in native logs.",
+    "Enrollment HTTP 406 with 513/4002: check ASTCLIENTDATA fragment concatenation (no separator per kssidpdart 0.6.0) and that the SDK ASTCLIENTID (null ULID included) was forwarded unchanged, before touching clients or flows. Encoding fix unit-verified 2026-09-29; device retest pending.",
+    "Before retrying a failed enrollment, read back the fixture: the activation code may be consumed and a password credential or partial AST client created even though the SDK reported failure.",
+    "KS_CERTIFICATE_ERROR / onURLBlocked reason 1 / subsystem 1500000 \"servercert validation endresult failed\": the pinned set did not cover the mobile-negotiated chain (verified iOS: ISRG Root X2 system root vs desktop X1 cross-sign, 2026-09-29). Pin the fingerprint-checked authentic X2 alongside X1; never disable validation or hostname checks. Never blank-fail the WebView (VAL-36, 2026-09-29): the X1-only pinning failure on Flutter iOS rendered a SILENT white/blank page with no user-visible error, and the gap was only found by chain inspection. In the reference integration a blank page must be IMPOSSIBLE: wire onWebResourceError/onWebResourceHttpError (Flutter NavigationDelegate), the trusted-WebView failure callbacks (onURLBlocked/KS_CERTIFICATE_ERROR, load-failure delegate methods) and every TLS-failure path to a visible in-app diagnostic view that replaces the WebView content and shows the numeric error code, the phase and a sanitized hint (for example 'certificate validation failed - check the pinned trust anchors'), never URLs, hostnames, tokens or other secrets. Surfacing the error never means weakening or disabling validation. Tests must force a trust failure and assert the diagnostic view appears instead of a blank page.",
+    "Dart sanitizer/redaction defects can swallow SDK errors (2026-09-29 validation round, kssidpdart 0.6.0): the inline (?i) flag is INVALID in Dart RegExp and throws FormatException at construction, so the diagnostic path itself fails and hides the SDK error. Use RegExp(pattern, caseSensitive: false) and EXECUTE sanitizers in tests against representative errors and secret-bearing inputs. Redaction invariant: the numeric SDK status/errorCode/type and the sanitized description must survive secret redaction - keep the numeric code under a distinct key such as errorCode outside the redaction boundary; a redactor matching generic 'code=' fields erased error evidence. UI/test automation must filter credential-bearing fields before emitting output; never log plaintext credentials or authorization URLs.",
+    "Toolchain surprises during long Flutter builds (2026-09-29 round): a half-installed Android NDK failed mid-build (VAL-06; local NDK 27.2.12479018 compiled - a local workaround, not vendor qualification) and the iOS Runner/Pods deployment target had to be raised to iOS 15 for Xcode 27 during compilation (VAL-07). Run a local toolchain preflight first (complete NDK, supported compilers, deployment target vs installed Xcode, signing/device readiness, disk space) and never mutate shared toolchains automatically.",
+    "Encrypted-file-logging capability matrix per SDK family x platform (2026-09-29 validation round): classic MCSDK 15.16 Android = SUPPORTED (logs_mPower written, runtime-observed); classic MCSDK 15.16 Swift iOS = SUPPORTED (validated); shift delivery 549 Flutter/Android (ksmastercontrollerwrapperdart 106.0.0, libnb.so core) = NOT WRITING - it accepts logsStorageDirectory at init but writes ZERO encrypted log files even at LogDebug (VAL-34, open vendor question; H-LOG-1 stands after the H-LOG-2 probe refuted the last public knob); shift 549 Flutter/iOS = SUPPORTED (validated 2026-09-29 on device: 3 encrypted log files, ~696 KB, CRC-clean ZIP with manifest, zero plaintext hits; VAL-38 - same delivery writes logs on iOS but not Android, so the VAL-34 defect is Android-platform-specific in the shift core). Acceptance runners must mark a known NOT-WRITING gap as EXPECTED-FAIL instead of probing the device again; an EXPECTED-FAIL is not a pass and does not close the vendor question. Update this matrix only from runtime evidence on the exact delivery, never by assuming family parity."
+  ],
+  "checklist": [
+    "SDK startup and complete packaged assets verified.",
+    "SetAuthorisationCode succeeds after enrollment.",
+    "Persisted user and returning login succeed after restart.",
+    "SignedJWT grant independently observed if claimed.",
+    "TMS approve, reject and timeout tested independently against backend results.",
+    "iOS device and push delivery tested separately.",
+    "Mobile bundle/package identity and AST app/version are distinguished; reuse decision is supported by registration, integrity and applicable binding evidence.",
+    "WebView proxy trust anchors, pinning and allowed origins configured independently from SDK Start.",
+    "WebView failures preserve numeric error, sanitized explanation and phase; duplicate callbacks and load failures handled.",
+    "Forced trust/load failure shows the sanitized in-app diagnostic view (numeric code + hint, no URLs or secrets) instead of a blank page; a blank page is impossible in the reference integration.",
+    "Backend failure before navigation is distinguished from WebView TLS failure; recovery retested.",
+    "Exported ZIP reopened and receiving-app access verified.",
+    "Trusted WebView full-URL allowlist permits the intended authentication path and rejects other origins; certificate pinning remains enabled.",
+    "Failed result events and ConnectionManagerError inspected alongside Warning/RuntimeError/FatalError; actual log destination checked before export.",
+    "AST header construction matches the delivered wrapper contract: clientData fragments concatenated without separator; SDK ASTCLIENTID (including the null ULID) forwarded unchanged; one PKCE state/nonce/S256 pair kept through GET and POST.",
+    "Redirect interception validates exact scheme/host/effective port/path plus state, rejects different-port redirects, consumes the code once and ignores duplicate callbacks.",
+    "Backend fixture state (credentials, AST client) read back before any enrollment retry or new activation code.",
+    "Pinned trust anchors cover the chains actually negotiated by the mobile TLS clients (SDK Start trust and WebView trust verified separately); no verification disabled.",
+    "Sanitizers executed in tests: valid Dart RegExp flags (no inline (?i)), no throw on representative errors, numeric errorCode/type and sanitized description survive secret redaction, credential-bearing UI fields filtered before any emitted output.",
+    "Authentication mode explicitly decided and recorded before activation (enum no=0, biometric=1, password=2, pin=3; preferred biometric); a missing decision produced a blocking prompt, not a silent default."
+  ],
+  "platform_notes": {
+    "flutter_android": "Manual foreground approval verified on physical Android; device PIN uses system UI.",
+    "flutter_ios": "Shared Dart recipe; final environment and iOS physical-device runtime unverified."
+  },
+  "source_evidence": {
+    "flutter_android": {
+      "kind": "local_integration_validation",
+      "date": "2026-09-24",
+      "wrapper_version": "107.0.0",
+      "hardening_version": "21.0.0",
+      "scope": "26 app tests; Android live foreground TMS approval; unsigned iOS build before final environment change.",
+      "additional_source_review": {
+        "date": "2026-09-25",
+        "delivery": "Flutter549",
+        "wrapper": "106.0.0",
+        "hardening": "20.1.0",
+        "files": [
+          "flutter_hardening/lib/webview/default/webview_flutter/src/webview_controller.dart",
+          "flutter_hardening/lib/utils/RunTimeError.dart",
+          "ksmastercontrollerwrapperdart/lib/src/api/object_converter/ks_event.dart"
+        ],
+        "runtime_scope": "Physical Android: SDK key exchange HTTP200, trusted proxy certificate verification OK and enrollment page rendered after correcting full-URL allowlist. Activation, returning login and TMS not tested in this run."
+      }
+    },
+    "flutter_ios": {
+      "kind": "local_integration_validation",
+      "date": "2026-09-24",
+      "wrapper_version": "107.0.0",
+      "hardening_version": "21.0.0",
+      "scope": "26 app tests; Android live foreground TMS approval; unsigned iOS build before final environment change.",
+      "additional_source_review": {
+        "date": "2026-09-25",
+        "delivery": "Flutter549",
+        "wrapper": "106.0.0",
+        "hardening": "20.1.0",
+        "files": [
+          "flutter_hardening/lib/webview/default/webview_flutter/src/webview_controller.dart",
+          "flutter_hardening/lib/utils/RunTimeError.dart",
+          "ksmastercontrollerwrapperdart/lib/src/api/object_converter/ks_event.dart"
+        ],
+        "runtime_scope": "Shared Dart source reviewed; no iOS physical-device validation for wrapper106.0.0/hardening20.1.0. Android runtime results do not qualify iOS."
+      }
+    }
+  },
+  "qualification": {
+    "level": "partial_device_validation",
+    "mobile_sdk_versions_verified": [],
+    "compiled_examples": false,
+    "device_verified": false,
+    "note": "Android foreground approval observed. No general version certification or iOS device qualification."
+  },
+  "examples": {
+    "flutter_android": {
+      "language": "dart",
+      "kind": "recipe",
+      "compile_ready": false,
+      "code": "// Follow the bundled sequence using the exact APIs of the supplied wrapper.",
+      "validation": {
+        "executed": false,
+        "scope": "Recipe text; no standalone compiled snippet."
+      }
+    },
+    "flutter_ios": {
+      "language": "dart",
+      "kind": "recipe",
+      "compile_ready": false,
+      "code": "// Follow the bundled sequence using the exact APIs of the supplied wrapper.",
+      "validation": {
+        "executed": false,
+        "scope": "Recipe text; no standalone compiled snippet."
+      }
+    }
+  },
+  "integration_generation": "flutter_mcsdk_trusted_webview",
+  "backend_tools": [
+    "sdk_native_preflight",
+    "sdk_idp_activation_code_generate",
+    "sdk_tms_trigger",
+    "sdk_tms_status",
+    "sdk_tms_result",
+    "sdk_app_list",
+    "sdk_app_get",
+    "sdk_app_versions",
+    "sdk_config_write",
+    "sdk_backend_auth_test",
+    "sdk_tls_chain_check"
+  ],
+  "runtime_acceptance": {
+    "flutter_android": {
+      "foreground_tms_approval": "verified",
+      "ios_device": "not_run",
+      "push": "not_run",
+      "reject_timeout": "not_run",
+      "signed_jwt_grant": "not_independently_observed",
+      "delivery_549": {
+        "wrapper_version": "106.0.0",
+        "hardening_version": "20.1.0",
+        "key_exchange": "verified",
+        "trusted_webview_enrollment_page": "verified",
+        "activation": "not_run",
+        "returning_login": "not_run",
+        "tms": "not_run"
+      }
+    },
+    "flutter_ios": null
+  }
+}

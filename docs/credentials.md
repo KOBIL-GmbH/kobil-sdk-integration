@@ -83,6 +83,29 @@ source intact; arrange its retention or removal locally. No store enumeration or
 get-secret tool is provided. The intentional activation-code/token-delivery tools
 are separate from keystore management.
 
+## Private output and file-reference setup diagnostics
+
+When a private/credential output destination or a `file` credential reference
+fails, the error is a metadata-only diagnostic: it distinguishes existence,
+permissions, ownership, path/type problems and provider support without ever
+disclosing credential values or file contents. There is no plaintext fallback.
+
+Errors also state whether the backend was involved: a private-output setup
+failure (`output_path` for `sdk_idp_client_secret_write/rotate`,
+`sdk_idp_source_token_write`, `sdk_idp_token_exchange`) is reported BEFORE the
+backend request of that tool is sent, so backend state is unchanged; only a
+failure after dispatch reports an uncertain backend change (never retried
+automatically). A failing activation-code reference in
+`sdk_idp_activation_code_set` likewise fails before the credential write is
+dispatched.
+
+Field evidence (2026-09-29 validation round, kssidpdart 0.6.0 Flutter app): an
+activation-code private-FILE output path failed with ACCESS_DENIED while the
+Keychain-reference path succeeded afterwards. The exact cause of that file
+failure was not confirmed — the diagnostics above exist so the next occurrence
+identifies permissions vs ownership vs provider support precisely instead of a
+bare ACCESS_DENIED.
+
 ## Local setup CLI
 
 After installation, run `kobil-sdk-credentials --help`. The CLI never prints a
@@ -335,3 +358,44 @@ in the receiving project. The receiver uses its retained identity to list names
 with `sdk_age_store_list`, then imports the selected servers through
 `sdk_age_server_bundle_import`. Use project-local encrypted output settings and
 the `kobil-sdk/import/` namespace. A private key is never part of the handoff.
+
+## Bundled default and project-local servers
+
+Each package contains `bundles/akinci.age`, an encrypted default test-server delivery.
+It contains durable server credentials; it contains no private decryption identity.
+Access to its separately provisioned delivery identity grants access to that delivery.
+Do not include that identity in source control, a wheel, or the project directory.
+
+Two encrypted files serve different purposes:
+
+- **Package bundle:** immutable default delivery, updated through a package release.
+- **Project `.kobil-sdk/environments.age`:** writable local server profiles and
+  credentials, encrypted for this project's own identity. Additional environments
+  use the existing age tools; the packaged bundle is never modified at runtime.
+
+For normal first-start setup, call `sdk_onboarding_prepare(project_path)`. When
+`KOBIL_SDK_PROJECT` is configured (or derivable from a project-local connection
+selector), MCP startup prepares the identity and email draft automatically.
+Otherwise the caller must provide the project path; the MCP never guesses its
+working directory. Read the draft with sdk_onboarding_prepare and present it to
+the user. It saves public recipient.txt and credential-request.txt inside
+.kobil-sdk and creates incoming/ for returned encrypted files. No email is sent.
+
+The sender encrypts server credentials for the receiver's public key using
+sdk_age_server_bundle_export, and can deliver SFTP credentials separately using
+sdk_age_transfer_export with matching connection settings and a verified SSH
+host key. Import with the receiver's project identity. Normal setup never requires
+the package's shared delivery private key. Explicit managed bundle initialization
+with sdk_default_initialize(bundle_identity_path=...) remains an advanced option.
+
+Initialization never replaces existing server profiles, credentials or connection
+selectors, and never contacts a backend. Rerunning it preserves local changes;
+a newer packaged bundle does not silently rotate an existing installation.
+Select the returned `connection_path` through `KOBIL_SDK_CONNECTION`, then check
+backend status and authenticate separately. The delivery key is not needed for
+normal backend operations after import. Keep the project key outside the project.
+
+AST profiles may explicitly select `oauth_password` with `token_url`, `client_id`,
+`username`, and a `credential` reference. This obtains a fresh access token from
+an already-enabled password-grant client; it does not enable the grant or modify
+roles. Do not persist short-lived bearer tokens in default deliveries.

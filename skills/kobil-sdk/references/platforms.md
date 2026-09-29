@@ -29,6 +29,39 @@ fresh and existing apps separately. Flutter requires separate Android and iOS ev
 excluded from the external-customer scope. Missing test hosts and unavailable
 SDK artifacts for the in-scope targets remain explicit blockers.
 
+## Authentication-mode matrix and preferred login path (15.16, 2026-09-29)
+
+Verified tuple: Android MCSDK 15.16.3088426, iOS MCSDK 15.16.803.3089231
+(2026-09-29 validation round).
+
+| Platform | Available local authentication |
+|---|---|
+| iOS (KSMAuthenticationMode) | no, biometric, password — there is NO PIN mode |
+| Android | device-credential and biometric authentication classes |
+
+On Android the user-authentication policy is bound at Keystore KEY CREATION and
+cannot be changed on existing keys. Switching mode later requires discarding the
+keys and a fresh activation with a new activation code. The mode decision MUST be
+made and recorded before the key-creating activation step; never silently fall
+back from a selected biometric policy.
+
+Decision gate (E16, Android PIN-prompt surprise): an explicit authentication-mode
+decision is REQUIRED before activation — enum no=0, biometric=1, password=2,
+pin=3 (iOS 15.16 exposes no PIN mode); preferred method is biometric (user
+decision). Activation guidance or automation without a declared mode must produce
+a blocking prompt/warning, never a silent default: an unwanted first-activation
+mode costs an uninstall plus a fresh activation code to undo.
+
+Preferred method (user decision, 2026-09-29): trusted WebView enrollment and
+interactive login, with SignedJWT token-based returning login
+(useTokenBasedLogin=true, SE-signed JWT OfflineLogin), protected by device
+biometrics/face recognition — iOS biometric mode; Android BIOMETRIC_STRONG with
+no device-credential fallback. PIN/password/no-authentication remain documented
+alternatives, not defaults. On this tuple SignedJWT is incompatible with
+maverick.mKex=true or useSEKeyForSigningTransactions=true (800000279); the
+tested known-good combination used both false — a tested combination, not a
+universal default.
+
 ## Verified Android activation and login
 
 Verified tuple: fresh Kotlin debug app, KSSIDP 1.7.0 / MC 188.1.2937039,

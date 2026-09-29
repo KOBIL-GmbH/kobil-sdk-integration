@@ -10,6 +10,9 @@
     "Capture event class, original errorType, errorDescription and unsigned errorCode for Warning, RuntimeError and FatalError.",
     "Record timestamp, current SDK state, pending operation and last relevant event with sensitive fields removed.",
     "Keep the original SDK error separate from an app-created timeout or invalid-state message.",
+    "Keep the numeric SDK status/errorCode/type under a distinct key such as errorCode OUTSIDE the secret-redaction boundary: redaction removes secrets, never the numeric code, error type or the sanitized description. A Swift redactor matching generic 'code=' fields erased the error evidence in the 2026-09-29 validation round (iOS MCSDK 15.16.803.3089231).",
+    "Execute every sanitizer/redactor in tests against representative SDK errors and secret-bearing inputs before relying on it: a sanitizer that throws at runtime swallows the SDK error it should report.",
+    "Capture Warning/RuntimeError/FatalError AND failed result events, ConnectionManagerError and WebView error channels BEFORE any cleanup, reset or teardown; teardown must not destroy the only failure evidence.",
     "Stop blind retries after a fatal or uncertain state; use the documented recovery/start/restart transition.",
     "If progress stops, present the captured evidence and ask for missing deployment/SDK information."
   ],
@@ -18,15 +21,20 @@
     "All three error categories are handled.",
     "Numeric code and full description survive formatting.",
     "Fatal events are observable even before activation UI appears.",
-    "No password, activation code, token or configuration JWT is in the diagnostic log."
+    "No password, activation code, token or configuration JWT is in the diagnostic log.",
+    "Numeric SDK status/errorCode/type and the sanitized description survive secret redaction (tested with representative secret-bearing errors).",
+    "Sanitizers/redactors are executed in tests and do not throw on representative inputs.",
+    "UI automation filters credential-bearing fields before emitting any output; raw evidence stays private and no plaintext credential or authorization URL is logged."
   ],
   "failure_handling": [
     "Do not guess an error meaning from a numeric code; use version-matched evidence.",
-    "GettingStarted sample handlers are not uniformly complete: improve them rather than copying their omissions."
+    "GettingStarted sample handlers are not uniformly complete: improve them rather than copying their omissions.",
+    "Qualify logger and diagnostic APIs against the exact SDK BINARY, not only headers: a header-declared selector can be absent from the shipped binary and crash at first use despite a clean build. Keep a runtime smoke test for logger initialization.",
+    "UI automation must filter credential-bearing fields (passwords, activation codes, OTP inputs) before returning output; never dump raw UI text during authentication (2026-09-29 validation round evidence)."
   ],
   "platform_notes": {
     "android": "The inspected ErrorHandlingModel logs generic runtime/warning messages and lacks a fatal branch in that class; do not copy it as complete diagnostic coverage. The 15.16 events inherit AbstractErrorEvent getters. Java int is signed: use errorCode.toLong() and 0xffffffffL to preserve its unsigned value.",
-    "ios": "ErrorModel receives KSMWarningEvent, KSMErrorRuntimeEvent and KSMErrorFatalEvent and extracts descriptions/codes. Preserve the original SDK error type too. In the 15.16 delivery, Warning uses errorStatus; RuntimeError/FatalError use errorType. The Objective-C signed int errorCode needs UInt32(bitPattern:) to retain the unsigned 32-bit code."
+    "ios": "ErrorModel receives KSMWarningEvent, KSMErrorRuntimeEvent and KSMErrorFatalEvent and extracts descriptions/codes. Preserve the original SDK error type too. In the 15.16 delivery, Warning uses errorStatus; RuntimeError/FatalError use errorType. The Objective-C signed int errorCode needs UInt32(bitPattern:) to retain the unsigned 32-bit code. Logger initialization (runtime-verified 2026-09-29, iOS MCSDK 15.16.803.3089231): the 15.16 header declares +getLogSinkWithLogLevel:, but the shipped binary does not implement that selector - calling it raises unrecognized selector at runtime despite a clean build. Verified fallback: obtain the sink with getLogSink() and then call setSeverityLevel(.info) (or the selected level). Qualify the logger API against the actual binary and keep a runtime smoke test."
   },
   "source_evidence": {
     "ios": {

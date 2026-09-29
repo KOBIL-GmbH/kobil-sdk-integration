@@ -44,3 +44,45 @@ class TmsTests(unittest.TestCase):
         self.assertFalse(cancel(backend, 'TEST01')['final_result_verified'])
         backend.request.assert_called_once_with('DELETE', '/tms/TEST01')
         with self.assertRaises(ValueError): cancel(backend, '../another')
+
+    def test_default_freshness_is_applied_and_not_warned(self):
+        backend = Mock()
+        backend.request.return_value = {'id': 'TEST01', 'status': 'PENDING'}
+        result = trigger(backend, UID, 'Synthetic test', 60, 30, False)
+        self.assertEqual(backend.request.call_args.args[2]['requireFreshnessOfAuthentication'], 3600)
+        self.assertNotIn('warning', result)
+        for value in (-1, 120, 3600, 86400):
+            backend.reset_mock()
+            self.assertNotIn('warning', trigger(backend, UID, 'Synthetic test', 60, 30, False, value))
+            self.assertEqual(backend.request.call_args.args[2]['requireFreshnessOfAuthentication'], value)
+
+    def test_unconfirmable_freshness_still_creates_but_warns(self):
+        # VAL-28 (2026-09-29, iOS MCSDK 15.16.803.3089231): freshness_seconds=0 produced a
+        # guaranteed confirmation-time HTTP 403 wrapped as SDK errorCode 516004035.
+        for value in (0, 60, 119):
+            backend = Mock()
+            backend.request.return_value = {'id': 'TEST01', 'status': 'PENDING'}
+            result = trigger(backend, UID, 'Synthetic test', 60, 30, False, value)
+            backend.request.assert_called_once()
+            self.assertEqual(result['transaction_id'], 'TEST01')
+            for token in ('516004035', 'HTTP 403', '85 seconds', 'CONFIRMATION', '3600', '-1'):
+                self.assertIn(token, result['warning'], token)
+
+    def test_result_http_412_maps_to_explicit_pending(self):
+        from kobil_sdk_integration.backend import BackendError
+        precondition = BackendError('Backend request failed (HTTP 412; backend_error)')
+        precondition.status_code = 412
+        backend = Mock()
+        backend.request.side_effect = precondition
+        result = read(backend, 'TEST01', result=True)
+        self.assertEqual(result['status'], 'pending')  # lowercase: distinguishable from backend [A-Z_] statuses
+        self.assertFalse(result['result_available'])
+        self.assertIn('not a backend error', result['note'].lower())
+        self.assertIn('re-trigger', result['note'])
+        # the status endpoint has no verified 412 pending semantics; it must still raise
+        with self.assertRaises(BackendError): read(backend, 'TEST01', result=False)
+        # other statuses and 412 errors without status metadata remain real errors
+        for error in (BackendError('Backend request failed (HTTP 403; permission_denied)'),
+                      BackendError('Backend request failed (HTTP 412; backend_error)')):
+            backend.request.side_effect = error
+            with self.assertRaises(BackendError): read(backend, 'TEST01', result=True)

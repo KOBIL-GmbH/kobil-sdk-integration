@@ -23,11 +23,14 @@
   ],
   "failure_handling": [
     "Do not automate approval of an arbitrary real transaction. Use explicit test transactions.",
-    "UI timeout and backend completion may race; inspect final result rather than submitting twice."
+    "UI timeout and backend completion may race; inspect final result rather than submitting twice.",
+    "errorCode 516004035 presented as generic \"A network error occurred\" during confirmation can actually be an authentication-FRESHNESS rejection: the backend answered HTTP 403 \"The access token is 85 seconds older than required\" and the SDK wraps it; the real cause is visible only in the embedded HTTP body of the error (observed 2026-09-29, iOS MCSDK 15.16.803.3089231). Inspect the embedded HTTP body before diagnosing a network problem, and check the trigger's requireFreshnessOfAuthentication value.",
+    "requireFreshnessOfAuthentication is evaluated at CONFIRMATION time, not at trigger time: 0 (or values below the confirmation latency) makes every confirmation fail with the 403/516004035 pattern above. Use the sdk_tms_trigger default 3600, a deliberate larger value, or -1 to disable; two device attempts were wasted on this trap before diagnosis (VAL-28 evidence, 2026-09-29).",
+    "A not-yet-terminal transaction answers HTTP 412 on the backend result endpoint; sdk_tms_result maps it to an explicit lowercase status \"pending\" (observed 2026-09-29 during bounded-wait polling). Pending is not a backend error: keep bounded polling and never re-trigger a transaction because its result is still pending."
   ],
   "platform_notes": {
-    "android": "StartTransactionEvent \u2192 DisplayConfirmationRequestEvent \u2192 DisplayConfirmationEvent \u2192 DisplayConfirmationResultEvent \u2192 TransactionEndEvent in the inspected Shift model.",
-    "ios": "KSMStartTransactionEvent \u2192 KSMDisplayConfirmationRequestEvent \u2192 KSMDisplayConfirmationEvent \u2192 KSMDisplayConfirmationResultEvent \u2192 KSMTransactionFinishedEvent in the inspected model."
+    "android": "StartTransactionEvent → DisplayConfirmationRequestEvent → DisplayConfirmationEvent → DisplayConfirmationResultEvent → TransactionEndEvent in the inspected Shift model.",
+    "ios": "KSMStartTransactionEvent → KSMDisplayConfirmationRequestEvent → KSMDisplayConfirmationEvent → KSMDisplayConfirmationResultEvent → KSMTransactionFinishedEvent in the inspected model."
   },
   "source_evidence": {
     "ios": {

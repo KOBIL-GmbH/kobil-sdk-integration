@@ -38,10 +38,14 @@ def authentication(cfg):
             raise ValueError('Invalid authentication schema')
         auth = cfg['auth']
         fields = {'type', 'credential'}
-        if auth.get('type') == 'oauth_client_credentials':
+        if auth.get('type') in ('oauth_client_credentials', 'oauth_password'):
             fields |= {'token_url', 'client_id'}
             https_url(auth['token_url']); segment(auth['client_id'])
             if 'scope' in auth: fields.add('scope')
+            if auth['type'] == 'oauth_password':
+                fields.add('username')
+                if not isinstance(auth.get('username'), str) or not auth['username'].strip() or len(auth['username']) > 256:
+                    raise ValueError('Invalid OAuth username')
         elif auth.get('type') != 'bearer': raise ValueError('Invalid authentication mode')
         if set(auth) != fields: raise ValueError('Invalid authentication fields')
     else:
@@ -158,7 +162,11 @@ class AST:
         try:secret=resolve(auth['credential'])
         except CredentialError as error:raise BackendError(str(error)) from None
         if auth['type']=='bearer':return secret
-        form={'grant_type':'client_credentials','client_id':auth['client_id'],'client_secret':secret}
+        if auth['type'] == 'oauth_password':
+            form={'grant_type':'password','client_id':auth['client_id'],
+                  'username':auth['username'],'password':secret}
+        else:
+            form={'grant_type':'client_credentials','client_id':auth['client_id'],'client_secret':secret}
         if auth.get('scope'):form['scope']=auth['scope']
         result=self.send('POST',auth['token_url'],data=form)
         token=result.get('access_token') if isinstance(result,dict) else None
@@ -174,7 +182,9 @@ class AST:
                     category = {400: 'invalid_request', 401: 'authentication_failed', 403: 'permission_denied',
                                 404: 'resource_or_api_not_found', 405: 'operation_not_supported',
                                 409: 'conflict', 429: 'rate_limited'}.get(response.status_code, 'backend_error')
-                    raise BackendError('Backend request failed (HTTP %d; %s)' % (response.status_code, category))
+                    error = BackendError('Backend request failed (HTTP %d; %s)' % (response.status_code, category))
+                    error.status_code = response.status_code
+                    raise error
                 raw = bytearray()
                 for part in response.iter_bytes():
                     raw.extend(part)
@@ -238,8 +248,10 @@ class AST:
     def list_versions(self, app_name):
         versions = []
         for row in self._version_rows(app_name):
+            # The server appName query can return related names. Pagination must
+            # finish before filtering; never expose another app's metadata.
             if row['appName'] != app_name:
-                raise BackendError('Version response does not match requested app')
+                continue
             required = ('platform', 'versionStr', 'registerUserId')
             if any(not isinstance(row.get(k), str) or not row[k] for k in required):
                 raise BackendError('Incomplete version registration metadata')

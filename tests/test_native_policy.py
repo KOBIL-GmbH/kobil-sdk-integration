@@ -23,6 +23,7 @@ class NativePolicyTests(unittest.TestCase):
         api=API();r=self.run_check(api)
         self.assertEqual(r['status'],'configuration_checked');self.assertFalse(r['runtime_verified'])
         self.assertEqual(len(api.calls),4)
+        self.assertIn('certificate-chain coverage are not verified here',r['limits'])
     def test_incident_client_names_cannot_be_reused(self):
         api=API();r=self.run_check(api,login_client='AK539SdkValidationLogin')
         self.assertEqual(r['status'],'blocked');self.assertEqual(api.calls,[])
@@ -37,3 +38,28 @@ class NativePolicyTests(unittest.TestCase):
         self.assertEqual(self.run_check(path='kstrustedwebview',login_client='')['status'],'blocked')
         self.assertEqual(self.run_check(API(alias='SuperApp Login V2'),path='kstrustedwebview')['status'],'blocked')
         self.assertEqual(self.run_check(API(alias='Customer Trusted WebView'),path='kstrustedwebview')['status'],'configuration_checked')
+
+    def test_webview_preserves_themed_clients_and_reports_presentation_metadata(self):
+        class ThemedAPI(API):
+            def call(self, method, path, params=None):
+                result=super().call(method,path,params)
+                if path=='/clients':
+                    result[0]['attributes']={'login_theme':'customer-mobile'}
+                    result[0]['redirectUris']=['https://kobil/OpenIdRedirectUri']
+                return result
+        api=ThemedAPI(alias='Customer Trusted WebView')
+        result=self.run_check(api,path='kstrustedwebview',activation_client='StyledEnrollment',login_client='StyledLogin')
+        self.assertEqual(result['status'],'configuration_checked')
+        self.assertEqual([b['client_id'] for b in result['bindings']],['StyledEnrollment','StyledLogin'])
+        for binding in result['bindings']:
+            self.assertEqual(binding['login_theme_override'],'customer-mobile')
+            self.assertEqual(binding['theme_source'],'client_override')
+            self.assertEqual(binding['redirect_uris'],['https://kobil/OpenIdRedirectUri'])
+        self.assertFalse(result['runtime_verified'])
+        self.assertTrue(all(method=='GET' for method,_ in api.calls))
+
+    def test_absent_theme_override_does_not_invent_effective_theme(self):
+        result=self.run_check()
+        for binding in result['bindings']:
+            self.assertIsNone(binding['login_theme_override'])
+            self.assertEqual(binding['theme_source'],'realm_default_not_checked')

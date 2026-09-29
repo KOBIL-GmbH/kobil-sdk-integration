@@ -21,6 +21,20 @@ decryption. No new authentication operation was needed to export existing logs.
 iOS/Flutter remain source-reviewed only. Receiver opening, cancellation and
 post-share cleanup still require verification.
 
+## Encrypted-file-logging capability matrix (2026-09-29 validation round)
+
+| SDK family / delivery | Platform | Encrypted file logging |
+|---|---|---|
+| classic MCSDK 15.16 | Android | SUPPORTED (logs_mPower runtime-observed) |
+| classic MCSDK 15.16 | Swift iOS | SUPPORTED (validated) |
+| shift 549 (ksmastercontrollerwrapperdart 106.0.0, libnb.so) | Flutter/Android | NOT WRITING — accepts logsStorageDirectory at init, writes zero files even at LogDebug (VAL-34, open vendor question) |
+| shift 549 | Flutter/iOS | SUPPORTED — validated 2026-09-29 (3 encrypted files, ~696 KB, CRC-clean ZIP; VAL-38: same delivery writes logs on iOS but not Android) |
+
+Acceptance runners mark known NOT-WRITING gaps EXPECTED-FAIL (with the VAL
+reference) instead of probing the device again. EXPECTED-FAIL is not a pass and
+does not close the vendor question. Update the matrix only from runtime evidence
+on the exact delivery; never assume family parity.
+
 ## Collection contract
 
 1. Set up logging early enough to capture initialization. Retain the separate
@@ -41,6 +55,12 @@ post-share cleanup still require verification.
 6. Let the user save/share the validated ZIP. Keep it until the receiving share
    operation finishes, then clean up the export copy according to retention
    policy. Preserve source logs and existing activation/device state.
+7. Owner-assisted device tests (E06 extension): pre-declare the export
+   destination and the exact owner tap sequence — for example
+   `Send To → Save to Files → <declared path>` — in the owner channel BEFORE
+   opening the share sheet, then verify the ZIP at the declared destination
+   afterwards (reopen it, confirm nonempty encrypted SDK entries). An
+   unannounced share sheet left open is a blocked step, not a failed export.
 
 ## Kotlin / Android
 

@@ -57,8 +57,22 @@ requireExplicitAuthentication and requireFreshnessOfAuthentication. Resolve
 units and policy semantics from the deployed API; do not copy sample timeout
 numbers without checking them. Backend authorization remains server-side.
 
+requireFreshnessOfAuthentication is the maximum age in seconds of the confirming
+device's authentication, checked at confirmation time — not at trigger time.
+`sdk_tms_trigger` defaults it to 3600 and `-1` disables the check. `0` (or any
+value below the confirmation latency) creates a transaction that is guaranteed
+to fail at confirmation: observed 2026-09-29 (iOS MCSDK 15.16.803.3089231) as
+HTTP 403 "The access token is 85 seconds older than required", which the SDK
+wraps as generic errorCode 516004035 "A network error occurred" — the freshness
+cause is visible only in the embedded HTTP body. The tool creates the
+transaction but returns an explicit warning for such values.
+
 Retain the returned transaction ID. Read status and final result independently;
-result may not be available while pending. Acceptance, rejection and expiry must
+result may not be available while pending. While a transaction is not yet
+terminal, the backend result endpoint answers HTTP 412; `sdk_tms_result` maps
+this to an explicit lowercase status `pending` (observed 2026-09-29 during
+bounded-wait polling). Pending is not a backend error: keep bounded polling and
+never re-trigger because a result is still pending. Acceptance, rejection and expiry must
 be checked against the final server response, not inferred from an HTTP200,
 notification, button tap or local success banner. Cancellation and display-message
 operations are separate capabilities.
