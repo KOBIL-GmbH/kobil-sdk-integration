@@ -68,6 +68,43 @@ class KnowledgeTests(unittest.TestCase):
         for platform, family in [('flutter', 'shift'), ('ios', 'ssms')]:
             self.assertEqual(get_topic('automated_testing', platform, family)['status'], 'knowledge_gap')
 
+    def test_release_qualified_configuration_and_error_codes(self):
+        setup=get_topic('setup','android')
+        text=' '.join((' '.join(setup['sequence'])+' '+' '.join(setup['failure_handling'])+' '+' '.join(setup['checklist'])).split())
+        for token in ('useScp','useTokenBasedLogin','useSmartScreen','astServerBackend',
+                      'clientId','redirectUri','trustedSslServerCerts','mTLS','mKex',
+                      'useSEKeyForSigningTransactions','GettingStarted','800000133',
+                      '800000015','800000279','15.16.3088426','15.16.803.3089231','2026-09-29'):
+            self.assertIn(token,text,token)
+        self.assertIn('Tag is empty, but category not',text)
+        self.assertIn('not the TMS notification category'.lower(),text.lower())
+        self.assertIn('partially unverified',text)
+        self.assertIn('not a universal default',text)
+        self.assertIn('mKex=false and useSEKeyForSigningTransactions=false',text)
+
+    def test_authentication_mode_matrix_and_preferred_method(self):
+        for platform in ('android','ios'):
+            activation=get_topic('activation',platform)
+            text=' '.join((' '.join(activation['prerequisites'])+' '+' '.join(activation['sequence'])+' '+' '.join(activation['failure_handling'])).split())
+            for token in ('KSMAuthenticationMode','no PIN mode','Keystore KEY CREATION',
+                          'new activation code','BIOMETRIC_STRONG','SignedJWT',
+                          'useTokenBasedLogin=true','OfflineLogin','2026-09-29'):
+                self.assertIn(token,text,token)
+            self.assertIn('alternatives, not defaults',text)
+            self.assertIn('before the key-creating activation step',text)
+            self.assertTrue(any('Authentication mode decided' in c for c in activation['checklist']))
+        checks=self.tools['sdk_integration_checklist']('activation','android')['checks']
+        self.assertTrue(any('Authentication mode decided' in c['description'] for c in checks))
+        self.assertTrue(all(c['status']=='not_run' for c in checks))
+
+    def test_flutter_preferred_path_and_signedjwt_compatibility(self):
+        data=get_topic('flutter_webview','flutter_android')
+        text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])).split())
+        for token in ('Preferred integration path','SignedJWT','useTokenBasedLogin=true',
+                      'BIOMETRIC_STRONG','800000279','mKex=false','Keystore key creation','2026-09-29'):
+            self.assertIn(token,text,token)
+        self.assertIn('not a universal default',text)
+
     def test_flutter_is_explicit_and_does_not_inherit_ios_acceptance(self):
         for platform in ('flutter_android', 'flutter_ios'):
             topics=self.tools['sdk_knowledge_topics'](platform)['topics']
