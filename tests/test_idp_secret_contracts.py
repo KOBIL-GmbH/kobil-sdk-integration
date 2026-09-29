@@ -48,6 +48,14 @@ class ActivationCodeTests(unittest.TestCase):
         idp_secrets.register(registry)
         self.generate=registry.tools['sdk_idp_activation_code_generate']
 
+    def test_description_carries_auth_mode_decision_gate(self):
+        # E16: the activation-code tool warns before the mode-binding activation
+        doc=self.generate.__doc__
+        for token in ('EXPLICIT local authentication-mode','no=0, biometric=1, password=2, pin=3',
+                      'Keystore','KEY CREATION','FRESH activation code','block',
+                      'never proceed on a silent default','preferred:','biometric'):
+            self.assertIn(token,doc,token)
+
     def test_generate_stores_credential_without_profile_or_flow_changes(self):
         import json
         with patch.object(idp_secrets,'Admin') as admin:

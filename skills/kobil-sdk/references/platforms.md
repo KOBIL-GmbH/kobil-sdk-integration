@@ -45,6 +45,13 @@ keys and a fresh activation with a new activation code. The mode decision MUST b
 made and recorded before the key-creating activation step; never silently fall
 back from a selected biometric policy.
 
+Decision gate (E16, Android PIN-prompt surprise): an explicit authentication-mode
+decision is REQUIRED before activation — enum no=0, biometric=1, password=2,
+pin=3 (iOS 15.16 exposes no PIN mode); preferred method is biometric (user
+decision). Activation guidance or automation without a declared mode must produce
+a blocking prompt/warning, never a silent default: an unwanted first-activation
+mode costs an uninstall plus a fresh activation code to undo.
+
 Preferred method (user decision, 2026-09-29): trusted WebView enrollment and
 interactive login, with SignedJWT token-based returning login
 (useTokenBasedLogin=true, SE-signed JWT OfflineLogin), protected by device
