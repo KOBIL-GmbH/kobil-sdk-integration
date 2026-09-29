@@ -11,7 +11,7 @@
     "Locate the SDK-created log directories rather than exporting only app console output.",
     "Create a bounded archive in app-controlled storage, preserving encrypted SDK log contents.",
     "Check archive creation succeeded and the expected entries are present.",
-    "Expose it through the platform sharing/file mechanism with scoped access.",
+    "Expose it through the platform sharing/file mechanism with scoped access. For owner-assisted device tests, pre-declare the export destination and the exact tap sequence (for example 'Send To -> Save to Files -> <declared path>') in the owner channel BEFORE opening the share sheet, then verify the ZIP at the declared destination afterwards (reopen, nonempty encrypted SDK entries).",
     "Record SDK version and reproduction time separately; remove temporary exports according to app retention policy."
   ],
   "expected_result": "Archive exists, is nonempty and contains SDK log entries.",
