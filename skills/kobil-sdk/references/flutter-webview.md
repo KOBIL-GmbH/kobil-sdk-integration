@@ -140,6 +140,18 @@ An AST TMS HTTP202 is submission only; a pending result may return HTTP412.
 Keep activation, returning login, observed SignedJWT grant, approve/reject/timeout,
 push and iOS device results separate. Never automate approval of a real transaction.
 
+Sanitizer/redaction rules (2026-09-29 validation round, kssidpdart 0.6.0): the
+inline `(?i)` flag is invalid in Dart `RegExp` and throws `FormatException` at
+construction — a throwing sanitizer swallows the SDK error it should report. Use
+`RegExp(pattern, caseSensitive: false)` and EXECUTE sanitizers in tests against
+representative errors and secret-bearing inputs. The numeric SDK
+status/errorCode/type and the sanitized description must survive secret
+redaction — keep the numeric code under a distinct key such as `errorCode`
+outside the redaction boundary (a redactor matching generic `code=` fields
+erased error evidence). UI/driver automation must filter credential-bearing
+fields before emitting output; never log plaintext credentials or authorization
+URLs, and keep raw evidence private.
+
 Themes change presentation, not the SDK handshake. A copied client/flow may use
 its own theme while the original BDDK definitions remain unchanged. Rendering a
 new theme does not prove that its authentication submission succeeds.
