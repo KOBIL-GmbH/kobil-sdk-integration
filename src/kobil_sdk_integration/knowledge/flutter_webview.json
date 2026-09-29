@@ -33,7 +33,8 @@
     "800000279 at Start: unsupported SignedJWT + mKex/SE-signing combination in mc_config. Set maverick.mKex=false and useSEKeyForSigningTransactions=false for the SignedJWT path on the qualified 15.16 tuple (runtime-verified, 2026-09-29 validation round); preserve the numeric error fields and check the device log — the explanation may appear only in native logs.",
     "Enrollment HTTP 406 with 513/4002: check ASTCLIENTDATA fragment concatenation (no separator per kssidpdart 0.6.0) and that the SDK ASTCLIENTID (null ULID included) was forwarded unchanged, before touching clients or flows. Encoding fix unit-verified 2026-09-29; device retest pending.",
     "Before retrying a failed enrollment, read back the fixture: the activation code may be consumed and a password credential or partial AST client created even though the SDK reported failure.",
-    "KS_CERTIFICATE_ERROR / onURLBlocked reason 1 / subsystem 1500000 \"servercert validation endresult failed\": the pinned set did not cover the mobile-negotiated chain (verified iOS: ISRG Root X2 system root vs desktop X1 cross-sign, 2026-09-29). Pin the fingerprint-checked authentic X2 alongside X1; never disable validation or hostname checks."
+    "KS_CERTIFICATE_ERROR / onURLBlocked reason 1 / subsystem 1500000 \"servercert validation endresult failed\": the pinned set did not cover the mobile-negotiated chain (verified iOS: ISRG Root X2 system root vs desktop X1 cross-sign, 2026-09-29). Pin the fingerprint-checked authentic X2 alongside X1; never disable validation or hostname checks.",
+    "Dart sanitizer/redaction defects can swallow SDK errors (2026-09-29 validation round, kssidpdart 0.6.0): the inline (?i) flag is INVALID in Dart RegExp and throws FormatException at construction, so the diagnostic path itself fails and hides the SDK error. Use RegExp(pattern, caseSensitive: false) and EXECUTE sanitizers in tests against representative errors and secret-bearing inputs. Redaction invariant: the numeric SDK status/errorCode/type and the sanitized description must survive secret redaction - keep the numeric code under a distinct key such as errorCode outside the redaction boundary; a redactor matching generic 'code=' fields erased error evidence. UI/test automation must filter credential-bearing fields before emitting output; never log plaintext credentials or authorization URLs."
   ],
   "checklist": [
     "SDK startup and complete packaged assets verified.",
@@ -52,7 +53,8 @@
     "AST header construction matches the delivered wrapper contract: clientData fragments concatenated without separator; SDK ASTCLIENTID (including the null ULID) forwarded unchanged; one PKCE state/nonce/S256 pair kept through GET and POST.",
     "Redirect interception validates exact scheme/host/effective port/path plus state, rejects different-port redirects, consumes the code once and ignores duplicate callbacks.",
     "Backend fixture state (credentials, AST client) read back before any enrollment retry or new activation code.",
-    "Pinned trust anchors cover the chains actually negotiated by the mobile TLS clients (SDK Start trust and WebView trust verified separately); no verification disabled."
+    "Pinned trust anchors cover the chains actually negotiated by the mobile TLS clients (SDK Start trust and WebView trust verified separately); no verification disabled.",
+    "Sanitizers executed in tests: valid Dart RegExp flags (no inline (?i)), no throw on representative errors, numeric errorCode/type and sanitized description survive secret redaction, credential-bearing UI fields filtered before any emitted output."
   ],
   "platform_notes": {
     "flutter_android": "Manual foreground approval verified on physical Android; device PIN uses system UI.",

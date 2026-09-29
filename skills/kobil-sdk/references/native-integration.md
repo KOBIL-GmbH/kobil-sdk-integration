@@ -79,8 +79,10 @@ Runtime-verified error knowledge for this tuple:
   universal default.
 - iOS 15.16 binary lacks the header-declared +getLogSinkWithLogLevel: selector
   (unrecognized selector at runtime despite a clean build). Use getLogSink()
-  followed by setSeverityLevel instead (runtime-verified fallback; broader
-  logging diagnostics remain a separate E05 work item).
+  followed by setSeverityLevel(.info) instead (runtime-verified fallback,
+  iOS MCSDK 15.16.803.3089231, 2026-09-29). Qualify logger and diagnostic
+  APIs against the exact shipped BINARY, not only headers, and keep a runtime
+  smoke test for logger initialization; see "Error capture and redaction" below.
 
 Preferred method (user decision, 2026-09-29): trusted WebView enrollment and
 interactive login with SignedJWT token-based returning login
@@ -122,6 +124,33 @@ or older signatures — a signature mismatch silently fails to override.
 - Before any retry, read back the backend fixture (`sdk_idp_user_credentials_list`,
   `sdk_ast_find_client`): a stalled or failed enrollment can consume the
   activation code and create a password credential or partial AST client.
+
+## Error capture and redaction (2026-09-29 validation round)
+
+Qualified tuple: Android MCSDK 15.16.3088426 / iOS MCSDK 15.16.803.3089231,
+kssidpdart 0.6.0 for Flutter.
+
+- Qualify logger/diagnostic APIs against the exact shipped binary, not headers:
+  the iOS 15.16 header declares `+getLogSinkWithLogLevel:` but the binary does
+  not implement it (unrecognized-selector crash at first use). The verified
+  fallback is `getLogSink()` then `setSeverityLevel(.info)`. Keep a runtime
+  smoke test for logger initialization.
+- Redaction invariant (Swift evidence, VAL round): a redactor matching generic
+  `code=` fields erased the numeric error evidence together with the secrets.
+  Keep the numeric SDK status/errorCode/type under a distinct key such as
+  `errorCode` OUTSIDE the redaction boundary; the sanitized description must
+  also survive redaction.
+- Dart: the inline `(?i)` flag is invalid in `RegExp` and throws
+  `FormatException` at construction — a sanitizer that throws swallows the SDK
+  error it should report. Use `RegExp(pattern, caseSensitive: false)` and
+  EXECUTE every sanitizer in tests against representative errors and
+  secret-bearing inputs.
+- Capture Warning/RuntimeError/FatalError AND failed result events,
+  ConnectionManagerError and WebView error channels BEFORE cleanup/teardown;
+  teardown must not destroy the only failure evidence.
+- UI automation must filter credential-bearing fields (passwords, activation
+  codes, OTP inputs) before emitting output. Raw evidence stays private; never
+  log plaintext credentials or authorization URLs.
 
 ## Mobile certificate-chain coverage and pinning diagnostics (verified 2026-09-29)
 
