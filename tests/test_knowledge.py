@@ -285,3 +285,20 @@ class KnowledgeTests(unittest.TestCase):
             for token in ('sdk_tls_chain_check','missing','ISRG Root X2','VAL-16','VAL-36'):
                 self.assertIn(token,text,(topic,token))
             self.assertIn('sdk_tls_chain_check',data['backend_tools'])
+
+    def test_webview_failures_are_never_blank(self):
+        # E13 / VAL-36: a pinning failure rendered a silent blank page
+        for topic,platform in [('setup','android'),('setup','ios'),('activation','android'),
+                               ('activation','ios'),('flutter_webview','flutter_android'),
+                               ('flutter_webview','flutter_ios')]:
+            data=get_topic(topic,platform)
+            text=' '.join((' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])).split())
+            for token in ('blank page must be IMPOSSIBLE','VAL-36','visible in-app diagnostic',
+                          'numeric error code','sanitized hint','never URLs, hostnames, tokens',
+                          'never means weakening','force a trust failure'):
+                self.assertIn(token,text,(topic,token))
+        fw=get_topic('flutter_webview','flutter_android')
+        self.assertIn('onWebResourceError',' '.join(fw['failure_handling']))
+        self.assertTrue(any('impossible in the reference integration' in c for c in fw['checklist']))
+        self.assertTrue(any('impossible in the reference integration' in c
+                            for c in get_topic('activation','ios')['checklist']))
