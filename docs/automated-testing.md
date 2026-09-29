@@ -110,6 +110,16 @@ restore changed device settings. Report passed, failed, skipped and not_run
 separately. Retain Warning/RuntimeError/FatalError category, description, unsigned
 code and last state without credentials or unfiltered event payloads.
 
+## Issue-ID registry convention (E15)
+
+Workers never mint central `VAL-nn` identifiers: app-local issue files use
+descriptive slugs only (for example
+`flutter-android-sdk-no-encrypted-log-files`). The supervisor assigns the
+central `VAL-nn` at reconciliation and records the slug-to-ID mapping. Cite
+already-assigned central IDs verbatim; never renumber or reuse a slug for a
+different finding. Motivated by a 2026-09-29 collision between a worker-local
+ISSUES.md numbering and the central registry.
+
 ## Qualification
 
 Runner commands are source-derived templates, not executed test results. Discover

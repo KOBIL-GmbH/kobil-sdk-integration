@@ -349,3 +349,14 @@ class KnowledgeTests(unittest.TestCase):
                           '40-60 minutes','2026-09-29'):
                 self.assertIn(token,text,token)
             self.assertTrue(any('OWNER_CHANNEL.md' in c for c in data['checklist']))
+
+    def test_issue_id_registry_convention(self):
+        # E15: workers use descriptive slugs; the supervisor assigns central VAL-nn
+        for platform in ('android','ios'):
+            data=get_topic('automated_testing',platform)
+            text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['checklist'])).split())
+            for token in ('never mint central VAL-nn','DESCRIPTIVE SLUGS',
+                          'flutter-android-sdk-no-encrypted-log-files','reconciliation',
+                          'slug-to-ID mapping','never renumber','2026-09-29'):
+                self.assertIn(token,text,token)
+            self.assertTrue(any('descriptive slugs only' in c for c in data['checklist']))
