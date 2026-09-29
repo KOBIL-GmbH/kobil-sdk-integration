@@ -327,7 +327,7 @@ class KnowledgeTests(unittest.TestCase):
             for token in ('capability matrix','classic MCSDK 15.16 Android = SUPPORTED',
                           'classic MCSDK 15.16 Swift iOS = SUPPORTED',
                           'shift delivery 549 Flutter/Android','NOT WRITING','ZERO encrypted log files',
-                          'VAL-34','open vendor question','Flutter/iOS = PENDING',
+                          'VAL-34','open vendor question','Flutter/iOS = SUPPORTED',
                           'EXPECTED-FAIL','not a pass','never by assuming family parity','2026-09-29'):
                 self.assertIn(token,text,token)
             self.assertIn('SUPPORTED',logs['platform_notes'])
