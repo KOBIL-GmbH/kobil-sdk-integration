@@ -83,6 +83,29 @@ source intact; arrange its retention or removal locally. No store enumeration or
 get-secret tool is provided. The intentional activation-code/token-delivery tools
 are separate from keystore management.
 
+## Private output and file-reference setup diagnostics
+
+When a private/credential output destination or a `file` credential reference
+fails, the error is a metadata-only diagnostic: it distinguishes existence,
+permissions, ownership, path/type problems and provider support without ever
+disclosing credential values or file contents. There is no plaintext fallback.
+
+Errors also state whether the backend was involved: a private-output setup
+failure (`output_path` for `sdk_idp_client_secret_write/rotate`,
+`sdk_idp_source_token_write`, `sdk_idp_token_exchange`) is reported BEFORE the
+backend request of that tool is sent, so backend state is unchanged; only a
+failure after dispatch reports an uncertain backend change (never retried
+automatically). A failing activation-code reference in
+`sdk_idp_activation_code_set` likewise fails before the credential write is
+dispatched.
+
+Field evidence (2026-09-29 validation round, kssidpdart 0.6.0 Flutter app): an
+activation-code private-FILE output path failed with ACCESS_DENIED while the
+Keychain-reference path succeeded afterwards. The exact cause of that file
+failure was not confirmed — the diagnostics above exist so the next occurrence
+identifies permissions vs ownership vs provider support precisely instead of a
+bare ACCESS_DENIED.
+
 ## Local setup CLI
 
 After installation, run `kobil-sdk-credentials --help`. The CLI never prints a

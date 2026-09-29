@@ -125,19 +125,55 @@ def native_call(operation, ref, value=None, replace=False):
 
 
 def private_read(path):
+    """Read an owner-only private file with metadata-only failure diagnostics.
+
+    Failure guidance distinguishes existence, permissions, ownership and file type
+    without disclosing file contents. A read failure is a LOCAL setup problem; the
+    read itself never contacts or mutates a backend.
+    """
+    import errno
     try:
         fd = os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0) | getattr(os, 'O_NONBLOCK', 0))
+    except FileNotFoundError:
+        raise CredentialError('CREDENTIAL_NOT_FOUND',
+            'the referenced private file does not exist; check the path (local setup, no backend contacted)') from None
+    except OSError as error:
+        number = getattr(error, 'errno', None)
+        if number in (errno.ELOOP, getattr(errno, 'EMLINK', None)):
+            raise CredentialError('ACCESS_DENIED',
+                'symbolic links are refused for private files; reference the real file directly') from None
+        if number in (errno.EACCES, errno.EPERM):
+            raise CredentialError('ACCESS_DENIED',
+                'opening the private file was denied; check read permission and ownership of the file and its directory') from None
+        if number == errno.ENOTDIR:
+            raise CredentialError('ACCESS_DENIED',
+                'a path component of the private file reference is not a directory') from None
+        raise CredentialError('ACCESS_DENIED',
+            'the private file could not be opened; verify the path, permissions and provider/filesystem support') from None
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
+            raise CredentialError('CONFIG_INVALID', 'the private reference must be a regular file')
+    except CredentialError:
+        os.close(fd)
+        raise
+    try:
         with os.fdopen(fd, 'rb') as handle:
-            info = os.fstat(handle.fileno())
-            if not stat.S_ISREG(info.st_mode) or info.st_size > LIMIT:
-                raise CredentialError('CONFIG_INVALID')
-            if os.name == 'posix' and (info.st_uid != os.getuid() or info.st_mode & 0o077):
-                raise CredentialError('ACCESS_DENIED')
+            if info.st_size > LIMIT:
+                raise CredentialError('CONFIG_INVALID', 'the private file exceeds the size limit')
+            if os.name == 'posix' and info.st_uid != os.getuid():
+                raise CredentialError('ACCESS_DENIED',
+                    'the private file is not owned by the current user; fix its ownership')
+            if os.name == 'posix' and info.st_mode & 0o077:
+                raise CredentialError('ACCESS_DENIED',
+                    'the private file must be owner-only; remove group/other permissions (chmod 600)')
             data = handle.read(LIMIT + 1)
             if len(data) > LIMIT: raise CredentialError('CONFIG_INVALID')
             return data
+    except CredentialError:
+        raise
     except OSError:
-        raise CredentialError('ACCESS_DENIED') from None
+        raise CredentialError('ACCESS_DENIED', 'reading the opened private file failed; local I/O problem') from None
 
 
 def age_read(ref):

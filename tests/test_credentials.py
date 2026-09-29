@@ -90,6 +90,28 @@ class CredentialTests(unittest.TestCase):
             link=Path(tmp)/'link';link.symlink_to(f)
             with self.assertRaises(c.CredentialError):c.private_read(link)
 
+    def test_private_read_diagnostics_are_metadata_only(self):
+        # E07: distinguish existence, permissions, ownership and type without contents.
+        if os.name != 'posix':self.skipTest('POSIX permissions')
+        with tempfile.TemporaryDirectory() as tmp:
+            missing=Path(tmp)/'absent'
+            with self.assertRaises(c.CredentialError) as caught:c.private_read(missing)
+            self.assertEqual(caught.exception.code,'CREDENTIAL_NOT_FOUND')
+            self.assertIn('does not exist',str(caught.exception))
+            self.assertIn('no backend contacted',str(caught.exception))
+            f=Path(tmp)/'cred';f.write_text('secret-value-1234');f.chmod(0o644)
+            with self.assertRaises(c.CredentialError) as caught:c.private_read(f)
+            self.assertEqual(caught.exception.code,'ACCESS_DENIED')
+            self.assertIn('chmod 600',str(caught.exception))
+            self.assertNotIn('secret-value-1234',str(caught.exception))
+            f.chmod(0o600)
+            link=Path(tmp)/'link';link.symlink_to(f)
+            with self.assertRaises(c.CredentialError) as caught:c.private_read(link)
+            self.assertIn('symbolic links',str(caught.exception))
+            with self.assertRaises(c.CredentialError) as caught:c.private_read(Path(tmp))
+            self.assertEqual(caught.exception.code,'CONFIG_INVALID')
+            self.assertIn('regular file',str(caught.exception))
+
     def test_configuration_is_lazy_and_rejects_mixed_auth(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(c,'resolve') as read:
             f=Path(tmp)/'config.json';f.write_text(json.dumps(CFG))
