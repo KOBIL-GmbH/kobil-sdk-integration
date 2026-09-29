@@ -121,7 +121,16 @@ def list_delivery(relative_path='.'):
             entries.append({'name': entry.filename, 'bytes': entry.st_size,
                             'kind': 'directory' if stat.S_ISDIR(entry.st_mode) else
                                     'file' if stat.S_ISREG(entry.st_mode) else 'other'})
-        return {'path': relative_path, 'entries': sorted(entries, key=lambda x: x['name']),
+        return {'path': relative_path, 'remote_root': cfg['remote_root'],
+                'listing_scope': 'configured_root_only',
+                'scope_note': 'This listing covers only the configured remote_root above, not the full '
+                              'account inventory. Never infer account-wide artifact absence (for example '
+                              '"no native Android/iOS SDK delivered") from one scoped listing. To inspect '
+                              'another user-authorized delivery area, select a separate connection profile '
+                              '(for example a read-only reference profile with remote_root "/") through '
+                              'KOBIL_SDK_SFTP_CONNECTION, reusing the same credential reference and verified '
+                              'known_hosts. Never silently broaden remote_root or bypass path confinement.',
+                'entries': sorted(entries, key=lambda x: x['name']),
                 'next_step': 'Select an explicit release and download its archives, SHA-512 sidecars and release notes with sdk_sftp_download.'}
 
 

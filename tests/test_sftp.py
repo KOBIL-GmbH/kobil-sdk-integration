@@ -43,6 +43,24 @@ class SftpTests(unittest.TestCase):
             with self.assertRaisesRegex(sftp.DeliveryError, 'SFTP_SETUP_REQUIRED'):
                 sftp.configuration()
 
+    def test_listing_reports_configured_root_and_scope(self):
+        remote = Remote({})
+        entry = SimpleNamespace(filename='SDK-Flutter.zip', st_size=3, st_mode=stat.S_IFREG | 0o600)
+        remote.listdir_iter = lambda path, read_aheads=1: iter([entry])
+        context = MagicMock()
+        context.__enter__.return_value = remote
+        with patch.object(sftp, 'connection', return_value=context):
+            result = sftp.list_delivery('flutter')
+        self.assertEqual(result['remote_root'], '/releases')
+        self.assertEqual(result['path'], 'flutter')
+        self.assertEqual(result['listing_scope'], 'configured_root_only')
+        self.assertIn('not the full account inventory', result['scope_note'])
+        self.assertIn('Never infer account-wide artifact absence', result['scope_note'])
+        self.assertIn('KOBIL_SDK_SFTP_CONNECTION', result['scope_note'])
+        self.assertIn('Never silently broaden remote_root', result['scope_note'])
+        self.assertEqual(result['entries'][0]['name'], 'SDK-Flutter.zip')
+        self.assertNotIn('fixture-secret', json.dumps(result))
+
     def remote(self, files):
         context = MagicMock()
         context.__enter__.return_value = Remote(files)

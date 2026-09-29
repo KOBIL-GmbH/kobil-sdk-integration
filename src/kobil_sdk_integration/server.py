@@ -1,7 +1,7 @@
 """Stdio MCP with local inspection and explicitly configured AST operations."""
 import hashlib
 import os
-from pathlib import Path
+from pathlib import Path, PurePath
 import stat
 
 from mcp.server.fastmcp import FastMCP
@@ -29,6 +29,40 @@ def sdk_plan(profile: dict, capabilities: list[str] | None = None) -> dict:
     return plan(profile, capabilities if capabilities is not None else [])
 
 
+_CONFIG_TEMPLATES = ("mc_config", "app_config")
+
+
+def _delivery_inventory(source):
+    """Classify a delivery ZIP from member names only; no member contents are read."""
+    import zipfile
+    names = []
+    try:
+        with zipfile.ZipFile(source) as archive:
+            names = [i.filename for i in archive.infolist()[:10000]]
+    except (zipfile.BadZipFile, OSError, RuntimeError):
+        return {'inspected': False, 'platform_kinds': ['unknown'],
+                'note': 'Archive member names could not be inspected; classify the delivery manually.'}
+    kinds = set()
+    lowered = [n.lower() for n in names]
+    if any('.xcframework/' in n or n.endswith('.xcframework') for n in lowered):
+        kinds.add('ios_native')
+    if any(n.endswith('.aar') for n in lowered):
+        kinds.add('android_native')
+    if any(n.endswith('pubspec.yaml') or '/flutter' in n or n.startswith('flutter') for n in lowered):
+        kinds.add('flutter')
+    present = sorted({t for t in _CONFIG_TEMPLATES
+                      for n in lowered if PurePath(n).name.startswith(t)})
+    return {'inspected': True, 'platform_kinds': sorted(kinds) or ['unknown'],
+            'config_templates_present': present,
+            'config_templates_missing': [t for t in _CONFIG_TEMPLATES if t not in present],
+            'note': 'Framework archives (for example the iOS xcframeworks ZIP of 15.16.803.3089231, '
+                    'verified 2026-09-29) legitimately contain no mc_config/app_config templates; '
+                    'configuration templates ship in the GettingStarted asset ZIPs of the same delivery. '
+                    'A missing template here means fetch the matching asset ZIP before app scaffolding. '
+                    'One archive or one scoped listing never proves account-wide absence of a platform '
+                    'delivery; see sdk_sftp_list scope fields.'}
+
+
 @mcp.tool()
 def sdk_artifact_info(path: str) -> dict:
     """Hash a separately supplied SDK binary/archive; return metadata, never contents.
@@ -36,6 +70,11 @@ def sdk_artifact_info(path: str) -> dict:
     Supported file suffixes: aar, jar, dll, dylib, so, zip, tar, gz, tgz.
     Framework directories must first be packaged as an archive. This does not
     verify authenticity, architecture, version compatibility or license rights.
+    For ZIP deliveries a delivery_inventory is returned from member names only:
+    native Android (.aar) / iOS (.xcframework) / Flutter classification plus
+    presence of mc_config/app_config templates. Framework ZIPs normally carry no
+    config templates; those come from GettingStarted asset ZIPs. Flag missing
+    template assets before app scaffolding instead of guessing schemas.
     """
     source = Path(path).expanduser()
     if source.suffix.lower() not in {".aar", ".jar", ".dll", ".dylib", ".so", ".zip", ".tar", ".gz", ".tgz"}:
@@ -55,8 +94,11 @@ def sdk_artifact_info(path: str) -> dict:
                 raise ValueError("Artifact changed during inspection")
     except OSError:
         raise ValueError("Cannot read the SDK artifact") from None
-    return {"path": str(source.absolute()), "bytes": after.st_size,
-            "sha256": digest.hexdigest(), "compatibility_verified": False}
+    result = {"path": str(source.absolute()), "bytes": after.st_size,
+              "sha256": digest.hexdigest(), "compatibility_verified": False}
+    if source.suffix.lower() == ".zip":
+        result["delivery_inventory"] = _delivery_inventory(source)
+    return result
 
 
 @mcp.tool()
@@ -65,6 +107,13 @@ def sdk_sftp_list(relative_path: str = '.') -> dict:
 
     Requires user-provided setup selected by KOBIL_SDK_SFTP_CONNECTION, verified
     known_hosts and server-side credential references. Paths stay within remote_root.
+    The response names the effective configured remote_root and requested relative
+    path; that scope is NOT the full account inventory. Never conclude from one
+    scoped listing that native Android/iOS SDKs are unavailable account-wide. To
+    inspect another user-authorized area, select a separate connection profile
+    (for example a reference profile with remote_root "/") via
+    KOBIL_SDK_SFTP_CONNECTION, preserving the credential reference and known_hosts;
+    never silently broaden roots or bypass confinement.
     Choose an explicit release; never assume the newest SDK is compatible.
     """
     from .sftp import list_delivery
