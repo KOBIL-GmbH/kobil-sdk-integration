@@ -10,6 +10,15 @@ login can use cached or refreshed tokens: success alone does not prove a SignedJ
 grant. These observations qualify only this test tuple, not every delivery.
 
 ## Setup and activation
+- Local toolchain preflight before long builds (2026-09-29 round): confirm a
+  COMPLETELY installed Android NDK (VAL-06: a half-installed NDK 26.3 was only
+  discovered mid-build; the local NDK 27.2.12479018 compiled — a local
+  workaround, not vendor qualification), supported compiler versions, and the
+  iOS deployment target against the installed Xcode (VAL-07: Runner/Pods had to
+  be raised to iOS 15 for Xcode 27 during compilation). Check signing/device
+  readiness and disk space up front. Unsupported toolchains must be precise
+  preflight findings, never mid-build surprises; never mutate shared toolchains
+  automatically. Physical-device tests remain distinct from simulator tests.
 - Select a customer-configured connection explicitly. Keep server URLs, tenants,
   credentials and signed assets in project-local configuration, outside this recipe.
   Reuse an appropriate AST app/version and its existing registration user.
