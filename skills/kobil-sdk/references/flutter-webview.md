@@ -213,6 +213,28 @@ The Android trusted proxy matches each `whiteList` entry as a regular expression
 
 `processReceivedSslError` checks both the proxy certificate and the URL allowlist. If logs say `Proxy set up is correct` followed by `certificate verification failed`, inspect the allowlist before replacing certificates. The latter message alone does not prove a certificate-chain failure. Source: CertPinningProxy `Util.kt`, `urlWhiteListCheckOk` and `processReceivedSslError`.
 
+### Mobile certificate-chain coverage (verified 2026-09-29)
+
+SDK Start trust (mc_config `iam.trustedSslServerCerts`) is separate from the WebView
+proxy trust (`pinnedCertificates`/`certPinningEnabled` in the Flutter controller;
+`certsDataForValidation` on iOS KSTrustedWebView). Configure and verify both
+independently, matching each API's expected DER/PEM contract, and never disable
+certificate or hostname verification.
+
+The mobile TLS client may negotiate or build a DIFFERENT chain than desktop
+verification. Verified on iOS (simulator and physical device, 2026-09-29, MCSDK
+15.16.803.3089231): for a Let's Encrypt chain, iOS builds to the self-signed system
+root ISRG Root X2 while desktop sees ISRG Root X1 via the cross-sign. Pinning X1
+alone yields KS_CERTIFICATE_ERROR (onURLBlocked reason 1, subsystem 1500000,
+"servercert validation endresult failed") although SecTrust succeeds. Pin the
+authentic X2 — from the system root store, fingerprint-checked — alongside X1.
+Derive approved anchors from the chains actually negotiated by the mobile clients
+per platform; never hard-code one CA for all environments. Diagnose with
+`KsTrustedWebView.setLogListener` plus a temporary `KsTwvLog.setLogLevel(debug)`.
+The full-URL allowlist fix above is already installed knowledge; a
+KS_CERTIFICATE_ERROR is not automatically an allowlist recurrence nor
+automatically a chain gap — check both against the actual logs.
+
 ### Device evidence and error channels
 
 On Android with wrapper106.0.0/hardening20.1.0, the corrected full-URL allowlist

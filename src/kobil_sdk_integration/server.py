@@ -250,6 +250,11 @@ def sdk_config_write(expected_environment: str, certificate_paths: list[str], ou
     """Request backend-signed SDK config and save to a NEW private local JWT file.
 
     Supply 1–50 trusted public TLS certificates, one PEM/DER certificate per file.
+    Certificates must cover the chains actually negotiated by the mobile TLS
+    clients, which can differ from desktop verification (verified 2026-09-29:
+    iOS builds Let's Encrypt chains to ISRG Root X2 while desktop sees X1 via
+    the cross-sign — supply both when both can appear). This trust input is for
+    SDK Start and is separate from the trusted WebView pinning input.
     Output directory must exist. Returns path/hash, never JWT contents. The SDK
     must verify the signature. On Windows use a user-private directory with ACLs.
     This does not supply IDP client settings or activate a device. It does not take
