@@ -70,6 +70,8 @@ Tools:
 | sdk_app_version_ensure | Reuse or create an AST app version with explicit registration/integrity settings |
 | sdk_config_write | Request signed SDK configuration and write a new private JWT file |
 | sdk_tls_chain_check | Compare served TLS chains against the local trust asset; report missing anchors |
+| sdk_deployment_preflight | Check local deployment mTLS, token-owner and explicit-TMS scope evidence before activation/transactions |
+| sdk_ios_signing_preflight | Verify built iOS app signature, expected team, profile and device eligibility before installation |
 | sdk_tms_trigger | Create an authorized foreground transaction with explicit policy |
 | sdk_tms_status / sdk_tms_result | Read redacted progress and final-result metadata |
 | sdk_tms_cancel | Request cancellation; final result checked separately |

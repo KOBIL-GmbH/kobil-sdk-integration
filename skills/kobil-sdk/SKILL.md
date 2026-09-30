@@ -58,6 +58,20 @@ consistently with the existing native flow; do not change it for existing users.
 On Swift match `.success`, `.eventFailed` and `.requestFailed` explicitly. Keep
 the detailed event's status/code/description; never match success using strings.
 
+## Mandatory deployment and signing gates
+
+Before activation, run `sdk_deployment_preflight` with the actual mc_config and
+explicit deployment mTLS choice. Before explicit-auth TMS, reconcile the IAM
+exchange client with the observed token holder. Current-token missing `tms` is
+a warning while SDK exchange/step-up is pending; require it on the resulting
+token at `granted_scope_stage="explicit_auth"`, not universally before exchange.
+Before a physical iOS install, run `sdk_ios_signing_preflight` on the actual built
+.app for the customer-selected team and target device. Never guess missing
+values from templates or silently choose another signing team. These checks
+verify supplied metadata, not backend capability or runtime acceptance.
+See [deployment and artifact gates](references/deployment-preflight.md) for inputs,
+evidence limits and distinct error diagnostics.
+
 ## Resolve the customer's request
 
 Inspect the target app's rules, dependency/build files and configuration.

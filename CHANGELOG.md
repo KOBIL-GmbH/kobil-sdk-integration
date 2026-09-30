@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add read-only deployment preflight for actual mc_config against explicit deployment mTLS and token-owner/scope metadata; mismatches block the integration gate without changing backend policy.
+- Add built iOS artifact signing preflight for the selected customer team, embedded profile, application identifier, expiry and device eligibility, including legacy application prefixes.
+- Require deployment/signing gates in bundled integration guidance; distinguish token-holder, explicit scope and freshness errors, preserve selected themed flows, and document native diagnostics when SDK errorCode is zero.
+- Clarify WebView navigation and export/share lifecycle handling. Checks report their evidence limits and never claim runtime acceptance or physical biometric proof.
+
 ## 0.6.1 — 2026-09-29
 
 - Fix sdk_tls_chain_check crashing on interpreters that do not export ssl.ENCODING_DER (bundled CPython 3.11): resolve the DER encoding constant with the _ssl fallback at import time; regression test added. Found in the v0.6.0 retest round (slug tls-chain-check-py311-ssl-encoding-der-crash); chain-comparison logic itself was verified correct against akinci (X1+X2 ok, X1-only reports missing ISRG Root X2).

@@ -25,8 +25,20 @@ class ProtocolTests(unittest.TestCase):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 191)
+                        self.assertEqual(len(names), 193)
+                        self.assertTrue({"sdk_deployment_preflight", "sdk_ios_signing_preflight"} <= names)
                         self.assertIn('sdk_tls_chain_check', names)
+                        config_path = Path(directory) / 'mc_config.json'
+                        config_path.write_text(json.dumps({'maverick': {'mTLS': True}, 'iam': {'clientId': 'Login'}}))
+                        checked = await session.call_tool('sdk_deployment_preflight', {
+                            'mc_config_path': str(config_path), 'expected_mtls': False,
+                            'expected_token_client': 'Enrollment', 'granted_scopes': ['openid'],
+                            'require_explicit_authentication': True, 'granted_scope_stage': 'explicit_auth'})
+                        self.assertFalse(checked.isError)
+                        checked_payload = checked.structuredContent or json.loads(checked.content[0].text)
+                        self.assertEqual(checked_payload['status'], 'blocked')
+                        self.assertEqual(len(checked_payload['errors']), 3)
+
                         self.assertTrue({'sdk_sftp_list', 'sdk_sftp_download'} <= names)
                         self.assertFalse({"sdk_idp_journeys", "sdk_activation_flow_ensure", "sdk_activation_client_ensure"} & names)
                         self.assertTrue({"sdk_idp_client_list", "sdk_idp_flow_list", "sdk_app_list"} <= names)

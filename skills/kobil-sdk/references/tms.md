@@ -22,6 +22,19 @@ SSMS has a separate backend API and must not inherit these REST paths.
   registered through SetPushTokenEvent, and the backend's push request settings.
   See [TMS APIs](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-twv/idp/postman_usage/postman_tms).
 
+Before explicit-auth tests, run `sdk_deployment_preflight` with
+`require_explicit_authentication=true` and observed token-holder identity.
+At `granted_scope_stage="current"` (default), missing `tms` warns rather than
+blocks: the SDK may acquire it through token exchange/step-up. Recheck the actual
+resulting token using `granted_scope_stage="explicit_auth"`; missing `tms` or
+missing resulting-token scope evidence blocks that gate. See
+[deployment gates](deployment-preflight.md): scope `tms` is necessary at the
+observed AST decision, not sufficient proof of step-up/user authentication.
+A request for scope is not a grant. Never disable explicit auth
+or blindly create/assign a scope. Distinguish token-holder HTTP403/700000022,
+missing explicit scope 516004034 and freshness 516004035 using native HTTP detail,
+even when SDK result code is zero and no fatal event is emitted.
+
 ## App event sequence
 
 The [transaction guide](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-kssidp/development/transaction/)
