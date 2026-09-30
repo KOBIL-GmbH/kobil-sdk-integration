@@ -12,7 +12,8 @@
     "Create a bounded archive in app-controlled storage, preserving encrypted SDK log contents.",
     "Check archive creation succeeded and the expected entries are present.",
     "Expose it through the platform sharing/file mechanism with scoped access. For owner-assisted device tests, pre-declare the export destination and the exact tap sequence (for example 'Send To -> Save to Files -> <declared path>') in the owner channel BEFORE opening the share sheet, then verify the ZIP at the declared destination afterwards (reopen, nonempty encrypted SDK entries).",
-    "Record SDK version and reproduction time separately; remove temporary exports according to app retention policy."
+    "Record SDK version and reproduction time separately; remove temporary exports according to app retention policy.",
+    "Separate archive_ready from share_pending and actual share_completed/share_cancelled/share_error. A native share future can await modal dismissal while the app remains responsive; pending/cancelled is neither a hang nor recipient delivery. Guard duplicate export/share actions, retain the ZIP, capture sanitized presentation errors, and use a valid nonzero source-view anchor on iOS. Test harnesses report archive completion separately instead of blocking their queue on the share future; no timeout-as-success. Reopen at the intended destination before claiming delivery."
   ],
   "expected_result": "Archive exists, is nonempty and contains SDK log entries.",
   "checklist": [

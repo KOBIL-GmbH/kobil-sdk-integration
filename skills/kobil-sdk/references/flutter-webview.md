@@ -299,3 +299,16 @@ both the WebView request and SDK IAM configuration. Do not revert to BDDK-named
 example clients merely because this recipe uses them as a reference: those may
 select a different theme. Keep the original flow unchanged. Rendering the selected
 theme verifies presentation only; test authentication and SDK completion separately.
+
+## Deployment, navigation and physical signing gates
+
+Apply [deployment and artifact gates](deployment-preflight.md) to the actual
+mc_config and built iOS app. Preserve selected themed WebView clients; SDK IAM
+exchange client identity follows observed token ownership, not a login-label
+assumption. Missing deployment or signing choices must be resolved explicitly.
+
+Inspect Swift delegate return semantics in the delivered API: cancel only the
+verified authorization redirect, not every nonredirect/external callback. Keep
+normal navigation subject to the existing allowlist and trust checks. Query or
+fragment response parsing is specific to the verified journey; preserve exact
+redirect/state checks and do not broaden them as a blank-page workaround.

@@ -85,4 +85,7 @@ def register(mcp):
         with Admin(expected_environment, realm) as api:
             result = preflight(api, path, activation_client, login_client,
                                use_token_based_login, ast_server_backend, login_header)
-        return {**result, "platform": platform, "path": path, "policy": POLICY}
+        return {**result, "platform": platform, "path": path, "policy": POLICY,
+                "required_followup_checks": ["sdk_deployment_preflight", "sdk_tls_chain_check"] +
+                    (["sdk_ios_signing_preflight"] if platform == "ios" else []),
+                "next_gate": "Before activation verify local deployment settings and TLS trust; before iOS installation verify the signed artifact against the explicitly selected team and device. Before explicit-authentication TMS rerun deployment preflight with actual token-holder and granted scope metadata. Never infer deployment mTLS or signing team from SDK samples."}

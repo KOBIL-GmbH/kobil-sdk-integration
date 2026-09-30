@@ -62,6 +62,23 @@ on the exact delivery; never assume family parity.
    afterwards (reopen it, confirm nonempty encrypted SDK entries). An
    unannounced share sheet left open is a blocked step, not a failed export.
 
+## Archive completion and share lifecycle
+
+Track ZIP creation/validation separately from native share presentation and
+recipient delivery. Publish explicit `archive_ready`, `share_pending`,
+`share_completed`, `share_cancelled` and `share_error` states (or equivalents).
+A share future may remain pending until the user dismisses the native modal;
+a responsive app awaiting it is not necessarily hung. Do not turn a timeout
+into success or call dismissal a delivered export.
+
+Guard against duplicate archive/share actions while one operation is pending,
+keep the file alive, and report sanitized presentation errors. On iOS supply an
+appropriate nonzero anchor inside the source view. In a test harness, report ZIP
+completion immediately and observe the actual share result separately; do not
+block the entire command queue on a user-owned modal. Verify the destination
+independently before claiming delivery. Do not dismiss authentication prompts
+or restart an activated app to recover a pending share operation.
+
 ## Kotlin / Android
 
 The reviewed wrapper exposes SynchronousEventHandler.logsPath. Prefer that
