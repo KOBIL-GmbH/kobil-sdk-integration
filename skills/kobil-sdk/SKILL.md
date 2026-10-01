@@ -65,6 +65,9 @@ explicit deployment mTLS choice. Before explicit-auth TMS, reconcile the IAM
 exchange client with the observed token holder. Current-token missing `tms` is
 a warning while SDK exchange/step-up is pending; require it on the resulting
 token at `granted_scope_stage="explicit_auth"`, not universally before exchange.
+For repeated TMS failures use `sdk_tms_auth_diagnose`: compare requested versus
+issued transaction scope, not a later ordinary claims lookup. Capture inherited
+error fields on confirmation/terminal events; status alone loses the cause.
 Before a physical iOS install, run `sdk_ios_signing_preflight` on the actual built
 .app for the customer-selected team and target device. Never guess missing
 values from templates or silently choose another signing team. These checks

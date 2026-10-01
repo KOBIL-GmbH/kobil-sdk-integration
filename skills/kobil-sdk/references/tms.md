@@ -35,6 +35,42 @@ or blindly create/assign a scope. Distinguish token-holder HTTP403/700000022,
 missing explicit scope 516004034 and freshness 516004035 using native HTTP detail,
 even when SDK result code is zero and no fatal event is emitted.
 
+## Diagnose requested versus issued transaction scope
+
+Use `sdk_tms_auth_diagnose` with scope names and numeric status/error codes only.
+For the inspected Maverick SDK implementation, transaction retrieval supplies
+`requiresExplicitAuthenticationScope`. The SDK compares that requirement with
+its token and internally requests OAuth token exchange using `iam.clientId` and
+the required scope. This happens before confirmation presentation; a token
+request after the decision can instead be the app's own claims lookup.
+Do not invent an extra application WebView step from missing ordinary scopes.
+Check this contract against the supplied SDK version.
+
+Record these separately: downloaded requirement, requested exchange scope,
+exchange HTTP result, issued token scopes, and AST decision result. An exchange
+HTTP200 can be followed by PATCH HTTP403/516004034: success at the token endpoint
+does not prove the requested scope was granted. Inspect the actual exchange
+result, not a later ordinary token. Compare users with the same client and
+explicit-auth policy; a prior non-explicit TMS pass is not a valid control.
+Successful activation does not prove transaction authorization, and a missing
+scope does not establish a user-creation defect. Do not recreate users or assign
+a default scope to force a pass. Correct issuance requires the documented
+server authentication contract.
+
+Capture inherited result error fields (`hasErrorOccurred`, `errorCode`,
+`errorDescription`, `reportId`, where exposed) on confirmation and terminal
+events. A Swift status39 may carry server516004034 and the full HTTP error;
+logging only status discards the diagnosis even with Warning/Runtime/Fatal
+listeners installed. Use the exact transaction ID and UTC timestamps to
+correlate SDK and backend traces. Claims lookup can update session lastAccess;
+that timestamp alone is not evidence of transaction exchange.
+
+Timeout and server cancellation are independently testable. A local timeout
+can terminate before the SDK sends a decision PATCH; accept/reject scope errors
+must not automatically block those separate gates. The inspected SDK's legacy
+explicit-auth integration tests are disabled, so do not present them or older
+non-explicit four-mode passes as current explicit-auth support evidence.
+
 ## App event sequence
 
 The [transaction guide](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-kssidp/development/transaction/)

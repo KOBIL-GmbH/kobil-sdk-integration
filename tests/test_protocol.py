@@ -25,9 +25,14 @@ class ProtocolTests(unittest.TestCase):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 193)
+                        self.assertEqual(len(names), 194)
                         self.assertTrue({"sdk_deployment_preflight", "sdk_ios_signing_preflight"} <= names)
                         self.assertIn('sdk_tls_chain_check', names)
+                        self.assertIn('sdk_tms_auth_diagnose', names)
+                        auth = await session.call_tool('sdk_tms_auth_diagnose', {'exchange_requested_scopes': ['tms'], 'exchange_http_status': 200, 'exchanged_scopes': ['openid'], 'ast_error_code': 516004034})
+                        self.assertFalse(auth.isError)
+                        auth_payload = auth.structuredContent or json.loads(auth.content[0].text)
+                        self.assertEqual(auth_payload['status'], 'blocked')
                         config_path = Path(directory) / 'mc_config.json'
                         config_path.write_text(json.dumps({'maverick': {'mTLS': True}, 'iam': {'clientId': 'Login'}}))
                         checked = await session.call_tool('sdk_deployment_preflight', {
