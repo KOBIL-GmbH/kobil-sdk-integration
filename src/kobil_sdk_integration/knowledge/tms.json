@@ -7,7 +7,8 @@
     "User/device activated and authenticated as required by deployment.",
     "Backend TMS initiation targets that device/user; app event listener active.",
     "Mandatory agent gate: before activation call sdk_deployment_preflight(mc_config_path, expected_mtls) using actual configuration and explicit customer deployment choice, never a sample default. Explicit-auth TMS always requires require_explicit_authentication=true and expected_token_client from observed token ownership. Set granted_scope_stage=current (default) for the existing token: missing tms warns/pends verification, NOT blocks, because SDK StartTransaction may acquire it through exchange/step-up. Set granted_scope_stage=explicit_auth for the actual resulting token: granted_scopes must contain tms, otherwise missing scope/evidence blocks. Requested/assigned scopes are not actual granted-token evidence. The tool verifies supplied metadata only (configuration_checked, runtime acceptance false), not issuer capability, live token validity or backend acceptance; no policy enforcement on independent raw service API calls.",
-    "Explicit-authentication scope tms is necessary for the observed AST check, not sufficient proof of fresh user/device authentication. Preserve require_explicit_authentication=true. Never turn it off or blindly create/grant a realm scope to pass; establish the documented step-up/mapper/token-issuance contract first. Keep the selected themed WebView clients; reconcile app-local IAM exchange identity with the actual token holder rather than guessing from login-client naming. A token endpoint HTTP200 or SDK OfflineLogin success does not by itself prove the SignedJWT grant or TMS authorization."
+    "Explicit-authentication scope tms is necessary for the observed AST check, not sufficient proof of fresh user/device authentication. Preserve require_explicit_authentication=true. Never turn it off or blindly create/grant a realm scope to pass; establish the documented step-up/mapper/token-issuance contract first. Keep the selected themed WebView clients; reconcile app-local IAM exchange identity with the actual token holder rather than guessing from login-client naming. A token endpoint HTTP200 or SDK OfflineLogin success does not by itself prove the SignedJWT grant or TMS authorization.",
+    "Explicit-auth TMS contract (documented, Confluence 62199010 'AST TMS Service'): requireExplicitAuthentication means AST demands a dedicated OIDC scope (deployed name: tms) on the token that answers the transaction. The SDK obtains it by a silent token exchange with iam.clientId. Measured 2026-10-01 on Akinci/superapp (SDK 15.16.3088426, Pixel 8): the token client needs (1) client scope tms assigned as OPTIONAL scope, (2) to be the holder of the SDK's current token (after activation via a separate enrollment client an interactive login with the token client is required first), (3) the same browser-flow override as the KOBIL mobile clients ('KOBIL Mobile Login'). With all three the explicit transaction is ACCEPTED end-to-end; with only (1) the exchange is rejected not_allowed 'client is not the token holder' and the SDK reports FAILED/0 before the dialog; without (3) interactive login fails CANNOT_ACQUIRE_TOKEN_DATA. Use sdk_tms_explicit_preflight to check all three read-only before the run. tms stays an optional scope on that client only; never a realm default, never on unrelated clients."
   ],
   "sequence": [
     "Handle transaction availability/banner and start retrieval with the SDK transaction-start event.",
@@ -34,11 +35,13 @@
     "Capture inherited error fields on confirmation and terminal results, including hasErrorOccurred, errorCode, errorDescription and reportId where exposed. Swift status39 can carry detailed server516004034 even when Warning/Runtime/Fatal events are silent.",
     "Compare users under the same exchange client and explicit-authentication policy. No missing ordinary scope alone proves a user-creation defect. Claims lookup may update session lastAccess; this is not transaction-exchange evidence. Do not recreate users or grant default tms scope blindly.",
     "Test timeout and server cancellation independently from accept/reject. Local timeout may complete without a decision PATCH. Older non-explicit passes and disabled legacy SDK tests do not prove current explicit-auth support.",
-    "GettingStarted baseline is not explicit-auth proof: the inspected bundled ApiHelper builder sends requireExplicitAuthentication=false and freshness=-1. Compare those request fields before diagnosing users or changing clients. Label baseline vs explicit-auth tests separately; never silently relax the customer requirement. Sample UI navigation and unconditional success logs are not backend acceptance evidence. Verify the actual helper/platform version."
+    "GettingStarted baseline is not explicit-auth proof: the inspected bundled ApiHelper builder sends requireExplicitAuthentication=false and freshness=-1. Compare those request fields before diagnosing users or changing clients. Label baseline vs explicit-auth tests separately; never silently relax the customer requirement. Sample UI navigation and unconditional success logs are not backend acceptance evidence. Verify the actual helper/platform version.",
+    "Explicit TMS ends FAILED/errorCode=0 within ~100 ms of StartTransaction, no dialog, backend later TIMEOUT: the SDK's scope exchange was refused. IDP log shows TOKEN_EXCHANGE_ERROR error=not_allowed reason='client is not the token holder' when iam.clientId differs from the client that issued the SDK's current token (enrollment client after activation). Fix the holder (interactive login with iam.clientId, or activate through it), not the scope.",
+    "Interactive login with a freshly created client returns SetAuthorisationCode CANNOT_ACQUIRE_TOKEN_DATA and the IDP logs 'X-KOBIL-ASTCLIENTDATA is missing': the client runs the realm default browser flow. KOBIL mobile clients carry a client-level authenticationFlowBindingOverrides.browser = 'KOBIL Mobile Login' / 'KOBIL Mobile Enrollment'. Set the override (kobil-support idp_client_flow_override) before using the client with the SDK."
   ],
   "platform_notes": {
-    "android": "StartTransactionEvent \u2192 DisplayConfirmationRequestEvent \u2192 DisplayConfirmationEvent \u2192 DisplayConfirmationResultEvent \u2192 TransactionEndEvent in the inspected Shift model.",
-    "ios": "KSMStartTransactionEvent \u2192 KSMDisplayConfirmationRequestEvent \u2192 KSMDisplayConfirmationEvent \u2192 KSMDisplayConfirmationResultEvent \u2192 KSMTransactionFinishedEvent in the inspected model."
+    "android": "StartTransactionEvent → DisplayConfirmationRequestEvent → DisplayConfirmationEvent → DisplayConfirmationResultEvent → TransactionEndEvent in the inspected Shift model.",
+    "ios": "KSMStartTransactionEvent → KSMDisplayConfirmationRequestEvent → KSMDisplayConfirmationEvent → KSMDisplayConfirmationResultEvent → KSMTransactionFinishedEvent in the inspected model."
   },
   "source_evidence": {
     "ios": {
@@ -70,10 +73,12 @@
   },
   "qualification": {
     "level": "source_reviewed",
-    "mobile_sdk_versions_verified": [],
+    "mobile_sdk_versions_verified": [
+      "Android 15.16.3088426 (explicit-auth TMS, Akinci, 2026-10-01)"
+    ],
     "compiled_examples": true,
     "device_verified": false,
-    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow."
+    "note": "Examples compile against the exact classic MCSDK/KSSIDP artifact in each example validation record. Compilation and synthetic diagnostics do not qualify a complete live app flow. Explicit-auth contract device-verified 2026-10-01: Pixel 8 / SDK 15.16.3088426 / IDP migros core 8.0.3 / AST trusted-message-sign 0.40.0 on Akinci, transaction 01M3VWXYQN14BKB8EQ2BXBYDQ6 ACCEPTED; ordinary control 01M3VWERA6P1DDKD1YAW29XTM0 ACCEPTED."
   },
   "examples": {
     "android": {
@@ -109,6 +114,8 @@
     "sdk_tms_status",
     "sdk_tms_result",
     "sdk_tms_cancel",
-    "sdk_deployment_preflight"
+    "sdk_deployment_preflight",
+    "sdk_tms_explicit_preflight",
+    "sdk_tms_auth_diagnose"
   ]
 }

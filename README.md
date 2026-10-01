@@ -71,6 +71,7 @@ Tools:
 | sdk_config_write | Request signed SDK configuration and write a new private JWT file |
 | sdk_tls_chain_check | Compare served TLS chains against the local trust asset; report missing anchors |
 | sdk_tms_auth_diagnose | Diagnose requested versus issued transaction scopes and AST errors without changing users or backend policy |
+| sdk_tms_explicit_preflight | Read-only check of the SDK token client for explicit-auth TMS: optional client scope `tms`, KOBIL mobile browser-flow override, token-holder warning when enrollment and token client differ |
 | sdk_deployment_preflight | Check local deployment mTLS, token-owner and explicit-TMS scope evidence before activation/transactions |
 | sdk_ios_signing_preflight | Verify built iOS app signature, expected team, profile and device eligibility before installation |
 | sdk_tms_trigger | Create an authorized foreground transaction with explicit policy |

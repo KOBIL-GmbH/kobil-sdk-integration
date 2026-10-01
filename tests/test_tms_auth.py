@@ -40,3 +40,73 @@ class TmsAuthTests(unittest.TestCase):
             with self.assertRaises(ValueError) as error:
                 diagnose(**kwargs)
             self.assertNotIn('secret', str(error.exception))
+
+
+class ExplicitPreflightTests(unittest.TestCase):
+    FLOWS = [{'id': 'f-login', 'alias': 'KOBIL Mobile Login'}, {'id': 'f-browser', 'alias': 'browser'}]
+
+    def client(self, override='f-login', enabled=True):
+        c = {'id': 'uuid-1', 'clientId': 'app-login', 'enabled': enabled}
+        if override:
+            c['authenticationFlowBindingOverrides'] = {'browser': override}
+        return c
+
+    def test_measured_good_configuration_passes(self):
+        from kobil_sdk_integration.tms_auth import explicit_preflight
+        r = explicit_preflight(self.client(), [{'name': 'ast'}], [{'name': 'tms'}], self.FLOWS)
+        self.assertEqual(r['status'], 'client_checked')
+        self.assertEqual(r['browser_flow_override'], 'KOBIL Mobile Login')
+        self.assertFalse(r['runtime_verified'])
+
+    def test_missing_optional_scope_blocks_with_516004034_hint(self):
+        from kobil_sdk_integration.tms_auth import explicit_preflight
+        r = explicit_preflight(self.client(), [], [{'name': 'phone'}], self.FLOWS)
+        self.assertEqual(r['status'], 'blocked')
+        self.assertIn('516004034', str(r['errors']))
+
+    def test_default_scope_is_a_warning_not_a_pass_through(self):
+        from kobil_sdk_integration.tms_auth import explicit_preflight
+        r = explicit_preflight(self.client(), [{'name': 'tms'}], [], self.FLOWS)
+        self.assertEqual(r['status'], 'client_checked')
+        self.assertIn('DEFAULT', str(r['warnings']))
+
+    def test_missing_flow_override_blocks_with_cannot_acquire_hint(self):
+        from kobil_sdk_integration.tms_auth import explicit_preflight
+        r = explicit_preflight(self.client(override=None), [], [{'name': 'tms'}], self.FLOWS)
+        self.assertEqual(r['status'], 'blocked')
+        self.assertIn('CANNOT_ACQUIRE_TOKEN_DATA', str(r['errors']))
+
+    def test_separate_enrollment_client_warns_about_token_holder(self):
+        from kobil_sdk_integration.tms_auth import explicit_preflight
+        r = explicit_preflight(self.client(), [], [{'name': 'tms'}], self.FLOWS, enrollment_client_id='app-enrollment')
+        self.assertEqual(r['status'], 'client_checked')
+        self.assertIn('token holder', str(r['warnings']))
+
+    def test_tool_reads_client_scopes_and_flows_read_only(self):
+        from unittest.mock import patch
+        from kobil_sdk_integration import tms_auth
+
+        class Registry:
+            def __init__(self):
+                self.tools = {}
+
+            def tool(self):
+                def register(function):
+                    self.tools[function.__name__] = function
+                    return function
+                return register
+
+        registry = Registry()
+        tms_auth.register(registry)
+        with patch.object(tms_auth, 'Admin') as admin:
+            api = admin.return_value.__enter__.return_value
+            api.page.return_value = [self.client()]
+            api.call.side_effect = lambda method, path, **kw: (
+                [{'name': 'tms'}] if path.endswith('/optional-client-scopes') else
+                [{'name': 'ast'}] if path.endswith('/default-client-scopes') else self.FLOWS)
+            r = registry.tools['sdk_tms_explicit_preflight']('test', 'app-login', 'app-enrollment', 'superapp')
+        admin.assert_called_once_with('test', 'superapp')
+        self.assertEqual(r['status'], 'client_checked')
+        self.assertEqual({c.args[0] for c in api.call.call_args_list}, {'GET'})
+        with self.assertRaises(ValueError):
+            registry.tools['sdk_tms_explicit_preflight']('test', 'eyJ.a.b c')
