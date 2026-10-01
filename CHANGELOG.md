@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add read-only TMS authorization diagnosis for requested versus issued transaction scope; document result-event errors, same-client user comparisons and independent timeout/cancellation tests.
+
 - Add read-only deployment preflight for actual mc_config against explicit deployment mTLS and token-owner/scope metadata; mismatches block the integration gate without changing backend policy.
 - Add built iOS artifact signing preflight for the selected customer team, embedded profile, application identifier, expiry and device eligibility, including legacy application prefixes.
 - Require deployment/signing gates in bundled integration guidance; distinguish token-holder, explicit scope and freshness errors, preserve selected themed flows, and document native diagnostics when SDK errorCode is zero.
