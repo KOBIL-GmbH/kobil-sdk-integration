@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Separate GettingStarted ordinary-TMS baseline from explicit-auth policy; require SDK status and backend proof instead of sample UI success.
+
 - Add read-only TMS authorization diagnosis for requested versus issued transaction scope; document result-event errors, same-client user comparisons and independent timeout/cancellation tests.
 
 - Add read-only deployment preflight for actual mc_config against explicit deployment mTLS and token-owner/scope metadata; mismatches block the integration gate without changing backend policy.

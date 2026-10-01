@@ -71,6 +71,21 @@ must not automatically block those separate gates. The inspected SDK's legacy
 explicit-auth integration tests are disabled, so do not present them or older
 non-explicit four-mode passes as current explicit-auth support evidence.
 
+## GettingStarted baseline versus explicit authentication
+
+The inspected bundled GettingStarted ApiHelper request builder uses
+`requireExplicitAuthentication=false` and `requireFreshnessOfAuthentication=-1`.
+Those ordinary transaction tests are not equivalent to an explicit-authentication
+scenario. Record these request settings with every result; match the reference
+policy for a labelled baseline comparison instead of changing users or clients.
+Do not silently relax a customer's explicit-authentication requirement or report
+a baseline pass as its fix. SDK/API-helper versions and backend must also be
+recorded. A different platform's helper binary requires its own verification.
+
+The inspected Swift sample logs success on confirmation/end without evaluating
+the event status, and UI tests can pass on navigation alone. Always check actual
+SDK status and backend terminal result rather than copying that success logic.
+
 ## App event sequence
 
 The [transaction guide](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-kssidp/development/transaction/)
