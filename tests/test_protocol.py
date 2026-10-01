@@ -25,7 +25,7 @@ class ProtocolTests(unittest.TestCase):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         names = {t.name for t in (await session.list_tools()).tools}
-                        self.assertEqual(len(names), 194)
+                        self.assertEqual(len(names), 195)
                         self.assertTrue({"sdk_deployment_preflight", "sdk_ios_signing_preflight"} <= names)
                         self.assertIn('sdk_tls_chain_check', names)
                         self.assertIn('sdk_tms_auth_diagnose', names)

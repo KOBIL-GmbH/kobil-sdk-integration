@@ -73,7 +73,7 @@ def check(mc_config_path, expected_mtls, expected_token_client=None,
             errors.append("Provide actual granted scope names as a list, not an access token or realm scope catalog.")
         elif granted_scope_stage == "explicit_auth":
             if not valid_scopes or "tms" not in granted_scopes:
-                errors.append("Explicit-authentication token lacks required scope tms (516004034). Do not retry with explicit authentication disabled or grant a scope blindly; verify the deployment step-up authentication contract.")
+                errors.append("Explicit-authentication token lacks required scope tms (516004034). Do not retry with explicit authentication disabled or grant a realm-default scope; run sdk_tms_explicit_preflight on the token client (optional client scope tms, token holder, KOBIL mobile flow override) and fix the client configuration, not the request.")
             else:
                 scope_checked = True
         else:

@@ -35,6 +35,50 @@ or blindly create/assign a scope. Distinguish token-holder HTTP403/700000022,
 missing explicit scope 516004034 and freshness 516004035 using native HTTP detail,
 even when SDK result code is zero and no fatal event is emitted.
 
+## Explicit authentication: what the token client needs (measured 2026-10-01)
+
+The documented contract (Confluence 62199010, "AST TMS Service", parameter
+`requireExplicitAuthentication`): "The explicit authentication is done in terms
+of a dedicated OIDC scope. The scope to use is configured in the service's
+configuration. When a client wants to answer a TMS with this requirement set,
+it must retrieve a token with the configured scope from the IDP and use this
+token for sending the answer." Deployed scope name on Akinci and FIS BMW TEST:
+`tms`. The SDK fulfils this with a silent token exchange using `iam.clientId`
+(`source file`); it does not start an interactive
+step-up and does not re-check the issued scope. The IDP resolves the requested
+scope only against the client's configured default/optional client scopes and
+silently drops unknown names (`source file`).
+
+Device-verified on Akinci (realm `superapp`, Pixel 8, SDK 15.16.3088426, IDP
+migros core 8.0.3, AST trusted-message-sign 0.40.0) with an isolated token
+client, no change to shared clients:
+
+| Token client state | Explicit TMS result |
+|---|---|
+| no `tms` client scope (KobilMobileLogin, BDDKLogin) | exchange HTTP 200 without `tms`, AST HTTP 403 / 516004034 |
+| `tms` optional scope, but SDK token still held by the enrollment client | IDP `TOKEN_EXCHANGE_ERROR not_allowed "client is not the token holder"`, SDK `FAILED/0` before the dialog, backend TIMEOUT |
+| `tms` optional scope, holder fixed, realm default browser flow | interactive login `CANNOT_ACQUIRE_TOKEN_DATA`, IDP `X-KOBIL-ASTCLIENTDATA is missing` |
+| `tms` optional scope + holder + browser override "KOBIL Mobile Login" | `DisplayConfirmationResult OK`, `TransactionEnd OK`, AST **ACCEPTED** (01M3VWXYQN14BKB8EQ2BXBYDQ6) |
+
+Preconditions, all checked read-only by `sdk_tms_explicit_preflight`:
+
+1. `tms` assigned to the token client as **optional** client scope (not default,
+   not realm-wide, not on unrelated clients).
+2. The token client is the **holder of the SDK's current token**. After
+   activation through a separate enrollment client the SDK still holds that
+   client's token; one interactive login with the token client (or activation
+   through it) fixes the holder. The silent `FAILED/0` of a wrong holder is the
+   same mechanism as the round-3 "token holder switches after interactive login".
+3. The token client carries the client-level browser-flow override used by the
+   KOBIL mobile clients (`authenticationFlowBindingOverrides.browser` =
+   "KOBIL Mobile Login"); kobil-support `idp_client_flow_override` sets it.
+
+What this does not establish: that the exchanged token represents a fresh user
+authentication (no `acr`/`amr` in the probe tokens). The documented contract
+does not require it; treat step-up binding as a product decision, not a test
+defect. Do not disable `requireExplicitAuthentication` and do not add `tms` as
+a default scope to make a run pass.
+
 ## Diagnose requested versus issued transaction scope
 
 Use `sdk_tms_auth_diagnose` with scope names and numeric status/error codes only.
