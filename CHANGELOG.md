@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.7.0 — 2026-10-01
+
 - Explicit-auth TMS: record the measured contract (Confluence 62199010) and the three device-verified preconditions for the token client - optional client scope `tms`, token-holder identity, KOBIL mobile browser-flow override - with the failure signatures of each missing piece (403/516004034, not_allowed token holder with silent FAILED/0, CANNOT_ACQUIRE_TOKEN_DATA). Add read-only `sdk_tms_explicit_preflight` that checks a token client for all three via the IDP admin API. Akinci device proof 2026-10-01: explicit transaction 01M3VWXYQN14BKB8EQ2BXBYDQ6 ACCEPTED.
 
 - Separate GettingStarted ordinary-TMS baseline from explicit-auth policy; require SDK status and backend proof instead of sample UI success.
