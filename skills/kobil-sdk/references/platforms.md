@@ -62,6 +62,12 @@ maverick.mKex=true or useSEKeyForSigningTransactions=true (800000279); the
 tested known-good combination used both false — a tested combination, not a
 universal default.
 
+This describes the preferred target, not proof that every OfflineLogin uses a
+SignedJWT grant. Require the effective `maverick.jwtSignKeySecurityPolicy`, a
+non-password auth mode and sanitized jwt-bearer diagnostics or equivalent issuer
+evidence before claiming SignedJWT; token-based login enabled, success, a fresh
+`iat` or a biometric prompt alone is insufficient.
+
 ## Verified Android activation and login
 
 Verified tuple: fresh Kotlin debug app, KSSIDP 1.7.0 / MC 188.1.2937039,

@@ -37,7 +37,8 @@ def read_config(path):
 
 def check(mc_config_path, expected_mtls, expected_token_client=None,
           granted_scopes=None, require_explicit_authentication=False,
-          granted_scope_stage="current"):
+          granted_scope_stage="current", require_signed_jwt=False,
+          authentication_mode=None):
 
     config = read_config(mc_config_path)
     errors = []
@@ -47,6 +48,24 @@ def check(mc_config_path, expected_mtls, expected_token_client=None,
     if type(expected_mtls) is not bool:
         errors.append("Deployment mTLS choice is required from verified deployment evidence; do not inherit an unrelated SDK sample value.")
     maverick = config.get("maverick")
+    signed_jwt_checked = False
+    if type(require_signed_jwt) is not bool:
+        errors.append("require_signed_jwt must be an explicit boolean.")
+    elif require_signed_jwt:
+        policy = maverick.get("jwtSignKeySecurityPolicy") if isinstance(maverick, dict) else None
+        if not isinstance(policy, str) or policy not in (
+                "ENFORCE_STRONG_HARDWARE", "ENFORCE_HARDWARE", "ALLOW_VIRTUAL_SMART_CARD"):
+            errors.append("SignedJWT requires an explicitly selected maverick.jwtSignKeySecurityPolicy in the mc_config passed to SDK Start. Resolve the deployment's approved key policy before activation; do not invent a default, weaken protection or clear token data to compensate.")
+        if authentication_mode not in ("biometric", "pin", "no_authentication"):
+            errors.append("SignedJWT requires known non-password SDK authentication_mode metadata: biometric, pin or no_authentication. Never substitute a weaker mode to pass.")
+        if config.get("useTokenBasedLogin") is not True:
+            errors.append("SignedJWT requires useTokenBasedLogin=true in the selected configuration.")
+        signed_jwt_checked = (
+            isinstance(policy, str) and policy in (
+                "ENFORCE_STRONG_HARDWARE", "ENFORCE_HARDWARE", "ALLOW_VIRTUAL_SMART_CARD")
+            and authentication_mode in ("biometric", "pin", "no_authentication")
+            and config.get("useTokenBasedLogin") is True)
+        warnings.append("SignedJWT prerequisite metadata is not proof of stored key policy, delivered SDK compatibility or the grant used at runtime. Require sanitized jwt-bearer/issuer evidence; never use CLEAR_ALL.")
     actual_mtls = maverick.get("mTLS") if isinstance(maverick, dict) else None
     if type(actual_mtls) is not bool:
         errors.append("mc_config.maverick.mTLS must be an explicit JSON boolean.")
@@ -80,6 +99,7 @@ def check(mc_config_path, expected_mtls, expected_token_client=None,
             warnings.append("Current-token scopes do not prove explicit TMS authorization. The SDK may obtain tms during token exchange or step-up; inspect that resulting token and rerun with granted_scope_stage=explicit_auth. Do not require a pre-granted tms scope or change backend permissions blindly.")
     return {"status": "blocked" if errors else "configuration_checked", "errors": errors, "warnings": warnings,
             "token_binding_checked": binding_checked, "explicit_tms_scope_checked": scope_checked,
+            "signed_jwt_prerequisites_checked": signed_jwt_checked,
             "evidence_source": "caller-supplied deployment and token metadata compared with local mc_config",
             "runtime_verified": False, "backend_capability_verified": False,
             "limits": "No backend request, token signature validation or proof of explicit authentication. Scope presence is necessary but not sufficient. Preserve server TLS validation, pinning and the selected key-protection/authentication policy."}
@@ -91,7 +111,9 @@ def register(mcp):
                                  expected_token_client: str | None = None,
                                  granted_scopes: list[str] | None = None,
                                  require_explicit_authentication: bool = False,
-                                 granted_scope_stage: Literal["current", "explicit_auth"] = "current") -> dict:
+                                 granted_scope_stage: Literal["current", "explicit_auth"] = "current",
+                                 require_signed_jwt: bool = False,
+                                 authentication_mode: Literal["biometric", "pin", "no_authentication", "password"] | None = None) -> dict:
         """Check actual mc_config before activation and before explicit-authentication TMS.
 
         Supply verified deployment mTLS choice, not a sample default. Before TMS
@@ -99,7 +121,11 @@ def register(mcp):
         Current-token scopes are not a pre-grant requirement. Use explicit_auth
         stage for the exchange/step-up result; missing tms then blocks. No backend calls, mutations,
         credential output, automatic scope grants or authentication downgrade.
+        For a requested SignedJWT path, set require_signed_jwt and the observed
+        SDK authentication_mode; checks local key-policy/token-login prerequisites
+        without choosing policy, modifying keys or proving the runtime grant.
         Configuration checked is not live acceptance or backend capability proof.
         """
         return check(mc_config_path, expected_mtls, expected_token_client,
-                     granted_scopes, require_explicit_authentication, granted_scope_stage)
+                     granted_scopes, require_explicit_authentication, granted_scope_stage,
+                     require_signed_jwt, authentication_mode)

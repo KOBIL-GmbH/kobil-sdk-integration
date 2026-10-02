@@ -64,4 +64,22 @@ Live verification: not performed for this clean service-interface branch.
 
 `sdk_idp_activation_code_generate(expected_environment, user_uuid, valid_for="60d", digits=8, realm=None)` generates a numeric code in the MCP process and stores it as a KOBIL `ACTIVATION_CODE` credential on an existing user. The backend must support that credential type and the connection needs user-management rights. The tool returns the code for entering into the app; keep it out of committed files and logs.
 
+### The one happy path for a test user's activation code (round 4, 2026-10-01)
+
+Call `sdk_idp_activation_code_generate(expected_environment, user_uuid)` and
+leave `code_reference` out. The MCP generates the digits, stores them as the
+user's `ACTIVATION_CODE` credential and returns them once in the result field
+`activation_code`. Type that value into the app under test. Nothing has to be
+prepared on disk for this path.
+
+`code_reference` on `_generate` and the `code` parameter of
+`sdk_idp_activation_code_set` are credential *references*, not the code itself:
+`{"provider":"file","path":"<absolute owner-only file holding the digits>"}` or
+`{"provider":"env","name":"VAR"}` (see the [credential guide](../../../docs/credentials.md)).
+`CREDENTIAL_NOT_FOUND` with "the referenced private file does not exist" means
+exactly that: the reference file was never created locally. It is a local setup
+error; no backend request was sent. Use `_set` only when a specific code must be
+stored (for example a code already configured on the device side) and the
+referenced file already exists.
+
 This is an explicit credential operation, separate from registration-user selection and app-flow configuration. It never creates users, selects a flow or activates a device. Existing activation codes may be replaced. Readback confirms the credential type exists, not that the exact generated value was stored; successful device activation remains a separate test. An uncertain write must not be automatically retried.

@@ -9,6 +9,17 @@ the final environment/theme change; iOS device behavior is unverified. Returning
 login can use cached or refreshed tokens: success alone does not prove a SignedJWT
 grant. These observations qualify only this test tuple, not every delivery.
 
+The actual OfflineLogin factor depends on the effective SDK configuration, not
+only on `useTokenBasedLogin=true`: source review shows a non-password auth mode
+with `maverick.jwtSignKeySecurityPolicy` selects the SignedJWT factor; without the
+policy, the SDK selects the offline-token factor. Confirm the effective policy
+without exposing signed configuration contents, then require sanitized
+jwt-bearer diagnostics or equivalent issuer evidence before claiming SignedJWT.
+Fresh `iat` and OfflineLogin success are insufficient. A diagnostic test may
+clear only access and refresh tokens; `CLEAR_ALL` also removes the offline token
+and can make returning login unavailable. Qualify this behavior against the
+delivered SDK.
+
 ## Setup and activation
 - Local toolchain preflight before long builds (2026-09-29 round): confirm a
   COMPLETELY installed Android NDK (VAL-06: a half-installed NDK 26.3 was only

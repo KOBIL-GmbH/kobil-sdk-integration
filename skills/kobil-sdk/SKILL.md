@@ -5,6 +5,63 @@ description: Integrate KOBIL SDK features into existing or fresh Kotlin Android,
 
 # KOBIL SDK integration
 
+## Start here: the minimal native journey (one knowledge call, one tool load)
+
+Load the standard-journey tools once with a single ToolSearch
+`select:` of these exact names: `sdk_service_catalog`, `sdk_backend_status`,
+`sdk_knowledge_bundle`, `sdk_artifact_info`, `sdk_plan`, `sdk_native_preflight`,
+`sdk_deployment_preflight`, `sdk_idp_user_search`,
+`sdk_idp_activation_code_generate`, `sdk_idp_user_credentials_list`,
+`sdk_tms_explicit_preflight`, `sdk_tms_trigger`, `sdk_tms_status`,
+`sdk_tms_result`, `sdk_tms_cancel`. Then follow this order; every later section
+of this skill refines a step, none replaces it.
+
+1. Knowledge: `sdk_knowledge_bundle(platform="android"|"ios")` returns setup,
+   activation, login, tms, logs and diagnostics in one call (replaces ~10
+   sequential `sdk_knowledge_get` calls). Read
+   [native-integration.md](references/native-integration.md) once; open
+   [tms.md](references/tms.md) and [log-export.md](references/log-export.md)
+   when you reach those steps. `lifecycle`, `multi_step`, `automated_testing`
+   stay separate `sdk_knowledge_get` topics.
+2. Backend and artifacts: `sdk_backend_status`, `sdk_artifact_info(path)` on
+   each delivery ZIP (see [sdk-delivery.md](references/sdk-delivery.md) for
+   locating AARs/xcframeworks inside it), `sdk_plan(profile)`.
+3. Gates before code: `sdk_native_preflight`, then `sdk_deployment_preflight`
+   with the actual mc_config. Proceed only on `configuration_checked`.
+4. Start: register listeners, Start the SDK, observe the Start result event.
+5. Activation via trusted WebView: fixture = `sdk_idp_user_search` ->
+   `sdk_idp_activation_code_generate(user_uuid)` (code is returned once in the
+   result; no reference file needed). Allowlist + redirect pattern per platform:
+   native-integration.md "Trusted-WebView allowlist and redirect". Biometric
+   prompt timing varies by delivered SDK, platform and key policy; announce
+   possible physical prompts before activation or protected key access, then
+   record whether a prompt actually appeared. On a stall read back
+   `sdk_idp_user_credentials_list` before consuming another code.
+6. Interactive login in the trusted WebView with the token client
+   (`iam.clientId`) so that client holds the SDK's current token.
+7. Cold login: kill the process, relaunch, `OfflineLoginEvent`. This may reuse
+   an access token or refresh an offline token; success and a fresh `iat` do not
+   prove a SignedJWT grant. The biometric prompt, when enabled, is on protected
+   credential access, not necessarily at activation or interactive login.
+8. Claim SignedJWT only when the effective SDK configuration has
+   `maverick.jwtSignKeySecurityPolicy` and the selected auth mode is not password.
+   On the inspected source path, that policy selects the SignedJWT first factor;
+   without it, the SDK selects the offline-token factor. A safe diagnostic run
+   may clear only access and refresh tokens (`CLEAR_ACCESS_AND_REFRESH`), then
+   post `OfflineLoginEvent` and inspect whitelisted claims. Confirm the
+   jwt-bearer grant in sanitized SDK diagnostics or equivalent issuer evidence.
+   If the policy or grant cannot be verified, record `NOT_PROVEN`. Never use
+   `CLEAR_ALL` for this check: it also removes the offline token and can leave
+   the user without a returning-login credential. Never print tokens.
+9. TMS: `sdk_tms_explicit_preflight(iam.clientId)` once, then `sdk_tms_trigger`
+   for ordinary accept, ordinary reject, explicit accept, explicit reject,
+   timeout (owner must not touch) and `sdk_tms_cancel` (server cancel); confirm
+   each with `sdk_tms_status` / `sdk_tms_result` against the SDK terminal event.
+10. Export: the reopened ZIP with non-empty, CRC-clean entries IS the pass; the
+    share sheet is optional and bounded to 60 s, then skipped.
+
+Write TEST_REPORT.md after every one of these gates, not at the end.
+
 Scope: all public SDK features across supported releases and the four
 framework/OS combinations. Activation/login is the first milestone, not the
 product boundary. The MCP supplies planning, artifact inspection and AST app/version/configuration

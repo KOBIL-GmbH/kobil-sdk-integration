@@ -129,6 +129,12 @@ creation and cannot be changed on existing keys: decide the mode BEFORE the
 key-creating activation step; a later change requires discarding keys and a
 fresh activation with a new activation code.
 
+This is the preferred target path, not proof of the grant used by a particular
+OfflineLogin. Require the effective `maverick.jwtSignKeySecurityPolicy`, a
+non-password auth mode and sanitized jwt-bearer diagnostics or equivalent issuer
+evidence before claiming SignedJWT. `useTokenBasedLogin=true`, a successful
+OfflineLogin result, a fresh `iat` or a biometric prompt alone is insufficient.
+
 ## Native trusted WebView callback contract (verified 2026-09-29)
 
 Record the callback contract from the ACTUAL delivered interfaces (javap/bytecode

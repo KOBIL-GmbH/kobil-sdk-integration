@@ -9,6 +9,9 @@ lookup is needed to retrieve them.
 - `sdk_knowledge_get(topic, platform, sdk_family, sdk_version)` returns a complete
   recipe with prerequisites, sequence, expected result, failure handling,
   platform notes, concrete example and checks.
+- `sdk_knowledge_bundle(platform, sdk_family, sdk_version)` returns the minimal
+  ordered journey - setup, activation, login, tms, logs, diagnostics - as the
+  concatenated `sdk_knowledge_get` results in one call (same validation).
 - `sdk_integration_checklist(...)` returns acceptance items, initially `not_run`.
   It does not scan an application or certify a completed integration.
 

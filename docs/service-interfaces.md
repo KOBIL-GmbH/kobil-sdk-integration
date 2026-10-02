@@ -64,7 +64,11 @@ These operations never recommend an authenticator, flow or client.
 
 `sdk_idp_login_page_fetch` implements the ninth audited REST operation: the OIDC
 GET authorization endpoint. Supply the existing client, registered redirect URI,
-and new output file. Optional state, nonce and S256 code challenge are supported.
+and new output file inside a private owner-only directory of the app under test
+(for example `<app>/private/fixtures/login-page.html`). If only the last
+directory level is missing and its parent belongs to the caller, the tool creates
+it with mode 0700; a deeper missing path is reported as a local setup error and
+no request is sent. Optional state, nonce and S256 code challenge are supported.
 Redirects are reported as failures rather than followed; cookies are not exported
 for subsequent login. The saved page is untrusted content, not an SDK compatibility test.
 

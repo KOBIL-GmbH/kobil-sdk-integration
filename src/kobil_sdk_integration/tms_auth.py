@@ -117,8 +117,8 @@ def register(mcp):
             if not _CLIENT_ID.fullmatch(value):
                 raise ValueError('Provide public clientId names, never tokens or UUIDs with spaces.')
         with Admin(expected_environment, realm) as api:
-            clients = api.page('/clients', 0, 2, params={'clientId': token_client_id})
-            matches = [c for c in (clients if isinstance(clients, list) else []) if c.get('clientId') == token_client_id]
+            client_page = api.page('/clients', 0, 50, params={'clientId': token_client_id})
+            matches = [c for c in client_page['items'] if c.get('clientId') == token_client_id]
             if not matches:
                 return {'status': 'blocked', 'errors': [f'Client {token_client_id} not found in realm.'], 'warnings': [],
                         'runtime_verified': False, 'backend_modified': False}
