@@ -18,7 +18,7 @@ a ZIP with 23 files and opened the Android share chooser. A private local copy
 passed ZIP CRC validation (4,205,396 archive bytes). This proves archive creation
 and chooser launch, not receiver access, current-reproduction coverage or
 decryption. No new authentication operation was needed to export existing logs.
-iOS/Flutter remain source-reviewed only. Receiver opening, cancellation and
+Later iOS/Flutter archive evidence is qualified in the matrix below. Receiver opening, cancellation and
 post-share cleanup still require verification.
 
 ## Encrypted-file-logging capability matrix (2026-09-29 validation round)
@@ -27,13 +27,13 @@ post-share cleanup still require verification.
 |---|---|---|
 | classic MCSDK 15.16 | Android | SUPPORTED (logs_mPower runtime-observed) |
 | classic MCSDK 15.16 | Swift iOS | SUPPORTED (validated) |
-| shift 549 (ksmastercontrollerwrapperdart 106.0.0, libnb.so) | Flutter/Android | NOT WRITING — accepts logsStorageDirectory at init, writes zero files even at LogDebug (VAL-34, open vendor question) |
-| shift 549 | Flutter/iOS | SUPPORTED — validated 2026-09-29 (3 encrypted files, ~696 KB, CRC-clean ZIP; VAL-38: same delivery writes logs on iOS but not Android) |
+| shift 549 (ksmastercontrollerwrapperdart 106.0.0, libnb.so) | Flutter/Android | MIXED historical evidence: September 29 reported no files (VAL-34); September 30 physical run exported four non-empty encrypted files from external logs_mPower and stageOneLogs while logsStorageDirectory was empty |
+| shift 549 | Flutter/iOS | SUPPORTED — validated 2026-09-29 (3 encrypted files, ~696 KB, CRC-clean ZIP; VAL-38) |
 
-Acceptance runners mark known NOT-WRITING gaps EXPECTED-FAIL (with the VAL
-reference) instead of probing the device again. EXPECTED-FAIL is not a pass and
-does not close the vendor question. Update the matrix only from runtime evidence
-on the exact delivery; never assume family parity.
+Resolve actual native paths before classifying missing logs. An empty configured
+directory alone does not establish absent file logging. EXPECTED-FAIL requires
+a reproduced limitation on the exact tuple and is not a pass. The historical
+VAL-34 question remains scoped to its original run; never assume family parity.
 
 ## Collection contract
 
@@ -135,7 +135,29 @@ FileSystemEntity.toString(). Handle null directories, partial copies and empty
 archives; perform large archive work away from the UI isolate. Android content
 URI access and iPad share anchors still need platform verification.
 
+## Pass criterion and bounded share (round 4, 2026-10-01)
+
+The export gate PASSES when the ZIP exists at the declared private destination,
+was reopened, every entry is non-empty and the archive is CRC-clean
+(`zipfile.ZipFile(...).testzip()` is None or equivalent). Record entry count and
+archive bytes; that is the evidence.
+
+Share delivery (Android chooser, iOS share sheet) is optional and owner-driven.
+Pre-declare the tap sequence in the owner channel, wait at most 60 s for the
+owner, then record `share_skipped` and continue with the next gate. In round 4
+a worker sat in WAIT for more than 7 minutes on the chooser after the archive
+had already been verified (19 entries, non-empty, CRC ok) - the gate was passed
+at verification time (O-13, same as round-3 K-10).
+
 ## Export is not decryption
+
+Decrypting an export is a support-side capability. The key id on the decrypt
+service is the **LoggingFramework** version printed in the header of each
+`ks*.log` file (`LoggingFramework Version: <x.y.z>`), not the MCSDK release
+version: passing the MCSDK version fails with "no cached key" (round 4, O-14).
+Read the header first, then decrypt with that version
+(`decrypt.py decrypt <file> --version <header version>`).
+
 
 Keep the bundle encrypted. Decryption is a separate, optionally configured
 support capability using matching SDK-version tooling; never bundle keys or

@@ -1,10 +1,12 @@
 import json
+import stat
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 from kobil_sdk_integration import service_helpers as helpers, service_api, idp_secrets
 from kobil_sdk_integration.backend import BackendError
+from kobil_sdk_integration.idp_secrets import output_file
 
 class Registry:
     def __init__(self):self.tools={}
@@ -51,6 +53,21 @@ class HelpersTests(unittest.TestCase):
             args,kwargs=cls.return_value.client.stream.call_args
             self.assertEqual(kwargs,{})
             self.assertIn('client_id=client',args[1])
+
+    def test_login_fetch_creates_one_missing_private_level_only(self):
+        from kobil_sdk_integration.service_helpers import ensure_private_parent
+        with tempfile.TemporaryDirectory() as d:
+            target=Path(d)/'fixtures'/'page.html'
+            self.assertTrue(ensure_private_parent(str(target)))
+            self.assertTrue(target.parent.is_dir())
+            self.assertEqual(stat.S_IMODE(target.parent.stat().st_mode),0o700)
+            self.assertFalse(ensure_private_parent(str(target)))
+            deep=Path(d)/'missing'/'fixtures'/'page.html'
+            self.assertFalse(ensure_private_parent(str(deep)))
+            self.assertFalse(deep.parent.exists())
+            with self.assertRaises(ValueError) as error:
+                with output_file(str(deep)):pass
+            self.assertIn('does not exist',str(error.exception))
 
     def test_grafana_environment_mismatch_precedes_credentials(self):
         with patch.object(helpers,'configuration'),patch.object(helpers,'load_private_json',return_value={'environment':'other'}),patch.object(helpers,'resolve') as resolve:

@@ -49,6 +49,24 @@ the actual SDK/backend path. Never switch explicit authentication off or blindly
 create/grant a realm scope to get a green result. A missing `tms` scope may require
 a documented step-up flow or mapper; that contract must be established first.
 
+## Before a requested SignedJWT returning-login path
+
+Pass `require_signed_jwt=true` and the observed SDK `authentication_mode` to
+`sdk_deployment_preflight`. The actual `mc_config` passed to Start must contain
+an explicitly approved `maverick.jwtSignKeySecurityPolicy` and
+`useTokenBasedLogin=true`; password mode does not select this factor in the
+reviewed source. Missing prerequisites block this requested path without
+blocking ordinary OfflineLogin when SignedJWT checking is not requested.
+
+Do not substitute a sample policy or change existing key protection to get a
+green result. Configuration inspection is not proof of effective stored keys
+or exact delivered-version compatibility. Confirm the deployment-approved
+policy before any key-creating operation; preserve existing bindings and use
+a separately authorized isolated fixture if new keys are required.
+
+Only runtime jwt-bearer/issuer evidence proves the grant. Never use `CLEAR_ALL`;
+fresh token timestamps or biometric prompts do not establish SignedJWT.
+
 ## Before any physical iOS installation
 
 Run `sdk_ios_signing_preflight(app_path, expected_team_id, device_udid)` on the

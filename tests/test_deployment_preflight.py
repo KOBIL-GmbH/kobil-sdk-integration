@@ -90,3 +90,44 @@ class DeploymentPreflightTests(unittest.TestCase):
     def test_explicit_auth_missing_metadata_and_unknown_stage_block(self):
         self.assertEqual(check(str(self.path), False, 'Enrollment', None, True, 'explicit_auth')['status'], 'blocked')
         self.assertEqual(check(str(self.path), False, 'Enrollment', [], True, 'guess')['status'], 'blocked')
+
+    def test_signed_jwt_missing_policy_blocks_without_config_mutation(self):
+        before = self.path.read_bytes()
+        result = check(str(self.path), False, require_signed_jwt=True, authentication_mode='biometric')
+        self.assertEqual(result['status'], 'blocked')
+        self.assertFalse(result['signed_jwt_prerequisites_checked'])
+        self.assertIn('jwtSignKeySecurityPolicy', str(result['errors']))
+        self.assertNotIn('never-return-this', str(result))
+        self.assertEqual(before, self.path.read_bytes())
+
+    def test_signed_jwt_qualified_prerequisites_do_not_prove_grant(self):
+        self.config['useTokenBasedLogin'] = True
+        for policy in ('ENFORCE_HARDWARE', 'ENFORCE_STRONG_HARDWARE', 'ALLOW_VIRTUAL_SMART_CARD'):
+            self.config['maverick']['jwtSignKeySecurityPolicy'] = policy
+            self.write()
+            result = check(str(self.path), False, require_signed_jwt=True, authentication_mode='biometric')
+            self.assertEqual(result['status'], 'configuration_checked')
+            self.assertTrue(result['signed_jwt_prerequisites_checked'])
+            self.assertFalse(result['runtime_verified'])
+            self.assertIn('never use CLEAR_ALL', str(result['warnings']))
+
+    def test_signed_jwt_invalid_metadata_is_not_echoed_or_defaulted(self):
+        self.config['useTokenBasedLogin'] = True
+        for policy in (None, '', 'secret-policy-value', [], {}):
+            self.config['maverick']['jwtSignKeySecurityPolicy'] = policy
+            self.write()
+            result = check(str(self.path), False, require_signed_jwt=True, authentication_mode='biometric')
+            self.assertEqual(result['status'], 'blocked')
+            self.assertNotIn('secret-policy-value', str(result))
+        self.config['maverick']['jwtSignKeySecurityPolicy'] = 'ENFORCE_HARDWARE'
+        self.write()
+        for mode in (None, 'password', 'secret-mode', [], {}):
+            result = check(str(self.path), False, require_signed_jwt=True, authentication_mode=mode)
+            self.assertEqual(result['status'], 'blocked')
+            self.assertNotIn('secret-mode', str(result))
+        for enabled in (False, 'true', 1, None):
+            self.config['useTokenBasedLogin'] = enabled
+            self.write()
+            self.assertEqual(check(str(self.path), False, require_signed_jwt=True,
+                                   authentication_mode='biometric')['status'], 'blocked')
+        self.assertEqual(check(str(self.path), False, require_signed_jwt='true')['status'], 'blocked')

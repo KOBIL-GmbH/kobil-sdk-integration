@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Start-here journey in SKILL.md and new `sdk_knowledge_bundle` (setup/activation/login/tms/logs/diagnostics in one call) to replace ~10 sequential knowledge calls (round-4 O-01/O-05).
+- `sdk_idp_login_page_fetch` creates its private output directory (0700) instead of failing; activation-code happy path and CREDENTIAL_NOT_FOUND meaning documented (O-02/O-03).
+- `sdk_artifact_info` / sdk-delivery.md: locate AARs, xcframeworks, headers and javadoc inside a delivery without unzip/grep guessing (O-04).
+- Login knowledge: BIOMETRIC prompts come with credential/key access, not activation; OfflineLogin grant order (cached access token, refresh token, then signed JWT) from source file; signed-JWT proof recipe ClearIamTokenCache(access+refresh) -> OfflineLogin -> claims, never CLEAR_ALL; the signed-JWT path exists only with maverick.jwtSignKeySecurityPolicy (ENFORCE_STRONG_HARDWARE / ENFORCE_HARDWARE / ALLOW_VIRTUAL_SMART_CARD) set before activation (O-09/O-10/O-12/O-19).
+- Copy-ready trusted-WebView allowlist/redirect example per platform; a mismatch shows as a blank WebView without prompt (O-11).
+- Log export: verified archive is the pass criterion, share delivery bounded; decrypt with the LoggingFramework version from the ks*.log header (O-13/O-14).
+- Automated testing: write TEST_REPORT after every gate, keep heartbeats as children and stop them, budget parallel runs against usage limits; iOS reinstall/OS update can reset the SDK container (O-06/O-16/O-17/O-18).
+
 ## 0.7.0 — 2026-10-01
 
 - Explicit-auth TMS: record the measured contract (Confluence 62199010) and the three device-verified preconditions for the token client - optional client scope `tms`, token-holder identity, KOBIL mobile browser-flow override - with the failure signatures of each missing piece (403/516004034, not_allowed token holder with silent FAILED/0, CANNOT_ACQUIRE_TOKEN_DATA). Add read-only `sdk_tms_explicit_preflight` that checks a token client for all three via the IDP admin API. Akinci device proof 2026-10-01: explicit transaction 01M3VWXYQN14BKB8EQ2BXBYDQ6 ACCEPTED.

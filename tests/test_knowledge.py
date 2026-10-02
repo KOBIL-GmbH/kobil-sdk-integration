@@ -1,7 +1,7 @@
 import json
 from importlib.resources import files
 import unittest
-from kobil_sdk_integration.knowledge_api import TOPICS,FLUTTER_TOPICS,get_topic,register
+from kobil_sdk_integration.knowledge_api import TOPICS,FLUTTER_TOPICS,BUNDLE_TOPICS,get_topic,register
 
 class Registry:
     def __init__(self):self.tools={}
@@ -27,6 +27,22 @@ class KnowledgeTests(unittest.TestCase):
                 self.assertFalse(data['qualification']['device_verified'])
                 self.assertFalse(data['external_source_access_required'])
                 self.assertNotIn('/Users/',json.dumps(data))
+
+    def test_knowledge_bundle_concatenates_minimal_journey_in_order(self):
+        self.assertEqual(BUNDLE_TOPICS,('setup','activation','login','tms','logs','diagnostics'))
+        for platform in ('android','ios'):
+            bundle=self.tools['sdk_knowledge_bundle'](platform,sdk_version='unverified-release')
+            self.assertEqual(bundle['status'],'source_reviewed_unqualified')
+            self.assertEqual(bundle['order'],list(BUNDLE_TOPICS))
+            self.assertEqual([t['topic'] for t in bundle['topics']],list(BUNDLE_TOPICS))
+            for topic in bundle['topics']:
+                self.assertEqual(topic,get_topic(topic['topic'],platform,sdk_version='unverified-release'))
+                self.assertFalse(topic['version_verified'])
+            self.assertFalse(bundle['version_verified'])
+            self.assertEqual(set(bundle['not_included']),set(TOPICS)-set(BUNDLE_TOPICS))
+            self.assertNotIn('/Users/',json.dumps(bundle))
+        for platform,family in [('flutter_android','shift'),('android','ssms'),('windows','shift')]:
+            self.assertEqual(self.tools['sdk_knowledge_bundle'](platform,family)['status'],'knowledge_gap')
 
     def test_unsupported_family_and_flutter_do_not_fallback(self):
         for platform,family in [('flutter','shift'),('android','ssms'),('windows','shift')]:
@@ -96,6 +112,30 @@ class KnowledgeTests(unittest.TestCase):
         checks=self.tools['sdk_integration_checklist']('activation','android')['checks']
         self.assertTrue(any('authentication-mode decision' in c['description'] for c in checks))
         self.assertTrue(all(c['status']=='not_run' for c in checks))
+
+    def test_signed_jwt_claim_requires_configured_policy_and_grant_evidence(self):
+        login = self.tools['sdk_knowledge_get']('login', 'android')
+        text = ' '.join((' '.join(login['failure_handling']) + ' '.join(login['sequence'])).split())
+        for token in ('jwtSignKeySecurityPolicy', 'non-password', 'CLEAR_ACCESS_AND_REFRESH',
+                      'jwt-bearer', 'fresh iat', 'NOT_PROVEN', 'CLEAR_ALL',
+                      'offline-token factor'):
+            self.assertIn(token, text, token)
+        self.assertNotIn('evidence = fresh iat', text)
+        for platform in ('android', 'ios'):
+            data = self.tools['sdk_knowledge_get']('automated_testing', platform)
+            combined = ' '.join((' '.join(data['sequence']) + ' '.join(data['checklist'])).split())
+            self.assertIn('may reuse an access token', combined)
+            self.assertIn('NOT_PROVEN', combined)
+            self.assertIn('Never use CLEAR_ALL', combined)
+
+    def test_biometric_prompt_timing_is_version_and_policy_qualified(self):
+        login = self.tools['sdk_knowledge_get']('login', 'android')
+        text = ' '.join(login['failure_handling'])
+        self.assertIn('prompt timing varies', text)
+        self.assertIn('Absence of a prompt alone does not prove', text)
+        self.assertIn('Announce possible owner authentication', text)
+        self.assertNotIn('Never announce or wait for a prompt', text)
+        self.assertNotIn('NOT at activation', text)
 
     def test_flutter_preferred_path_and_signedjwt_compatibility(self):
         data=get_topic('flutter_webview','flutter_android')
@@ -207,9 +247,9 @@ class KnowledgeTests(unittest.TestCase):
             text=' '.join((' '.join(data['sequence'])+' '+' '.join(data['failure_handling'])+' '+' '.join(data['checklist'])+' '+data['expected_result']).split())
             for token in ('gate separation','CONCRETE adapter','observed SDK Start event',
                           'never pass gates 2-6','Report scaffold tests separately',
-                          'TWO distinct paths','SEPARATE acceptance rows','OfflineLogin/SignedJWT',
+                          'TWO distinct paths','SEPARATE acceptance rows','eligible SignedJWT factor',
                           'interactive trusted-WebView login','never be attributed to biometric',
-                          'user-preferred primary path','PASS/FAIL/BLOCKED/NOT_RUN',
+                          'PASS/FAIL/BLOCKED/NOT_RUN',
                           'asset fingerprint','fixture ownership','readback',
                           '~60s','2-17s','PER-DEVICE lease','never two test runners on ONE phone',
                           'NOT touch the live confirmation dialog','invalidates the case',
@@ -218,7 +258,7 @@ class KnowledgeTests(unittest.TestCase):
                 self.assertIn(token,text,token)
             # separate checklist rows per returning-login path, both still not_run
             checks=self.tools['sdk_integration_checklist']('automated_testing',platform)['checks']
-            token_rows=[c for c in checks if 'OfflineLogin/SignedJWT token path' in c['description']]
+            token_rows=[c for c in checks if 'Cold OfflineLogin' in c['description']]
             interactive_rows=[c for c in checks if 'Interactive trusted-WebView returning login' in c['description']]
             self.assertEqual(len(token_rows),1)
             self.assertEqual(len(interactive_rows),1)
@@ -326,14 +366,15 @@ class KnowledgeTests(unittest.TestCase):
             text=' '.join((' '.join(logs['failure_handling'])+' '+' '.join(logs['checklist'])+' '+logs['platform_notes']).split())
             for token in ('capability matrix','classic MCSDK 15.16 Android = SUPPORTED',
                           'classic MCSDK 15.16 Swift iOS = SUPPORTED',
-                          'shift delivery 549 Flutter/Android','NOT WRITING','ZERO encrypted log files',
+                          'shift delivery 549 Flutter/Android','MIXED historical evidence','external logs_mPower',
                           'VAL-34','open vendor question','Flutter/iOS = SUPPORTED',
                           'EXPECTED-FAIL','not a pass','never by assuming family parity','2026-09-29'):
                 self.assertIn(token,text,token)
             self.assertIn('SUPPORTED',logs['platform_notes'])
             testing=' '.join(get_topic('automated_testing',platform)['failure_handling'])
-            for token in ('EXPECTED-FAIL','VAL-34','instead of probing the device again','EXPECTED-FAIL is not a pass'):
+            for token in ('EXPECTED-FAIL','VAL-34','stageOneLogs','EXPECTED-FAIL is not a pass'):
                 self.assertIn(token,testing,token)
+            self.assertNotIn('instead of probing the device again', testing)
         fw_text=' '.join(get_topic('flutter_webview','flutter_android')['failure_handling'])
         for token in ('NOT WRITING','logsStorageDirectory','VAL-34','EXPECTED-FAIL'):
             self.assertIn(token,fw_text,token)
