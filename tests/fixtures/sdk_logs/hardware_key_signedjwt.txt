@@ -1,0 +1,7 @@
+[2026-10-05 16:34:06.858006] : <info> [3139] [ksmcw++]  [HardeningBridge ] jni [-] isKeyInsideSecureHardware securityLevel 1, TEE=1, SE=2
+[2026-10-05 16:34:09.525004] : <info> [3512] [ksmcw++]  [HardeningBridge ] jni [-] isKeyInsideSecureHardware securityLevel 2, TEE=1, SE=2
+[2026-10-05 16:34:09.874122] : <info> [3512] [ksmcw++]  [HardeningBridge ] jni [-] isKeyInsideSecureHardware securityLevel 2, TEE=1, SE=2
+[2026-10-05 16:34:09.877318] : <info> [3512] [ksmcw++] GetKeystoreInfo has strong hardware keystore true, has hardware keystore true
+[2026-10-05 16:34:25.934829] : <info> [3894] [ConnectionManager] [TCP:00-584a93cc19441096869e034a99a666cb-587cf5181276bf28-00] Received Event: [event=GetIamAccessTokenUsingJwtBearer, client_id=token-client, uuid=1dc61d0a-b469-4197-baad-cfc4a85e64e3]
+[2026-10-05 16:34:25.937682] : <info> [3913] [ConnectionManager] Rest Data for Event with UUID [05931044-4234-4305-9162-ce48a8e1a295][Endpoint-Identifier=IAM][Method=POST][Path=/auth/realms/realm-a/protocol/openid-connect/token][Custom Timeout=5]
+[2026-10-05 16:34:26.173782] : <info> [3913] [ConnectionManager] HTTP Response for Event with UUID [05931044-4234-4305-9162-ce48a8e1a295] Success 200

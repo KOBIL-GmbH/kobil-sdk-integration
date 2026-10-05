@@ -57,7 +57,7 @@ the agent to read that absolute canonical skill path and resolve references from
 there. Custom agents should point at the same canonical path. Do not copy just
 the skill folder: it also references the release's docs directory.
 
-Start KOBILSDK in the MCP server list. Verify discovery of 196 tools and call
+Start KOBILSDK in the MCP server list. Verify discovery of 197 tools and call
 `sdk_targets`. Test backend access separately with authorized read-only operations.
 A running MCP does not prove native activation or login passed.
 
@@ -110,7 +110,7 @@ iOS signing preflights (`sdk_deployment_preflight`, artifact signing check), the
 CHANGELOG.md. Behavior changes: `sdk_idp_login_page_fetch` now creates its private
 output directory instead of failing; `sdk_deployment_preflight` accepts
 `require_signed_jwt` and blocks when the sign-key policy is missing from the
-configuration. Tool count is 196. No backend or configuration mutation was added.
+configuration. Tool count is 197. No backend or configuration mutation was added.
 
 ## v0.6.0 migration notes
 
