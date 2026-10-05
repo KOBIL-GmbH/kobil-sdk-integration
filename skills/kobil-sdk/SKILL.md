@@ -28,6 +28,12 @@ of this skill refines a step, none replaces it.
    locating AARs/xcframeworks inside it), `sdk_plan(profile)`.
 3. Gates before code: `sdk_native_preflight`, then `sdk_deployment_preflight`
    with the actual mc_config. Proceed only on `configuration_checked`.
+   Resolve the test target against the sign-key policy first: an emulator or
+   simulator cannot satisfy `ENFORCE_STRONG_HARDWARE` / `ENFORCE_HARDWARE` and
+   would fail at activation after consuming the code. Stop and offer
+   `ALLOW_VIRTUAL_SMART_CARD` for the fixture or a physical device; see
+   [signing-policy.md](references/signing-policy.md). Never downgrade a
+   deployment policy silently.
 4. Start: register listeners, Start the SDK, observe the Start result event.
 5. Activation via trusted WebView: fixture = `sdk_idp_user_search` ->
    `sdk_idp_activation_code_generate(user_uuid)` (code is returned once in the
@@ -52,7 +58,9 @@ of this skill refines a step, none replaces it.
    jwt-bearer grant in sanitized SDK diagnostics or equivalent issuer evidence.
    If the policy or grant cannot be verified, record `NOT_PROVEN`. Never use
    `CLEAR_ALL` for this check: it also removes the offline token and can leave
-   the user without a returning-login credential. Never print tokens.
+   the user without a returning-login credential. Never print tokens. Which
+   target can prove which claim (protocol vs key protection vs biometric) is
+   tabulated in [signing-policy.md](references/signing-policy.md).
 9. TMS: `sdk_tms_explicit_preflight(iam.clientId)` once, then `sdk_tms_trigger`
    for ordinary accept, ordinary reject, explicit accept, explicit reject,
    timeout (owner must not touch) and `sdk_tms_cancel` (server cancel); confirm
