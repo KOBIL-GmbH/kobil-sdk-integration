@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+(no changes yet)
+
+## 0.7.0 — 2026-10-05
+
 - Explicit-auth TMS guidance (tms.md, tms.json, login.json) made deployment-neutral and extended with the 2026-10-05 measurements: token holder reverts to the enrollment client after every cold OfflineLogin (interactive token-client login needed in the current session, silent FAILED/0 otherwise), freshness 3600 vs 0 behaviour (516004035, no SDK step-up path), software-backed key under ALLOW_VIRTUAL_SMART_CARD verified on an emulator, customer login clients without the scope show 403/516004034 and must not be changed from a test run.
 - Start-here journey in SKILL.md and new `sdk_knowledge_bundle` (setup/activation/login/tms/logs/diagnostics in one call) to replace ~10 sequential knowledge calls (round-4 O-01/O-05).
 - `sdk_idp_login_page_fetch` creates its private output directory (0700) instead of failing; activation-code happy path and CREDENTIAL_NOT_FOUND meaning documented (O-02/O-03).
@@ -11,9 +15,8 @@
 - Log export: verified archive is the pass criterion, share delivery bounded; decrypt with the LoggingFramework version from the ks*.log header (O-13/O-14).
 - Automated testing: write TEST_REPORT after every gate, keep heartbeats as children and stop them, budget parallel runs against usage limits; iOS reinstall/OS update can reset the SDK container (O-06/O-16/O-17/O-18).
 
-## 0.7.0 — 2026-10-01
 
-- Explicit-auth TMS: record the measured contract (Confluence 62199010) and the three device-verified preconditions for the token client - optional client scope `tms`, token-holder identity, KOBIL mobile browser-flow override - with the failure signatures of each missing piece (403/516004034, not_allowed token holder with silent FAILED/0, CANNOT_ACQUIRE_TOKEN_DATA). Add read-only `sdk_tms_explicit_preflight` that checks a token client for all three via the IDP admin API. Akinci device proof 2026-10-01: explicit transaction 01M3VWXYQN14BKB8EQ2BXBYDQ6 ACCEPTED.
+- Explicit-auth TMS: record the documented AST contract and the three measured preconditions for the token client - optional client scope `tms`, token-holder identity, KOBIL mobile browser-flow override - with the failure signatures of each missing piece (403/516004034, not_allowed token holder with silent FAILED/0, CANNOT_ACQUIRE_TOKEN_DATA). Add read-only `sdk_tms_explicit_preflight` that checks a token client for all three via the IDP admin API. Measured end-to-end in internal validation (2026-10-01 physical device, 2026-10-05 emulator).
 
 - Separate GettingStarted ordinary-TMS baseline from explicit-auth policy; require SDK status and backend proof instead of sample UI success.
 

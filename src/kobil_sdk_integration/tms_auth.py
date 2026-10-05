@@ -77,7 +77,7 @@ def explicit_preflight(token_client, default_scopes, optional_scopes, flows,
     """Judge, from client representations only, whether a token client can answer an
     explicit-authentication TMS. Pure function: no network, no tokens, no mutation.
 
-    Measured contract (Akinci, 2026-10-01): the token client must (1) carry the required
+    Measured contract (internal validation, 2026-10-01/05): the token client must (1) carry the required
     scope as an OPTIONAL client scope, (2) be the holder of the SDK's current token, (3) run
     the KOBIL mobile browser flow via a client-level override."""
     errors, warnings = [], []
@@ -95,7 +95,7 @@ def explicit_preflight(token_client, default_scopes, optional_scopes, flows,
     elif alias != expected_flow_alias:
         warnings.append(f"{client_id} browser flow override is '{alias}', not '{expected_flow_alias}'. Verify it is a KOBIL mobile flow variant.")
     if enrollment_client_id and enrollment_client_id != client_id:
-        warnings.append(f"Enrollment client {enrollment_client_id} differs from token client {client_id}. After activation the SDK still holds the enrollment client's token; run one interactive login with {client_id} before the first explicit TMS, otherwise the exchange is refused not_allowed 'client is not the token holder' and the SDK ends FAILED/0 before the dialog.")
+        warnings.append(f"Enrollment client {enrollment_client_id} differs from token client {client_id}. After activation and after every cold start with OfflineLogin the SDK holds the enrollment client's token; run one interactive login with {client_id} in the current session before an explicit TMS (verify claims azp == {client_id}), otherwise the exchange is refused not_allowed 'client is not the token holder' and the SDK ends FAILED/0 before the dialog.")
     if not token_client.get('enabled', True):
         errors.append(f"{client_id} is disabled.")
     return {'status': 'blocked' if errors else 'client_checked', 'token_client': client_id,
