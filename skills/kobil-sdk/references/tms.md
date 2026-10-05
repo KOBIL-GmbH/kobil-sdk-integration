@@ -101,6 +101,12 @@ What this does not establish:
   required", surfaced by the SDK only as 516004035 "A network error occurred".
   The SDK has no step-up path for this today; whether `tms` should be bound to
   a real re-authentication is a product decision, not a test defect.
+  How to report it: this is neither an SDK defect nor a customer configuration
+  error. If the customer only needs the scope check, use the default 3600 (or
+  `-1`). If the customer needs a **forced re-authentication at confirmation**,
+  say plainly that the current SDK/AST combination cannot deliver it and
+  escalate it as a product requirement; do not present a lower freshness value
+  as the fix for that requirement.
 - that any production integration sets `requireExplicitAuthentication=true`;
   the inspected backend callers hard-code or default to `false`.
 
