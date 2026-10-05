@@ -35,49 +35,77 @@ or blindly create/assign a scope. Distinguish token-holder HTTP403/700000022,
 missing explicit scope 516004034 and freshness 516004035 using native HTTP detail,
 even when SDK result code is zero and no fatal event is emitted.
 
-## Explicit authentication: what the token client needs (measured 2026-10-01)
+## Explicit authentication: what the token client needs (measured 2026-10-01/05)
 
 The documented contract (Confluence 62199010, "AST TMS Service", parameter
 `requireExplicitAuthentication`): "The explicit authentication is done in terms
 of a dedicated OIDC scope. The scope to use is configured in the service's
 configuration. When a client wants to answer a TMS with this requirement set,
 it must retrieve a token with the configured scope from the IDP and use this
-token for sending the answer." Deployed scope name on Akinci and FIS BMW TEST:
-`tms`. The SDK fulfils this with a silent token exchange using `iam.clientId`
-(`process_transaction_task.cc:278-301`); it does not start an interactive
-step-up and does not re-check the issued scope. The IDP resolves the requested
-scope only against the client's configured default/optional client scopes and
-silently drops unknown names (`KobilTokenExchangeProvider.java:390-396`).
+token for sending the answer." The scope name is an AST deployment setting; on
+the inspected deployments it is `tms`. Read it from the AST configuration, do
+not assume it. The SDK fulfils the contract with a silent token exchange using
+`iam.clientId` (`process_transaction_task.cc:278-301`); it does not start an
+interactive step-up and does not re-check the issued scope. The IDP resolves
+the requested scope only against the client's configured default/optional
+client scopes and silently drops unknown names
+(`KobilTokenExchangeProvider.java:390-396`).
 
-Device-verified on Akinci (realm `superapp`, Pixel 8, SDK 15.16.3088426, IDP
-migros core 8.0.3, AST trusted-message-sign 0.40.0) with an isolated token
-client, no change to shared clients:
+Device-verified (SDK 15.16, IDP core 8.0.x, AST trusted-message-sign 0.40.0)
+on a physical Android device with a hardware-backed key and on an Android
+emulator with a software-backed key (`jwtSignKeySecurityPolicy =
+ALLOW_VIRTUAL_SMART_CARD`), each time with an isolated token client and no
+change to shared clients:
 
 | Token client state | Explicit TMS result |
 |---|---|
-| no `tms` client scope (KobilMobileLogin, BDDKLogin) | exchange HTTP 200 without `tms`, AST HTTP 403 / 516004034 |
-| `tms` optional scope, but SDK token still held by the enrollment client | IDP `TOKEN_EXCHANGE_ERROR not_allowed "client is not the token holder"`, SDK `FAILED/0` before the dialog, backend TIMEOUT |
+| no `tms` client scope on the token client | exchange HTTP 200 without `tms`, AST HTTP 403 / SDK 516004034 |
+| `tms` optional scope, but the SDK token is still held by the enrollment client | IDP `TOKEN_EXCHANGE_ERROR not_allowed "client is not the token holder"`, SDK `FAILED/0` before the dialog, backend stays DOWNLOADED/TIMEOUT |
 | `tms` optional scope, holder fixed, realm default browser flow | interactive login `CANNOT_ACQUIRE_TOKEN_DATA`, IDP `X-KOBIL-ASTCLIENTDATA is missing` |
-| `tms` optional scope + holder + browser override "KOBIL Mobile Login" | `DisplayConfirmationResult OK`, `TransactionEnd OK`, AST **ACCEPTED** (01M3VWXYQN14BKB8EQ2BXBYDQ6) |
+| `tms` optional scope + holder + KOBIL mobile browser-flow override | `DisplayConfirmationResult OK`, `TransactionEnd OK`, AST **ACCEPTED**; reject path `USER_CANCEL` / **REJECTED** |
 
 Preconditions, all checked read-only by `sdk_tms_explicit_preflight`:
 
 1. `tms` assigned to the token client as **optional** client scope (not default,
    not realm-wide, not on unrelated clients).
-2. The token client is the **holder of the SDK's current token**. After
-   activation through a separate enrollment client the SDK still holds that
-   client's token; one interactive login with the token client (or activation
-   through it) fixes the holder. The silent `FAILED/0` of a wrong holder is the
-   same mechanism as the round-3 "token holder switches after interactive login".
+2. The token client is the **holder of the SDK's current token** at the moment
+   the transaction is answered. Two situations break this:
+   - after activation through a separate enrollment client the SDK still holds
+     that client's token;
+   - after a cold start with `OfflineLogin` (signed-JWT or offline-token path)
+     the SDK's token is again issued to the enrollment client (`azp` =
+     enrollment client), even if an interactive login with the token client
+     happened in an earlier session.
+   One interactive login with the token client in the **current session** fixes
+   the holder; verify with the access-token claims (`azp` = token client)
+   before triggering an explicit transaction. The wrong holder fails silently:
+   SDK `FAILED/0` without a dialog, no SDK error code, backend never leaves
+   DOWNLOADED. Ordinary transactions are not affected.
 3. The token client carries the client-level browser-flow override used by the
    KOBIL mobile clients (`authenticationFlowBindingOverrides.browser` =
    "KOBIL Mobile Login"); kobil-support `idp_client_flow_override` sets it.
 
-What this does not establish: that the exchanged token represents a fresh user
-authentication (no `acr`/`amr` in the probe tokens). The documented contract
-does not require it; treat step-up binding as a product decision, not a test
-defect. Do not disable `requireExplicitAuthentication` and do not add `tms` as
-a default scope to make a run pass.
+Customer deployments usually do **not** have (1) and (3) on their login client
+unless explicit TMS was planned; the observed symptom there is exactly row one
+(403 / 516004034) while activation, login and ordinary TMS work. Treat it as a
+realm configuration decision for the customer, not as an SDK defect, and never
+change a customer realm from a test run.
+
+What this does not establish:
+
+- that the exchanged token represents a **fresh** user authentication. With
+  `requireFreshnessOfAuthentication` at the default 3600 s no biometric prompt
+  appears at confirmation; the exchange reuses the existing session. With
+  `0` (or any value below the confirmation latency) the transaction is created
+  but fails at confirmation with HTTP 403 "access token is N seconds older than
+  required", surfaced by the SDK only as 516004035 "A network error occurred".
+  The SDK has no step-up path for this today; whether `tms` should be bound to
+  a real re-authentication is a product decision, not a test defect.
+- that any production integration sets `requireExplicitAuthentication=true`;
+  the inspected backend callers hard-code or default to `false`.
+
+Do not disable `requireExplicitAuthentication` and do not add `tms` as a
+default scope to make a run pass.
 
 ## Diagnose requested versus issued transaction scope
 
