@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Explicit-auth TMS guidance (tms.md, tms.json, login.json) made deployment-neutral and extended with the 2026-10-05 measurements: token holder reverts to the enrollment client after every cold OfflineLogin (interactive token-client login needed in the current session, silent FAILED/0 otherwise), freshness 3600 vs 0 behaviour (516004035, no SDK step-up path), software-backed key under ALLOW_VIRTUAL_SMART_CARD verified on an emulator, customer login clients without the scope show 403/516004034 and must not be changed from a test run.
 - Start-here journey in SKILL.md and new `sdk_knowledge_bundle` (setup/activation/login/tms/logs/diagnostics in one call) to replace ~10 sequential knowledge calls (round-4 O-01/O-05).
 - `sdk_idp_login_page_fetch` creates its private output directory (0700) instead of failing; activation-code happy path and CREDENTIAL_NOT_FOUND meaning documented (O-02/O-03).
 - `sdk_artifact_info` / sdk-delivery.md: locate AARs, xcframeworks, headers and javadoc inside a delivery without unzip/grep guessing (O-04).
