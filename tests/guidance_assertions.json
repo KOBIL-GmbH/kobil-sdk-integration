@@ -1,0 +1,69 @@
+{
+  "_comment": "Deterministic guard for the shipped guidance. must_contain phrases are measured facts the agent must be able to read; must_not_contain are regressions. Checked by tests/test_guidance_guard.py against the text the MCP serves (sdk_knowledge_get) and the skill references.",
+  "topics": {
+    "login": {
+      "must_contain": [
+        "jwtSignKeySecurityPolicy",
+        "CLEAR_ACCESS_AND_REFRESH",
+        "Never use CLEAR_ALL",
+        "ENFORCE_STRONG_HARDWARE",
+        "ALLOW_VIRTUAL_SMART_CARD",
+        "securityLevel 0",
+        "NOT_SUPPORTED",
+        "bcpkix",
+        "sdk_deployment_preflight",
+        "require_signed_jwt",
+        "sdk_tms_explicit_preflight",
+        "azp",
+        "GetIamAccessTokenUsingJwtBearer",
+        "JWT_BEARER_GRANT_TYPE"
+      ],
+      "must_not_contain": []
+    },
+    "tms": {
+      "must_contain": [
+        "requireExplicitAuthentication",
+        "OPTIONAL",
+        "holder of the SDK's current token",
+        "cold start with OfflineLogin",
+        "KOBIL Mobile Login",
+        "516004034",
+        "516004035",
+        "CANNOT_ACQUIRE_TOKEN_DATA",
+        "FAILED/0",
+        "never change a customer realm",
+        "product decision",
+        "escalate"
+      ],
+      "must_not_contain": []
+    }
+  },
+  "references": {
+    "signing-policy.md": {
+      "must_contain": [
+        "ENFORCE_STRONG_HARDWARE",
+        "ENFORCE_HARDWARE",
+        "ALLOW_VIRTUAL_SMART_CARD",
+        "-25293",
+        "status 46",
+        "not** proof that the device lacks hardware",
+        "sdk_deployment_preflight",
+        "sdk_tms_explicit_preflight",
+        "Never silently downgrade"
+      ]
+    },
+    "tms.md": {
+      "must_contain": [
+        "holder of the SDK's current token",
+        "never change a customer realm",
+        "escalate it as a product requirement"
+      ]
+    }
+  },
+  "skill_md_must_contain": [
+    "signing-policy.md",
+    "sdk_tms_explicit_preflight",
+    "CLEAR_ALL",
+    "Never downgrade a deployment policy silently"
+  ]
+}

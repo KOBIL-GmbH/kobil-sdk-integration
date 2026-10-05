@@ -1,6 +1,6 @@
 """Compare served TLS chains against a local trust asset before device runs.
 
-Motivated by VAL-16/VAL-36 (2026-09-29): akinci *.sicher.men served
+Motivated by VAL-16/VAL-36 (2026-09-29): a test environment served
 leaf <- YE2 <- Root YE <- ISRG Root X2 (X2 cross-signed by X1); iOS built the
 chain to the self-signed system ISRG Root X2, so an X1-only pinning asset
 failed silently to a blank WebView. Two device rounds were burned on a gap a

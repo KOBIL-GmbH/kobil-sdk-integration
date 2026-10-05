@@ -1,6 +1,6 @@
 # Versioned installation and releases
 
-## Install v0.7.0
+## Install v1.0.0
 
 Requires Git, Python 3.11+ and uv. While this repository is private, Git must
 already be authenticated with an account that has access. Never put an access
@@ -9,8 +9,8 @@ token in the clone URL or MCP configuration. SDK binaries are supplied separatel
 Install each release into its own directory; do not reuse a development checkout:
 
 ```sh
-git clone --branch v0.7.0 --depth 1 https://github.com/KOBIL-GmbH/kobil-sdk-integration.git /absolute/path/kobil-sdk/releases/v0.7.0
-cd /absolute/path/kobil-sdk/releases/v0.7.0
+git clone --branch v1.0.0 --depth 1 https://github.com/KOBIL-GmbH/kobil-sdk-integration.git /absolute/path/kobil-sdk/releases/v1.0.0
+cd /absolute/path/kobil-sdk/releases/v1.0.0
 git describe --tags --exact-match
 uv sync --frozen --python 3.11
 ```
@@ -33,7 +33,7 @@ need the absolute path to the uv executable as well.
     "KOBILSDK": {
       "type": "stdio",
       "command": "/absolute/path/to/uv",
-      "args": ["run", "--frozen", "--directory", "/absolute/path/kobil-sdk/releases/v0.7.0", "kobil-sdk-mcp"],
+      "args": ["run", "--frozen", "--directory", "/absolute/path/kobil-sdk/releases/v1.0.0", "kobil-sdk-mcp"],
       "env": {
         "KOBIL_SDK_CONNECTION": "/absolute/path/private/kobil-sdk/connection.json"
       }
@@ -50,7 +50,7 @@ it must stay outside the source and release checkout, and must not follow `main`
 No account, backend URL, SDK binary or credential is included in a release.
 
 Use the skill from the **same** release:
-`/absolute/path/kobil-sdk/releases/v0.7.0/skills/kobil-sdk/SKILL.md`.
+`/absolute/path/kobil-sdk/releases/v1.0.0/skills/kobil-sdk/SKILL.md`.
 For Copilot, create a personal `~/.copilot/skills/kobil-sdk/SKILL.md` with frontmatter
 `name: kobil-sdk` and a concise integration description. Its body should instruct
 the agent to read that absolute canonical skill path and resolve references from
@@ -91,14 +91,23 @@ tag or artifact. SDK binary versions are independent of this integration version
 2. Run `uv lock`, `uv sync --frozen`, and
    `uv run --frozen python -m unittest discover -s tests -v`.
 3. Verify manifest/package/lock versions match, run an MCP stdio discovery check,
-   and inspect the diff for secrets, binaries and internal information.
+   and inspect the diff for secrets, binaries and internal information. The
+   unit suite includes `tests/test_guidance_guard.py` (required facts present in
+   the served knowledge, no internal identifiers in shipped text). Run
+   `scripts/skill_blindtest.py --print` and judge the answers of a skill-only
+   reader (or `--ollama <model>` locally) before tagging.
 4. Merge the tested change to develop; create an annotated version tag on that exact
    commit. Push the tag and publish a GitHub Release with its commit and notes.
 5. Install from GitHub into a new directory and verify it independently of the
    development tree before migrating consumers. Keep backend-specific evidence
    private and distinguish startup, backend and app-runtime verification.
 
-## v0.7.0 migration notes
+## v1.0.0 migration notes
+
+1.0.0 declares the public contract stable: tool names, parameters, result
+fields, knowledge topics and the versioned-installation procedure now follow
+the MAJOR rule above (incompatible changes only with a major bump). Everything
+listed for 0.7.0 ships in this release; 0.7.0 itself was never published.
 
 Adds the explicit-auth TMS contract (`sdk_tms_explicit_preflight`), deployment and
 iOS signing preflights (`sdk_deployment_preflight`, artifact signing check), the
