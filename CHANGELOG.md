@@ -4,9 +4,7 @@
 
 (no changes yet)
 
-## 1.0.0 — 2026-10-05
-
-First stable release. The public contract (tool names, parameters, result fields, knowledge topics, versioned installation) is now covered by the MAJOR rule in docs/releases.md. 0.7.0 was prepared but never published; its content ships here.
+## 0.7.0 — 2026-10-05
 
 - Guidance guard: `tests/test_guidance_guard.py` asserts measured facts in the served knowledge, references and SKILL.md and fails on internal identifiers (page ids, fixture users, transaction ids, device serials, personal paths, e-mail addresses, internal hostnames, customer names) in any shipped text. `tests/scenarios/skill_blindtest.json` + `scripts/skill_blindtest.py`: eleven measured customer scenarios (policy vs simulator, token holder after cold OfflineLogin, freshness 0, emulator SignedJWT report, NOT_SUPPORTED attribution, blank WebView, log roots, CLEAR_ALL, two security refusals) for a skill-only reader; lexical judge, local-model runner.
 - New reference signing-policy.md and login knowledge: sign-key policy versus test target table (ENFORCE_* fails on emulator/simulator with the measured codes, ALLOW_VIRTUAL_SMART_CARD works with a software key), what each target can prove, NOT_SUPPORTED is not proof of missing hardware (bcpkix case), and the agent duty to resolve target/policy and run the deployment and explicit-TMS preflights before the user can fail on configuration.
