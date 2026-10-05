@@ -1,0 +1,1146 @@
+{
+ "sdk_idp_activation_code_generate": {
+  "calls": [],
+  "module": "idp_secrets",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_activation_code_set": {
+  "calls": [],
+  "module": "idp_secrets",
+  "outcome": "validation:ValidationError"
+ },
+ "sdk_idp_authorization_enable": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x"
+   ],
+   [
+    "PUT",
+    "/clients/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_authorization_resource_create": {
+  "calls": [
+   [
+    "POST",
+    "/clients/x/authz/resource-server/resource"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_authorization_resource_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/clients/x/authz/resource-server/resource/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_authorization_resource_get": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/authz/resource-server/resource/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_authorization_resource_list": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/authz/resource-server/resource"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_authorization_resource_update": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_authorization_scope_create": {
+  "calls": [
+   [
+    "POST",
+    "/clients/x/authz/resource-server/scope"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_authorization_scope_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/clients/x/authz/resource-server/scope/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_authorization_scope_get": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/authz/resource-server/scope/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_authorization_scope_list": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/authz/resource-server/scope"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_authorization_scope_update": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_bruteforce_clear": {
+  "calls": [
+   [
+    "DELETE",
+    "/attack-detection/brute-force/users/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_bruteforce_get": {
+  "calls": [
+   [
+    "GET",
+    "/attack-detection/brute-force/users/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_cache_clear": {
+  "calls": [
+   [
+    "POST",
+    "/clear-realm-cache"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_client_create": {
+  "calls": [
+   [
+    "POST",
+    "/clients"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_client_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/clients/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_client_get": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_client_list": {
+  "calls": [
+   [
+    "GET",
+    "/clients"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_client_scope_assign": {
+  "calls": [
+   [
+    "PUT",
+    "/clients/x/default-client-scopes/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_client_scope_remove": {
+  "calls": [
+   [
+    "DELETE",
+    "/clients/x/default-client-scopes/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_client_scopes_get": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/default-client-scopes"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_client_secret_rotate": {
+  "calls": [],
+  "module": "idp_secrets",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_client_secret_write": {
+  "calls": [],
+  "module": "idp_secrets",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_client_service_account_get": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/service-account-user"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_client_update": {
+  "calls": [],
+  "module": "idp_access",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_component_create": {
+  "calls": [
+   [
+    "POST",
+    "/components"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_component_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/components/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_component_get": {
+  "calls": [
+   [
+    "GET",
+    "/components/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_component_list": {
+  "calls": [
+   [
+    "GET",
+    "/components"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_component_update": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_events_list": {
+  "calls": [
+   [
+    "GET",
+    "/events"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_flow_create": {
+  "calls": [
+   [
+    "POST",
+    "/authentication/flows"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_flow_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/authentication/flows/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_flow_execution_update": {
+  "calls": [
+   [
+    "PUT",
+    "/authentication/flows/x/executions"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_flow_executions_list": {
+  "calls": [
+   [
+    "GET",
+    "/authentication/flows/x/executions"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_flow_get": {
+  "calls": [
+   [
+    "GET",
+    "/authentication/flows/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_flow_list": {
+  "calls": [
+   [
+    "GET",
+    "/authentication/flows"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_group_count": {
+  "calls": [
+   [
+    "GET",
+    "/groups/count"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_group_create": {
+  "calls": [
+   [
+    "POST",
+    "/groups"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_group_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/groups/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_group_get": {
+  "calls": [
+   [
+    "GET",
+    "/groups/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_group_list": {
+  "calls": [
+   [
+    "GET",
+    "/groups"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_group_member_add": {
+  "calls": [
+   [
+    "PUT",
+    "/users/x/groups/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_group_member_remove": {
+  "calls": [
+   [
+    "DELETE",
+    "/users/x/groups/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_group_members_list": {
+  "calls": [
+   [
+    "GET",
+    "/groups/x/members"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_group_update": {
+  "calls": [
+   [
+    "GET",
+    "/groups/x"
+   ],
+   [
+    "PUT",
+    "/groups/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_identity_provider_create": {
+  "calls": [
+   [
+    "POST",
+    "/identity-provider/instances"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_identity_provider_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/identity-provider/instances/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_identity_provider_get": {
+  "calls": [
+   [
+    "GET",
+    "/identity-provider/instances/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_identity_provider_list": {
+  "calls": [
+   [
+    "GET",
+    "/identity-provider/instances"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_identity_provider_mapper_create": {
+  "calls": [
+   [
+    "POST",
+    "/identity-provider/instances/x/mappers"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_identity_provider_mapper_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/identity-provider/instances/x/mappers/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_identity_provider_mapper_list": {
+  "calls": [
+   [
+    "GET",
+    "/identity-provider/instances/x/mappers"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_identity_provider_mapper_update": {
+  "calls": [
+   [
+    "GET",
+    "/identity-provider/instances/x/mappers/x"
+   ],
+   [
+    "PUT",
+    "/identity-provider/instances/x/mappers/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_identity_provider_update": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_mapper_create": {
+  "calls": [
+   [
+    "POST",
+    "/clients/x/protocol-mappers/models"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_mapper_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/clients/x/protocol-mappers/models/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_mapper_list": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/protocol-mappers/models"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_mapper_update": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/protocol-mappers/models/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_permission_create": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_permission_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/clients/x/authz/resource-server/permission/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_permission_get": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/authz/resource-server/permission/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_permission_list": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/authz/resource-server/permission"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_permission_update": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_policy_create": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_policy_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/clients/x/authz/resource-server/policy/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_policy_get": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/authz/resource-server/policy/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_policy_list": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/authz/resource-server/policy"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_policy_update": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_realm_create": {
+  "calls": [
+   [
+    "POST",
+    "[global]/admin/realms"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_realm_delete": {
+  "calls": [
+   [
+    "DELETE",
+    ""
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_realm_get": {
+  "calls": [
+   [
+    "GET",
+    ""
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_realm_update": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_realms_list": {
+  "calls": [
+   [
+    "GET",
+    "[global]/admin/realms"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_required_action_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/authentication/required-actions/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_required_action_get": {
+  "calls": [
+   [
+    "GET",
+    "/authentication/required-actions/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_required_action_update": {
+  "calls": [],
+  "module": "idp_extended",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_required_actions_list": {
+  "calls": [
+   [
+    "GET",
+    "/authentication/required-actions"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_resource_server_get": {
+  "calls": [
+   [
+    "GET",
+    "/clients/x/authz/resource-server"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_role_assign": {
+  "calls": [],
+  "module": "idp_access",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_role_assignments_get": {
+  "calls": [
+   [
+    "GET",
+    "/users/x/role-mappings/realm"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_role_composite_add": {
+  "calls": [],
+  "module": "idp_access",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_role_composite_remove": {
+  "calls": [],
+  "module": "idp_access",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_role_composites_get": {
+  "calls": [
+   [
+    "GET",
+    "/roles/x/composites"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_role_create": {
+  "calls": [
+   [
+    "POST",
+    "/roles"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_role_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/roles/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_role_get": {
+  "calls": [
+   [
+    "GET",
+    "/roles/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_role_list": {
+  "calls": [
+   [
+    "GET",
+    "/roles"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_role_members_list": {
+  "calls": [
+   [
+    "GET",
+    "/roles/x/users"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_role_remove": {
+  "calls": [],
+  "module": "idp_access",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_role_update": {
+  "calls": [],
+  "module": "idp_access",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_scope_create": {
+  "calls": [
+   [
+    "POST",
+    "/client-scopes"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_scope_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/client-scopes/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_scope_get": {
+  "calls": [
+   [
+    "GET",
+    "/client-scopes/x"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_scope_list": {
+  "calls": [
+   [
+    "GET",
+    "/client-scopes"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_scope_update": {
+  "calls": [],
+  "module": "idp_access",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_server_info": {
+  "calls": [
+   [
+    "GET",
+    "[global]/admin/serverinfo"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_session_logout": {
+  "calls": [
+   [
+    "DELETE",
+    "/sessions/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_sessions_list": {
+  "calls": [
+   [
+    "GET",
+    "/users/x/sessions"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_source_token_write": {
+  "calls": [],
+  "module": "idp_secrets",
+  "outcome": "validation:ValidationError"
+ },
+ "sdk_idp_tenant_create": {
+  "calls": [
+   [
+    "POST",
+    "[direct]/auth/realms/x/v4_realm"
+   ]
+  ],
+  "module": "idp_secrets",
+  "outcome": "ok"
+ },
+ "sdk_idp_tms_trigger": {
+  "calls": [
+   [
+    "POST",
+    "[direct]/auth/realms/realm-a/v3_user/x/tms"
+   ]
+  ],
+  "module": "idp_secrets",
+  "outcome": "ok"
+ },
+ "sdk_idp_token_exchange": {
+  "calls": [],
+  "module": "idp_secrets",
+  "outcome": "validation:ValidationError"
+ },
+ "sdk_idp_user_actions_email_send": {
+  "calls": [],
+  "module": "idp_users",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_user_consents_revoke": {
+  "calls": [
+   [
+    "DELETE",
+    "/users/x/consents/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_count": {
+  "calls": [
+   [
+    "GET",
+    "/users/count"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_create": {
+  "calls": [],
+  "module": "idp_users",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_user_credential_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/users/x/credentials/x"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_credentials_list": {
+  "calls": [
+   [
+    "GET",
+    "/users/x/credentials"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "validation:BackendError"
+ },
+ "sdk_idp_user_delete": {
+  "calls": [
+   [
+    "DELETE",
+    "/users/x"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_disable": {
+  "calls": [
+   [
+    "GET",
+    "/users/x"
+   ],
+   [
+    "PUT",
+    "/users/x"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_enable": {
+  "calls": [
+   [
+    "GET",
+    "/users/x"
+   ],
+   [
+    "PUT",
+    "/users/x"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_federation_link": {
+  "calls": [
+   [
+    "POST",
+    "/users/x/federated-identity/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_federation_list": {
+  "calls": [
+   [
+    "GET",
+    "/users/x/federated-identity"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_federation_unlink": {
+  "calls": [
+   [
+    "DELETE",
+    "/users/x/federated-identity/x"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_get": {
+  "calls": [],
+  "module": "idp_users",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_user_groups_list": {
+  "calls": [
+   [
+    "GET",
+    "/users/x/groups"
+   ]
+  ],
+  "module": "idp_access",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_list": {
+  "calls": [
+   [
+    "GET",
+    "/users"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_logout": {
+  "calls": [
+   [
+    "POST",
+    "/users/x/logout"
+   ]
+  ],
+  "module": "idp_extended",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_password_set": {
+  "calls": [],
+  "module": "idp_secrets",
+  "outcome": "validation:ValidationError"
+ },
+ "sdk_idp_user_required_actions_update": {
+  "calls": [
+   [
+    "GET",
+    "/users/x"
+   ],
+   [
+    "PUT",
+    "/users/x"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_search": {
+  "calls": [
+   [
+    "GET",
+    "/users"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "ok"
+ },
+ "sdk_idp_user_update": {
+  "calls": [],
+  "module": "idp_users",
+  "outcome": "validation:ValueError"
+ },
+ "sdk_idp_user_verify_email_send": {
+  "calls": [
+   [
+    "PUT",
+    "/users/x/send-verify-email"
+   ]
+  ],
+  "module": "idp_users",
+  "outcome": "ok"
+ }
+}
