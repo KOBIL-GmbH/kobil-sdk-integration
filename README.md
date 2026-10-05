@@ -41,7 +41,7 @@ history are included.
 ## Install a fixed release
 
 Use [versioned installation](docs/releases.md) for a fixed MCP and skill version.
-The current release is **v0.7.0**. Upgrades are explicit; install a tag rather than a moving branch.
+The current release is **v1.0.0**. Upgrades are explicit; install a tag rather than a moving branch.
 
 ## Run from a development checkout
 
