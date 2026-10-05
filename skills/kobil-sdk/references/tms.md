@@ -37,7 +37,7 @@ even when SDK result code is zero and no fatal event is emitted.
 
 ## Explicit authentication: what the token client needs (measured 2026-10-01/05)
 
-The documented contract (Confluence 62199010, "AST TMS Service", parameter
+The documented contract (KOBIL AST TMS Service documentation, parameter
 `requireExplicitAuthentication`): "The explicit authentication is done in terms
 of a dedicated OIDC scope. The scope to use is configured in the service's
 configuration. When a client wants to answer a TMS with this requirement set,

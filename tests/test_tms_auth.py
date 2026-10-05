@@ -102,13 +102,13 @@ class ExplicitPreflightTests(unittest.TestCase):
             api = admin.return_value.__enter__.return_value
             api.page.return_value = {
                 'items': [self.client()], 'first': 0, 'next_offset': None,
-                'complete': True, 'environment': 'test', 'realm': 'superapp'
+                'complete': True, 'environment': 'test', 'realm': 'realm-a'
             }
             api.call.side_effect = lambda method, path, **kw: (
                 [{'name': 'tms'}] if path.endswith('/optional-client-scopes') else
                 [{'name': 'ast'}] if path.endswith('/default-client-scopes') else self.FLOWS)
-            r = registry.tools['sdk_tms_explicit_preflight']('test', 'app-login', 'app-enrollment', 'superapp')
-        admin.assert_called_once_with('test', 'superapp')
+            r = registry.tools['sdk_tms_explicit_preflight']('test', 'app-login', 'app-enrollment', 'realm-a')
+        admin.assert_called_once_with('test', 'realm-a')
         api.page.assert_called_once_with('/clients', 0, 50, params={'clientId': 'app-login'})
         self.assertEqual(r['status'], 'client_checked')
         self.assertEqual({c.args[0] for c in api.call.call_args_list}, {'GET'})
