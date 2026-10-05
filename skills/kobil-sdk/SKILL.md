@@ -136,7 +136,10 @@ KOBIL mobile browser-flow override, and it must hold the SDK's current token
 (one interactive login with it after activation through a separate enrollment
 client). See [TMS](references/tms.md) for the measured contract and failure
 signatures. For repeated TMS failures use `sdk_tms_auth_diagnose`: compare
-requested versus issued transaction scope, not a later ordinary claims lookup. Capture inherited
+requested versus issued transaction scope, not a later ordinary claims lookup.
+On a decrypted SDK log, `sdk_log_markers(path)` reads the jwt-bearer proof,
+the key kind, the NOT_SUPPORTED attribution and explicit-TMS refusals
+deterministically instead of scanning by eye. Capture inherited
 error fields on confirmation/terminal events; status alone loses the cause.
 Before a physical iOS install, run `sdk_ios_signing_preflight` on the actual built
 .app for the customer-selected team and target device. Never guess missing

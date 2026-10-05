@@ -21,7 +21,12 @@ still succeeds, but no jwt-bearer grant happens and SignedJWT is not in use.
 same status appeared on a physical device when the Android CSR helper could not
 load `JcaContentSignerBuilder` (missing `org.bouncycastle:bcpkix-jdk15to18`
 dependency). Read the native log (`isKeyInsideSecureHardware`, `GetKeystoreInfo
-has strong hardware keystore ...`) before attributing the failure.
+has strong hardware keystore ...`) before attributing the failure. On a
+decrypted log, `sdk_log_markers(decrypted_log_path)` does this reading
+deterministically: it reports the jwt-bearer grant correlation, the key kind
+(software / hardware), the NOT_SUPPORTED attribution (missing dependency vs
+undetermined) and explicit-TMS exchange refusals - line numbers and booleans
+only, never payload text.
 
 ## What a target can prove
 
