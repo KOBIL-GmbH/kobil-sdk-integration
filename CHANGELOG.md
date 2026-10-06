@@ -8,6 +8,9 @@
 
 ## Unreleased
 
+- Add an automated Xcode package acceptance runner that executes generated manifests, verifies runtime/knowledge identity and writes machine-readable results without claiming Xcode host qualification.
+- Add read-only `sdk_runtime_info` with package version and source/knowledge fingerprints for detecting stale IDE registrations.
+
 - Add project-bound IDE adapter preparation for native VS Code/Xcode plugins and Android Studio Streamable HTTP, with paired skill/reference documentation and explicit development or full-commit release selection.
 - Add authenticated loopback HTTP using the MCP library, private token-file validation, Host/Origin checks and foreground process ownership. Require MCP library 1.30 or newer.
 - Replace generic connection setup failures with redacted diagnostic categories while preserving modern and legacy profile fields.
