@@ -11,6 +11,17 @@ mcp = FastMCP("KOBILSDK", instructions="For first-time setup call sdk_onboarding
 
 
 @mcp.tool()
+def sdk_runtime_info() -> dict:
+    """Identify the running MCP package and bundled knowledge by content hashes.
+
+    No credentials, local paths, backend requests or mobile SDK version claims.
+    Compare with the intended installed release to detect a stale IDE registration.
+    """
+    from .runtime_info import identity
+    return identity()
+
+
+@mcp.tool()
 def sdk_targets() -> dict:
     """List integration targets and point to scoped native runtime evidence."""
     return {"frameworks": {k: sorted(v) for k, v in FRAMEWORKS.items()},

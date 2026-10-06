@@ -85,3 +85,29 @@ an adapter with the selected connection path and reconnect. Other IDE processes
 keep their own selection. On moving/copying a project, regenerate the adapter
 with its new explicit path; use existing identity tools to choose identity reuse
 or creation, never guess a missing private-key path.
+
+## Automated Xcode package check
+
+Run the generated-manifest acceptance lane from the installed release:
+
+```sh
+/path/to/release/.venv/bin/python /path/to/release/scripts/test_xcode_integration.py \
+  --lane package --commit FULL_VERIFIED_COMMIT --output /absolute/new-test-output
+```
+
+For an explicitly uncommitted development candidate, use `--development` instead
+of `--commit`. The output directory must be new. The runner prepares a temporary
+fixture, launches the actual generated MCP definition, compares the running
+`sdk_runtime_info` package/source/knowledge identity with the candidate, checks
+required capabilities and iOS knowledge, and verifies the missing-connection
+error. It also checks copied skill/doc content and refuses repeated setup over
+an existing adapter. Existing app files are preserved.
+
+`report.md`, `cases.json` and `manifest.json` distinguish the package result from
+Xcode host qualification. Child stderr is retained locally. A failed assertion
+produces a failed report and nonzero exit. No real backend or user credentials
+are needed. Temporary fixtures and child processes are cleaned up.
+
+This command currently implements only the package lane. It does not import the
+plugin into Xcode, run an agent, build an app or certify the unexecuted host cases.
+`sdk_runtime_info` identifies the integration runtime, not the mobile SDK.
