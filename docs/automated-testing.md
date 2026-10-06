@@ -21,10 +21,17 @@ real SDK dependency + concrete adapter + observed SDK Start event ≠ activation
 returning login ≠ TMS ≠ log export. A green scaffold build with a throwing/stub
 adapter can never pass an integration gate (VAL-02); report scaffold tests
 separately. Returning login has TWO distinct paths with separate acceptance rows
-(VAL-27): the OfflineLogin/SignedJWT token path (user-preferred primary path,
-with trusted-WebView enrollment and biometric protection) and the interactive
-trusted-WebView login. A timeout in one path is never attributed to biometric
+(VAL-27): cold OfflineLogin and interactive trusted-WebView login. OfflineLogin
+may reuse an access token, refresh an offline token, or use a SignedJWT factor;
+success alone does not distinguish them. Claim SignedJWT only when the effective
+`maverick.jwtSignKeySecurityPolicy`, non-password auth mode, and jwt-bearer grant
+evidence are verified. A timeout in one path is never attributed to biometric
 failure or credited to the other path.
+
+For a controlled diagnostic, first verify the effective sign-key policy and
+selected auth mode. Clear only access and refresh tokens; do not clear all token
+data, which also removes the offline token. If the effective policy or jwt-bearer
+grant evidence is unavailable, record the SignedJWT claim as NOT_PROVEN.
 
 Each run records package/source and mobile-SDK versions, app ID, asset
 fingerprint, fixture ownership and the real backend outcome via readback. The
@@ -64,6 +71,26 @@ steps must surface within seconds via the file, never only via turn boundaries.
 Actions and status only — no credentials, codes, tokens or URLs. This
 complements, never replaces, the announce-before-trigger protocol above and the
 per-device lease below.
+
+## Report durability, helper processes and budget (round 4, 2026-10-01)
+
+- Write `TEST_REPORT.md` after EVERY gate (scaffold, Start, activation, each
+  named returning-login path, each TMS case, export), not once at the end.
+  Round 4 (O-16): three parallel workers were hard-stopped by a usage limit
+  after ~35 min; two had passed gates but left no report. The report file is
+  the durable record; chat output and heartbeat lines are not.
+- Minute-log / heartbeat helpers (the WAIT line writers) are child processes
+  of the worker, write a line also during long edits (O-06), and are killed by
+  the worker before it reports COMPLETE or exits; the launcher kills the whole
+  process group on stop. O-17: an orphaned heartbeat appended "WAIT - still
+  working" every minute for 20 hours after the worker had died. A heartbeat is
+  a liveness signal of the worker, never of a shell loop; a WAIT line with no
+  tool activity for minutes is an orphan, not progress.
+- Budget parallel runs against the usage limits before starting: three parallel
+  workers exhausted a shared 5-hour window in ~35 min. Stagger legs, run
+  build-only phases on a cheaper model or run one leg at a time, and record the
+  resume handle (session id) per leg before the first call so a limit stop is a
+  pause, not a loss.
 
 ## Per-device lease protocol (2026-09-29 user decision)
 
@@ -132,3 +159,7 @@ This addition does not qualify Flutter or standalone IDPSDK and does not rerun
 prior device acceptance. Native classic MCSDK/KSSIDP knowledge remains explicitly
 scoped by each recipe. It adds one topic to the existing three knowledge tools;
 it does not launch device tests or mutate a backend when retrieved.
+
+## Knowledge decisions before runtime tests
+
+Run the [knowledge interrogation workflow](knowledge-interrogation.md) before building apps: isolated reader-only questions, MCP knowledge retrieval, separately held expected answers, and answer-bound semantic review. Keyword checks alone are not acceptance.

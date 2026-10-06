@@ -74,6 +74,27 @@ xcframeworks ZIP carries none (verified 2026-09-29); templates ship in the
 GettingStarted asset ZIPs of the same delivery. Resolve flagged missing template
 assets from the delivery before app scaffolding instead of guessing schemas.
 
+## Locating AARs, xcframeworks, headers and javadoc inside a delivery
+
+`sdk_artifact_info` returns `path` (absolute), `bytes`, `sha256` and, for a
+ZIP, `delivery_inventory` with `platform_kinds` (android_native / ios_native /
+flutter) and `config_templates_present` / `config_templates_missing`. It does
+NOT return member paths. To find the exact artifacts without guessing relative
+paths (round 4, 2026-10-01, O-04), list the archive once with its absolute
+`path` from the result and filter by suffix:
+
+```
+unzip -l "<path from sdk_artifact_info>" | grep -E '\.aar$|\.xcframework/|Headers/|javadoc|\.jar$'
+```
+
+Android: the `.aar` files are the dependencies to copy into the app's `libs/`;
+javadoc ships as separate `*-javadoc.jar`/`.zip` members next to them. iOS: each
+`*.xcframework/` directory is one framework to embed; its public headers are
+under `<name>.xcframework/<slice>/<name>.framework/Headers/`. Extract only the
+members you need into a private delivery directory (never into the repository)
+and record the member names and the `sha256` in the integration record. The
+inventory classifies; your listing locates; neither verifies compatibility.
+
 ## Review the release before integration
 
 Read both CHANGELOG and platform README, plus component/version metadata inside

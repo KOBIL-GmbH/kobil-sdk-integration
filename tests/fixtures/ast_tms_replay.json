@@ -1,0 +1,56 @@
+{
+ "cases": {
+  "accepted": {
+   "result": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   },
+   "status": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   }
+  },
+  "cancelled": {
+   "result": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   },
+   "status": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   }
+  },
+  "explicit_accepted": {
+   "result": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   },
+   "status": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   }
+  },
+  "rejected": {
+   "result": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   },
+   "status": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   }
+  },
+  "timeout": {
+   "result": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   },
+   "status": {
+    "error": "Backend request failed (HTTP 404; resource_or_api_not_found)",
+    "http": 404
+   }
+  }
+ },
+ "note": "Read-only GETs on terminal transactions roughly 2.5 h after completion. Both endpoints answered 404 in this deployment; retention is a hypothesis supported by prior terminal evidence, not a universal interval. Read status/result right after the SDK terminal event; a later 404 alone establishes neither retention nor failure.",
+ "recorded_at": "2026-10-05T21:55+02:00"
+}

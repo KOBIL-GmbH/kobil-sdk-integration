@@ -79,6 +79,13 @@ the shared installation.
 Physical-device tests remain distinct from simulator tests; a passing simulator
 build/run does not discharge any physical preflight item.
 
+## Deployment and physical signing gates
+
+Run the [deployment and artifact gates](deployment-preflight.md) before activation,
+explicit-auth TMS and physical iOS installation. Use actual configuration and
+built artifacts, explicit customer choices and observed token-holder metadata;
+a sample configuration or project signing setting is not sufficient evidence.
+
 ## Release-qualified configuration and errors (15.16, verified 2026-09-29)
 
 Qualified tuple: Android MCSDK 15.16.3088426, iOS MCSDK 15.16.803.3089231
@@ -122,6 +129,12 @@ creation and cannot be changed on existing keys: decide the mode BEFORE the
 key-creating activation step; a later change requires discarding keys and a
 fresh activation with a new activation code.
 
+This is the preferred target path, not proof of the grant used by a particular
+OfflineLogin. Require the effective `maverick.jwtSignKeySecurityPolicy`, a
+non-password auth mode and sanitized jwt-bearer diagnostics or equivalent issuer
+evidence before claiming SignedJWT. `useTokenBasedLogin=true`, a successful
+OfflineLogin result, a fresh `iat` or a biometric prompt alone is insufficient.
+
 ## Native trusted WebView callback contract (verified 2026-09-29)
 
 Record the callback contract from the ACTUAL delivered interfaces (javap/bytecode
@@ -141,6 +154,13 @@ or older signatures — a signature mismatch silently fails to override.
 - iOS (KSTrustedWebView 9.7.3000479 with MCSDK 15.16.803.3089231): ALL
   `KsTrustedWebViewDelegate` methods are required — the 15.16 header declares no
   `@optional` methods. Implement every one.
+- Swift navigation decisions: inspect the delivered delegate's return semantics.
+  Cancel/intercept only the verified authorization redirect; do not cancel every
+  callback described as external. Ordinary navigation allowed by the existing
+  trust/URL policy must remain navigable. A blank page is not proof of TLS failure.
+  Parse query or fragment response fields only as required by the selected,
+  verified journey. Do not generalize fragment handling to other flows, broaden
+  the redirect allowlist, or bypass exact endpoint/state validation.
 - Redirect validation on both platforms: exact scheme, host, effective port
   (explicit or scheme default) and path plus the state parameter; deliver the
   authorization code exactly once, ignore duplicate callbacks, then hand it to

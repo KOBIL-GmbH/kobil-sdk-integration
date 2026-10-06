@@ -7,6 +7,10 @@ TOPICS = ("setup", "lifecycle", "activation", "login", "multi_step", "tms", "dia
 
 FLUTTER_TOPICS = ("flutter_webview",)
 
+# Minimal ordered journey for a fresh native app (round-4 observation O-01):
+# one call instead of ~10 sequential sdk_knowledge_get calls before the first build.
+BUNDLE_TOPICS = ("setup", "activation", "login", "tms", "logs", "diagnostics")
+
 def get_topic(topic, platform, sdk_family="shift", sdk_version=None):
     if topic not in TOPICS + FLUTTER_TOPICS:
         raise ValueError("Unknown topic; use sdk_knowledge_topics")
@@ -72,6 +76,29 @@ def register(mcp):
         package version or silently choose a backend flow.
         """
         return get_topic(topic, platform, sdk_family, sdk_version)
+
+    @mcp.tool()
+    def sdk_knowledge_bundle(platform: str, sdk_family: str = "shift",
+                             sdk_version: str | None = None) -> dict:
+        """Return the minimal ordered native journey in ONE call: the full sdk_knowledge_get
+        results for setup, activation, login, tms, logs and diagnostics, in that order.
+
+        Same validation and limits as sdk_knowledge_get (native android/ios, shift only;
+        other targets report a knowledge_gap). lifecycle, multi_step and automated_testing
+        stay separate topics; retrieve them with sdk_knowledge_get when needed. Source
+        review is not live flow validation and never certifies mobile SDK compatibility.
+        """
+        first = get_topic(BUNDLE_TOPICS[0], platform, sdk_family, sdk_version)
+        if first["status"] == "knowledge_gap":
+            return first
+        return {
+            "status": "source_reviewed_unqualified", "platform": platform, "sdk_family": sdk_family,
+            "requested_mobile_sdk_version": sdk_version, "version_verified": False,
+            "order": list(BUNDLE_TOPICS),
+            "topics": [get_topic(t, platform, sdk_family, sdk_version) for t in BUNDLE_TOPICS],
+            "not_included": ["lifecycle", "multi_step", "automated_testing"],
+            "external_source_access_required": False,
+        }
 
     @mcp.tool()
     def sdk_integration_checklist(topic: str, platform: str, sdk_family: str = "shift",

@@ -1,0 +1,8 @@
+[2026-10-02 15:37:56.682213] : <info> [32459] [ksmcw++]  [HardeningBridge ] jni [-] isKeyInsideSecureHardware securityLevel 1, TEE=1, SE=2
+[2026-10-02 15:37:56.717789] : <info> [32459] [ksmcw++]  [HardeningBridge ] jni [-] checkLogAndClearException - Exception occured : 
+java.lang.NoClassDefFoundError: Failed resolution of: Lorg/bouncycastle/operator/jcajce/JcaContentSignerBuilder;
+    com.kobil.AndroidInterface.StrongBoxHelper.generatePKCS10(source file)
+    com.kobil.AndroidInterface.StrongBoxHelper.c85353b4-3a99-49dd-aee9-b511e8c160b0(source file)
+    com.kobil.AndroidInterface.StrongBoxHelper.generatePKCS10(source file)
+Caused by: java.lang.ClassNotFoundException: Didn't find class "org.bouncycastle.operator.jcajce.JcaContentSignerBuilder" on path: DexPathList[<redacted>],nativeLibraryDirectories=[/data/app/~~bYVmFZMRbk4Dp03E84cLzA==/com.kobil.validation.round4.kotlin-LlYTnTjt0Strh_F-VuRCjg==/lib/arm64, /data/app/~~bYVmFZMRbk4Dp03E84cLzA==/com.kobil.validation.round4.kotlin-LlYTnTjt0Strh_F-VuRCjg==/base.apk!/lib/
+[2026-10-02 15:37:56.717963] : <info> [32459] [ksmcw++]  [HardeningBridge ] jni [-] generatePKCS10SignRequest - exception occurred during generate pkcs10 sign request using key pair

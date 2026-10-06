@@ -41,7 +41,7 @@ history are included.
 ## Install a fixed release
 
 Use [versioned installation](docs/releases.md) for a fixed MCP and skill version.
-The current release is **v0.6.0**. Upgrades are explicit; install a tag rather than a moving branch.
+The current release is **v0.7.0**. Upgrades are explicit; install a tag rather than a moving branch.
 
 ## Run from a development checkout
 
@@ -70,6 +70,11 @@ Tools:
 | sdk_app_version_ensure | Reuse or create an AST app version with explicit registration/integrity settings |
 | sdk_config_write | Request signed SDK configuration and write a new private JWT file |
 | sdk_tls_chain_check | Compare served TLS chains against the local trust asset; report missing anchors |
+| sdk_tms_auth_diagnose | Diagnose requested versus issued transaction scopes and AST errors without changing users or backend policy |
+| sdk_log_markers | Read measured markers from a decrypted SDK log: jwt-bearer grant correlation, software/hardware key, NOT_SUPPORTED attribution, explicit-TMS refusals (line numbers and booleans only) |
+| sdk_tms_explicit_preflight | Read-only check of the SDK token client for explicit-auth TMS: optional client scope `tms`, KOBIL mobile browser-flow override, token-holder warning when enrollment and token client differ |
+| sdk_deployment_preflight | Check local deployment mTLS, token-owner and explicit-TMS scope evidence before activation/transactions |
+| sdk_ios_signing_preflight | Verify built iOS app signature, expected team, profile and device eligibility before installation |
 | sdk_tms_trigger | Create an authorized foreground transaction with explicit policy |
 | sdk_tms_status / sdk_tms_result | Read redacted progress and final-result metadata |
 | sdk_tms_cancel | Request cancellation; final result checked separately |
