@@ -61,11 +61,13 @@ operation (activation) and before the first explicit transaction:
    with a clear message instead of after a consumed activation.
 3. **Run `sdk_tms_explicit_preflight(token_client, enrollment_client)`** before
    the first explicit transaction. It reports read-only which of the three
-   preconditions (optional `tms` scope, token holder, KOBIL mobile flow override)
-   is missing and the exact failure signature the user would otherwise see
-   (403/516004034, silent `FAILED/0`, `CANNOT_ACQUIRE_TOKEN_DATA`). Report the
-   finding as a realm configuration item for the owner of that realm; do not fix
-   a customer realm from a test run.
+   preconditions (optional `tms` scope, token holder, browser-flow override
+   "KOBIL Mobile Login") is missing and the exact failure signature the user
+   would otherwise see (403/516004034, silent `FAILED/0`,
+   `CANNOT_ACQUIRE_TOKEN_DATA`; a freshness value below the confirmation
+   latency shows as 516004035). Report the finding as a realm configuration
+   item for the owner of that realm; do not fix a customer realm from a test
+   run.
 4. **After a cold `OfflineLogin` re-check the token holder** (`azp` claim) before
    an explicit transaction; if it is the enrollment client, run one interactive
    login with the token client first.

@@ -86,3 +86,16 @@ class TmsTests(unittest.TestCase):
                       BackendError('Backend request failed (HTTP 412; backend_error)')):
             backend.request.side_effect = error
             with self.assertRaises(BackendError): read(backend, 'TEST01', result=True)
+
+
+class FreshnessRequirementTests(unittest.TestCase):
+    def test_strict_freshness_warning_preserves_requirement(self):
+        class Backend:
+            def request(self, method, path, payload):
+                self.payload = payload
+                return {'id': '01TX', 'status': 'STARTED'}
+        backend = Backend()
+        result = trigger(backend, '00000000-0000-0000-0000-000000000001', 'Test', 120, 90, True, 0)
+        self.assertEqual(backend.payload['requireFreshnessOfAuthentication'], 0)
+        self.assertIn('Do not relax freshness', result['warning'])
+        self.assertIn('preserve that requirement', result['warning'])

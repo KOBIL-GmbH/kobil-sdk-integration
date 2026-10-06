@@ -214,7 +214,13 @@ result may not be available while pending. While a transaction is not yet
 terminal, the backend result endpoint answers HTTP 412; `sdk_tms_result` maps
 this to an explicit lowercase status `pending` (observed 2026-09-29 during
 bounded-wait polling). Pending is not a backend error: keep bounded polling and
-never re-trigger because a result is still pending. Acceptance, rejection and expiry must
+never re-trigger because a result is still pending. Terminal transactions are
+not kept readable for long: recorded 2026-10-05, both the status and the result
+endpoint answered HTTP 404 for ACCEPTED, REJECTED, TIMEOUT and CANCELLED
+transactions about 2.5 h after completion. `sdk_tms_status` / `sdk_tms_result`
+map that to the lowercase status `not_found` (unknown id, routing, masked authorization or possible retention, not
+failure). Read status and result **directly after the SDK terminal event** and
+record them then; a later 404 proves nothing either way. Acceptance, rejection and expiry must
 be checked against the final server response, not inferred from an HTTP200,
 notification, button tap or local success banner. Cancellation and display-message
 operations are separate capabilities.
@@ -306,3 +312,5 @@ On the same iOS device tuple, foreground timeout passed: backend TIMEOUT, SDK te
 On the same iOS device tuple, foreground cancel passed: backend CANCELLED, SDK terminal event recorded and dialog/timer cleared. Server cancellation completed without a local decision.
 
 For iOS the observed terminal status values were 0 (accept), 3 (reject), 4 (timeout) and 53 (server cancellation). Each accept/reject/timeout submitted one local decision; cancellation submitted none. Returning login passed before every case. Disable debug scenario arguments after testing; normal confirmations require user input. Background push, explicit re-authentication and network interruption remain unverified.
+
+Retention intervals are deployment-specific; the observed delay is not a universal guarantee. A 404 does not by itself establish the cause.

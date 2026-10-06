@@ -15,11 +15,12 @@ Reads tests/scenarios/skill_blindtest.json. Two modes:
 
 Judging is lexical and case-insensitive: every `expect_all` phrase must appear,
 at least one phrase of every `expect_any` group must appear, no `forbid` phrase
-may appear. It is a release gate for the guidance text, not a unit test.
+may appear. It is a lexical smoke check only. A semantic review is required for acceptance.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -74,7 +75,7 @@ def judge(answers: dict[str, str], scenarios: list[dict]) -> int:
         print(f'{status}  {sc["id"]}')
         for m in misses:
             print(f'       - {m}')
-    print(f'\n{len(scenarios) - failures}/{len(scenarios)} scenarios passed')
+    print(f'\n{len(scenarios) - failures}/{len(scenarios)} lexical checks passed; semantic review still required')
     return 1 if failures else 0
 
 
@@ -109,15 +110,79 @@ def ask_ollama(model: str, scenarios: list[dict]) -> dict[str, str]:
     return answers
 
 
+def scenario_digest(scenario: dict) -> str:
+    return hashlib.sha256(json.dumps(scenario, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+
+def candidate_digest() -> str:
+    """Hash delivered behavior/guidance, including dirty changes, independently of Git HEAD."""
+    digest = hashlib.sha256()
+    paths = [ROOT / 'pyproject.toml']
+    for folder in ('src', 'skills', 'docs', 'scripts'):
+        paths.extend(p for p in (ROOT / folder).rglob('*')
+                     if p.is_file() and p.suffix in ('.py', '.md', '.json', '.toml'))
+    for path in sorted(paths):
+        digest.update(str(path.relative_to(ROOT)).encode() + b'\0' + path.read_bytes() + b'\0')
+    return digest.hexdigest()
+
+
+def review_answers(answers: dict[str, str], reviews: dict, scenarios: list[dict]) -> int:
+    """Require independent, answer-bound review; never equate keywords to correctness."""
+    failures = []
+    if not isinstance(reviews, dict):
+        print('FAIL: review must be a JSON object')
+        return 1
+    current_candidate = candidate_digest()
+    for sc in scenarios:
+        answer = answers.get(sc['id'], '')
+        review = reviews.get(sc['id'], {})
+        digest = hashlib.sha256(answer.encode()).hexdigest()
+        if not isinstance(review, dict) or not answer or review.get('answer_sha256') != digest or review.get('scenario_sha256') != scenario_digest(sc) or review.get('candidate_sha256') != current_candidate:
+            failures.append(sc['id'] + ': missing answer or stale answer/scenario/candidate review')
+            continue
+        if review.get('verdict') != 'pass' or not all(
+                isinstance(review.get(k), str) and review[k].strip()
+                for k in ('reviewer', 'rationale', 'source_evidence')):
+            failures.append(sc['id'] + ': semantic pass with reviewer, rationale and source evidence required')
+    for failure in failures:
+        print('FAIL ' + failure)
+    print(f'{len(scenarios) - len(failures)}/{len(scenarios)} semantic reviews accepted')
+    return int(bool(failures))
+
+
+def reader_packet(scenarios: list[dict], retrieval: bool = False) -> dict:
+    """No evaluator-only fields in the material delivered to the reader."""
+    rules = READER_RULES if not retrieval else (
+        'Use only the installed KOBIL SDK skill and read-only bundled knowledge tools. '
+        'No external source checkouts, previous session, backend writes or device actions. '
+        'For each question record the decision/config fragment, exact resource or tool '
+        'and arguments used, supporting section, missing prerequisites and uncertainty. '
+        'Report package version and distinguish retrieved knowledge from runtime proof.'
+    )
+    return {'mode': 'retrieval' if retrieval else 'comprehension', 'rules': rules,
+            'candidate_sha256': candidate_digest(),
+            'scenarios': [{'id': s['id'], 'prompt': s['prompt']} for s in scenarios]}
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     g = ap.add_mutually_exclusive_group(required=True)
+    g.add_argument('--packet', choices=['comprehension', 'retrieval'], help='print a reader-only JSON question packet')
+    g.add_argument('--review', type=Path, help='validate independent semantic review JSON against --answers')
+    ap.add_argument('--answers', type=Path, help='answers evaluated by --review')
     g.add_argument('--print', action='store_true', help='print the reader prompt')
     g.add_argument('--judge', type=Path, metavar='FILE', help='judge answers from FILE')
     g.add_argument('--ollama', metavar='MODEL', help='ask a local Ollama model and judge')
     ap.add_argument('--save', type=Path, help='with --ollama: save raw answers as JSON')
     args = ap.parse_args(argv)
     scenarios = load_scenarios()
+    if args.packet:
+        print(json.dumps(reader_packet(scenarios, args.packet == 'retrieval'), indent=2))
+        return 0
+    if args.review:
+        if not args.answers:
+            ap.error('--review requires --answers')
+        return review_answers(parse_answers(args.answers), json.loads(args.review.read_text()), scenarios)
     if args.print:
         print(READER_RULES)
         print('\nRead only SKILL.md, references/*.md and knowledge/*.json of the installed skill.\n')

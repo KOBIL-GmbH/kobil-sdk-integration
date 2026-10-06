@@ -55,8 +55,10 @@ def trigger(backend, user_uuid, text, retrieval_timeout_seconds, confirmation_ti
             'token is 85 seconds older than required", surfaced by the SDK only as errorCode 516004035 '
             '"A network error occurred" (observed 2026-09-29, iOS MCSDK 15.16.803.3089231). The '
             'transaction WAS created and will be presented on the device. Unless this failure is the '
-            'intended test, cancel it and re-trigger with the default 3600, a larger value, or -1 '
-            '(freshness check disabled).' % freshness_seconds)
+            'intended test, review the requirement with the owner. Do not relax freshness or re-trigger '
+            'automatically. If forced re-authentication is required, preserve that requirement and '
+            'escalate the qualified SDK/backend limitation. Values such as 3600 or -1 are alternatives '
+            'only when the owner explicitly permits a weaker freshness requirement.' % freshness_seconds)
     return response
 
 
@@ -72,10 +74,20 @@ def read(backend, transaction_id, result=False):
             return {'transaction_id': transaction_id, 'status': 'pending', 'result_available': False,
                     'note': 'Not yet terminal (HTTP 412 on the result endpoint), not a backend error. '
                             'Keep bounded polling and do not re-trigger; inspect sdk_tms_status for progress.'}
+        if getattr(error, 'status_code', None) == 404:
+            # Recorded 2026-10-05: ~2.5 h after completion both endpoints answered 404 for
+            # ACCEPTED, REJECTED, TIMEOUT and CANCELLED transactions. Retention, not failure.
+            return {'transaction_id': transaction_id, 'status': 'not_found', 'result_available': False,
+                    'note': 'HTTP 404: unknown id, endpoint/routing issue, masked authorization, or purged result. '
+                            'Retention was observed after hours on one deployment, not a universal guarantee. '
+                            'Not evidence of failure: use the SDK terminal event and the '
+                            'status/result read directly after it. Do not re-trigger.'}
         raise
     if value is None:
-        return {'transaction_id': transaction_id, 'result_available': False,
-                'note': 'No result returned (not ready, expired or unknown ID); inspect status'}
+        return {'transaction_id': transaction_id, 'status': 'not_found', 'result_available': False,
+                'note': 'No result returned: unknown id, route, authorization masking or purged result; '
+                        'the cause is unconfirmed. Retention depends on the deployment. Inspect the status read '
+                        'directly after the SDK terminal event; do not re-trigger.'}
     response = summary(value, transaction_id)
     if response['status'] is None:
         raise BackendError('Transaction response has no status')
