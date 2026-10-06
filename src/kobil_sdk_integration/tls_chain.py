@@ -12,13 +12,14 @@ would reject. This module makes no trust decision, changes no app or SDK
 configuration and must never be used to justify disabling verification
 anywhere else.
 """
+import hashlib
 import socket
 import ssl
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import hashes, serialization
 
 _PEM_MARKER = b"-----BEGIN CERTIFICATE-----"
 
@@ -38,7 +39,11 @@ VERIFICATION_NOTE = (
     "Mobile TLS clients may terminate a cross-signed chain at the SELF-SIGNED "
     "variant of the top CA subject (verified 2026-09-29: iOS built to system ISRG "
     "Root X2 while desktop verification used the X1 cross-sign), so the trust asset "
-    "must cover the top CA SUBJECT itself, not only its cross-sign parent."
+    "must cover the top CA subject AND public key, not only its cross-sign parent. "
+    "An ok result establishes asset coverage only, not certificate path validation, "
+    "validity, hostname verification, SDK byte-format compatibility or runtime acceptance. "
+    "For iOS KSTrustedWebView 9.7.3000479, certsDataForValidation needs PEM "
+    "trust-store bytes; do not convert those bytes to DER."
 )
 
 
@@ -116,6 +121,8 @@ def describe(certificate):
         "issuer": certificate.issuer.rfc4514_string(),
         "sha256_fingerprint": certificate.fingerprint(hashes.SHA256()).hex(),
         "self_signed": certificate.subject == certificate.issuer,
+        "spki_sha256": hashlib.sha256(certificate.public_key().public_bytes(
+            serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)).hexdigest(),
     }
 
 
@@ -153,9 +160,12 @@ def _check_host(entry, asset_certificates, fetch):
     for subject in required:
         exact = any(c["subject"] == subject and c["sha256_fingerprint"] in asset_fingerprints
                     for c in chain)
-        if subject in asset_subjects:
+        same_key = any(c["subject"] == subject and a["subject"] == subject
+                       and c["spki_sha256"] == a["spki_sha256"]
+                       for c in chain for a in asset)
+        if exact or same_key:
             matched.append({"subject": subject,
-                            "match": "exact_certificate" if exact else "same_subject_variant"})
+                            "match": "exact_certificate" if exact else "same_subject_and_key_variant"})
         else:
             missing.append(subject)
     recommended = []
@@ -196,5 +206,8 @@ def check(hosts, trust_asset_path, fetch=fetch_served_chain):
                         "certificates": [describe(c) for c in asset_certificates]},
         "hosts": results + failed,
         "all_hosts_ok": bool(results) and not failed and all(h["status"] == "ok" for h in results),
+        "verification_scope": "asset_coverage_only",
+        "runtime_acceptance_verified": False,
+        "certificate_path_verified": False,
         "verification_note": VERIFICATION_NOTE,
     }

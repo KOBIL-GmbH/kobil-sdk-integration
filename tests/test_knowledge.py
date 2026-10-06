@@ -316,6 +316,19 @@ class KnowledgeTests(unittest.TestCase):
             self.assertIn('freshness_seconds default 3600',testing_text)
             self.assertIn('"pending" (mapped from HTTP 412)',testing_text)
 
+    def test_ios_webview_recipe_states_verified_pem_contract(self):
+        for topic in ('setup', 'activation'):
+            text = '\n'.join(get_topic(topic, 'ios')['sequence'])
+            for term in ('9.7.3000479', 'PEM file bytes unchanged', 'not validate signatures',
+                         'DER fails', 'errorCode (0 here)', 'read-only HTTPS page'):
+                self.assertIn(term, text, (topic, term))
+
+    def test_ios_external_allowlist_does_not_classify_initial_auth_as_callback(self):
+        text = '\n'.join(get_topic('activation', 'ios')['sequence'])
+        for term in ('full URL, including', 'bare redirect hostname', 'encoded redirect_uri',
+                     'lookalike hosts', 'Observe a rendered page'):
+            self.assertIn(term, text)
+
     def test_tls_chain_preflight_is_cross_referenced(self):
         # E12 / VAL-16, VAL-36: the served-chain preflight belongs next to every trust-asset step
         for topic,platform in [('setup','android'),('setup','ios'),

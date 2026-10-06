@@ -304,7 +304,11 @@ def sdk_tls_chain_check(hosts: list[str], trust_asset_path: str) -> dict:
     Run this BEFORE any device round whenever trust anchors are prepared for
     SDK Start (mc_config iam.trustedSslServerCerts) or trusted-WebView pinning
     (certsDataForValidation). Pass environment https:// base URLs or host[:port]
-    entries plus the local PEM bundle / DER certificate the app will pin.
+    entries plus the local PEM bundle / DER certificate to inspect. An ok result
+    means asset coverage only, NOT certificate-path or mobile runtime acceptance.
+    Same-subject variants must also match the public key. iOS KSTrustedWebView
+    9.7.3000479 certsDataForValidation expects PEM trust-store bytes unchanged;
+    DER is readable by this tool but failed the actual WebView validation test.
     For each host the served chain (subject/issuer/SHA-256 per certificate),
     the required anchor subjects, matched anchors and MISSING anchors are
     reported. Mobile clients may terminate a cross-signed chain at the

@@ -35,7 +35,10 @@ of this skill refines a step, none replaces it.
    [signing-policy.md](references/signing-policy.md). Never downgrade a
    deployment policy silently.
 4. Start: register listeners, Start the SDK, observe the Start result event.
-5. Activation via trusted WebView: fixture = `sdk_idp_user_search` ->
+5. For iOS KSTrustedWebView 9.7, pass PEM file bytes unchanged to
+   `certsDataForValidation`, not DER. Prove a read-only page loads before
+   consuming activation codes; TLS asset coverage is not runtime acceptance.
+   Activation via trusted WebView: fixture = `sdk_idp_user_search` ->
    `sdk_idp_activation_code_generate(user_uuid)` (code is returned once in the
    result; no reference file needed). Allowlist + redirect pattern per platform:
    native-integration.md "Trusted-WebView allowlist and redirect". Biometric
