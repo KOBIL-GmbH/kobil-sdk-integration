@@ -257,3 +257,48 @@ returning-login path are recorded for MCSDK 15.16 on two physical devices. Read 
 per-platform runtime_acceptance scope. Other checklist cases remain to be tested.
 For iOS, package AND explicitly pass the IAM certificate chain at Start; packaging
 alone did not initialize it in the tested SDK.
+
+## iOS trusted WebView certificate bytes (verified 2026-10-06)
+
+For KSTrustedWebView 9.7.3000479, pass the approved PEM file bytes unchanged:
+`configuration.certsDataForValidation = [try Data(contentsOf: approvedPEMURL)]`.
+A PEM bundle can contain multiple approved roots. Do not base64-decode it into
+DER for this property. This is the WebView contract, not a universal rule for
+other SDK Start, Security.framework, Android or Flutter APIs.
+
+An actual iOS simulator test with secureBrowsing and hostname checks enabled
+verified: authentic X2 PEM passes; the SAME X2 converted to DER fails; X1-only
+PEM fails for the observed iOS X2 chain; X1+X2 PEM passes. Choose authentic,
+approved roots for the actual deployment, not a hard-coded CA or downloaded
+leaf certificate. GettingStarted reads the PEM file bytes without conversion.
+
+SecTrust OK plus hostname OK does not prove TWV acceptance: TWV additionally
+validates its configured trust store. Capture onURLBlocked reason (1 means
+KS_CERTIFICATE_ERROR), subSystem (1500000 here), errorCode (0 here) separately;
+zero errorCode alone is not success. Use a bounded SDK log listener locally to
+identify the failing stage without logging authorization URLs or credentials.
+
+sdk_tls_chain_check reports asset coverage only. It accepts PEM and DER for
+inspection and therefore cannot prove the bytes passed to a particular SDK API
+are correct. A matching subject must also match the public key; even that does
+not validate signatures, expiry, hostname or mobile trust-path construction.
+Before consuming an activation code, load a read-only HTTPS page on the approved
+origin through the actual trusted WebView. Check both a passing approved PEM
+case and a deliberately wrong/empty trust case which must fail visibly. Keep
+certificate and hostname checks enabled. Record SDK version and installed-asset
+evidence; successful SDK Start is a separate checkpoint.
+
+## iOS trusted WebView navigation rules (verified 2026-10-06)
+
+KSTrustedWebView 9.7 checks whitelist regexes against the full URL, including
+its query, and asks shouldHandleExternalUrl when an external rule matches.
+Never put a bare redirect hostname such as `kobil` in urlExternalWhiteList:
+it can match redirect_uri embedded inside the IDP authorization URL. Returning
+false from that delegate then cancels the initial page after TLS succeeds.
+Use anchored, escaped patterns: internal `^https://idp\.example(/.*)?$`;
+external `^https://callback\.example/OpenIdRedirectUri([?#].*)?$`, derived
+from the approved deployment endpoints. Do not use a global wildcard.
+Still validate scheme/host/effective port/path/state in the callback handler.
+Test that the initial authorization URL with its encoded redirect_uri does NOT
+match the external rule, while the actual callback does; reject lookalike hosts
+and callback paths. Observe a rendered page, not only successful TLS.

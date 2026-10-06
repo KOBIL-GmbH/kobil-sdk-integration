@@ -90,7 +90,23 @@ class TlsChainCheckTests(unittest.TestCase):
         self.assertTrue(result["all_hosts_ok"])
         matched = {m["subject"]: m["match"] for m in host["matched_anchors"]}
         # the asset holds the SELF-SIGNED X2 variant while the server sent the cross-sign
-        self.assertEqual(matched, {"CN=Test Root X2": "same_subject_variant"})
+        self.assertEqual(matched, {"CN=Test Root X2": "same_subject_and_key_variant"})
+
+    def test_same_subject_with_different_key_is_not_a_match(self):
+        other = ec.generate_private_key(ec.SECP256R1())
+        impostor = _certificate("Test Root X2", "Test Root X2", other.public_key(), other)
+        result = check(["service.test"], self.asset(FIXTURE.pem(impostor)), fetch=self.cross_chain)
+        self.assertFalse(result["all_hosts_ok"])
+        self.assertEqual(result["hosts"][0]["matched_anchors"], [])
+        self.assertEqual(result["hosts"][0]["missing_anchors"], ["CN=Test Root X2"])
+
+    def test_asset_coverage_does_not_claim_runtime_or_path_validation(self):
+        result = check(["service.test"], self.asset(FIXTURE.pem(FIXTURE.x2_self)), fetch=self.cross_chain)
+        self.assertTrue(result["all_hosts_ok"])
+        self.assertEqual(result["verification_scope"], "asset_coverage_only")
+        self.assertFalse(result["runtime_acceptance_verified"])
+        self.assertFalse(result["certificate_path_verified"])
+        self.assertIn("PEM trust-store bytes", result["verification_note"])
 
     def test_x2_only_asset_is_ok_and_recommends_cross_sign_parent(self):
         result = check(["service.test:8443"], self.asset(FIXTURE.pem(FIXTURE.x2_self)),
