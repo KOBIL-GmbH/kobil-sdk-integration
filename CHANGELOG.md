@@ -1,5 +1,42 @@
 # Changelog
 
+## Unreleased — knowledge interrogation tests
+
+- Expand blind questions to 46 scenarios with evaluator-only semantic criteria and reader-only comprehension/retrieval packets. Add answer-bound review validation and knowledge-discovery regressions.
+- Inject uncertain IDP write failures to verify no retry and tighten minimal-call write counts.
+- Add mixed-log correlation regressions; reject ambiguous SignedJWT evidence, report per-attempt outcomes, and avoid inferring a specific cause from generic CSR or exchange errors.
+
+## Unreleased
+
+(no changes yet)
+
+## 0.7.0 — 2026-10-05
+
+- New read-only tool `sdk_log_markers(decrypted_log_path)`: reads the measured markers out of a decrypted MCSDK log - jwt-bearer grant correlated with the token-endpoint 200 (the SignedJWT proof), key kind from `isKeyInsideSecureHardware` / `GetKeystoreInfo` (software vs hardware), NOT_SUPPORTED attribution (missing bouncycastle dependency vs undetermined), explicit-TMS exchange refusals (wrong holder, missing scope, freshness). Golden fixtures from the 2026-10-02/05 device and emulator logs under tests/fixtures/sdk_logs/. Tool count 197.
+- IDP tool catalog contract test (`tests/test_idp_tool_catalog.py` + route snapshot): every `sdk_idp_*` wrapper exercised once - validation-only exceptions, internal paths, at most one write per call, no secret echo. Line coverage 82 % -> 88 %.
+- Guidance guard: `tests/test_guidance_guard.py` asserts measured facts in the served knowledge, references and SKILL.md and fails on internal identifiers (page ids, fixture users, transaction ids, device serials, personal paths, e-mail addresses, internal hostnames, customer names) in any shipped text. `tests/scenarios/skill_blindtest.json` + `scripts/skill_blindtest.py`: eleven measured customer scenarios (policy vs simulator, token holder after cold OfflineLogin, freshness 0, emulator SignedJWT report, NOT_SUPPORTED attribution, blank WebView, log roots, CLEAR_ALL, two security refusals) for a skill-only reader; lexical judge, local-model runner.
+- New reference signing-policy.md and login knowledge: sign-key policy versus test target table (ENFORCE_* fails on emulator/simulator with the measured codes, ALLOW_VIRTUAL_SMART_CARD works with a software key), what each target can prove, NOT_SUPPORTED is not proof of missing hardware (bcpkix case), and the agent duty to resolve target/policy and run the deployment and explicit-TMS preflights before the user can fail on configuration.
+- Explicit-auth TMS guidance (tms.md, tms.json, login.json) made deployment-neutral and extended with the 2026-10-05 measurements: token holder reverts to the enrollment client after every cold OfflineLogin (interactive token-client login needed in the current session, silent FAILED/0 otherwise), freshness 3600 vs 0 behaviour (516004035, no SDK step-up path), software-backed key under ALLOW_VIRTUAL_SMART_CARD verified on an emulator, customer login clients without the scope show 403/516004034 and must not be changed from a test run.
+- Start-here journey in SKILL.md and new `sdk_knowledge_bundle` (setup/activation/login/tms/logs/diagnostics in one call) to replace ~10 sequential knowledge calls (round-4 O-01/O-05).
+- `sdk_idp_login_page_fetch` creates its private output directory (0700) instead of failing; activation-code happy path and CREDENTIAL_NOT_FOUND meaning documented (O-02/O-03).
+- `sdk_artifact_info` / sdk-delivery.md: locate AARs, xcframeworks, headers and javadoc inside a delivery without unzip/grep guessing (O-04).
+- Login knowledge: BIOMETRIC prompts come with credential/key access, not activation; OfflineLogin grant order (cached access token, refresh token, then signed JWT) from offline_login_flow.cc; signed-JWT proof recipe ClearIamTokenCache(access+refresh) -> OfflineLogin -> claims, never CLEAR_ALL; the signed-JWT path exists only with maverick.jwtSignKeySecurityPolicy (ENFORCE_STRONG_HARDWARE / ENFORCE_HARDWARE / ALLOW_VIRTUAL_SMART_CARD) set before activation (O-09/O-10/O-12/O-19).
+- Copy-ready trusted-WebView allowlist/redirect example per platform; a mismatch shows as a blank WebView without prompt (O-11).
+- Log export: verified archive is the pass criterion, share delivery bounded; decrypt with the LoggingFramework version from the ks*.log header (O-13/O-14).
+- Automated testing: write TEST_REPORT after every gate, keep heartbeats as children and stop them, budget parallel runs against usage limits; iOS reinstall/OS update can reset the SDK container (O-06/O-16/O-17/O-18).
+
+
+- Explicit-auth TMS: record the documented AST contract and the three measured preconditions for the token client - optional client scope `tms`, token-holder identity, KOBIL mobile browser-flow override - with the failure signatures of each missing piece (403/516004034, not_allowed token holder with silent FAILED/0, CANNOT_ACQUIRE_TOKEN_DATA). Add read-only `sdk_tms_explicit_preflight` that checks a token client for all three via the IDP admin API. Measured end-to-end in internal validation (2026-10-01 physical device, 2026-10-05 emulator).
+
+- Separate GettingStarted ordinary-TMS baseline from explicit-auth policy; require SDK status and backend proof instead of sample UI success.
+
+- Add read-only TMS authorization diagnosis for requested versus issued transaction scope; document result-event errors, same-client user comparisons and independent timeout/cancellation tests.
+
+- Add read-only deployment preflight for actual mc_config against explicit deployment mTLS and token-owner/scope metadata; mismatches block the integration gate without changing backend policy.
+- Add built iOS artifact signing preflight for the selected customer team, embedded profile, application identifier, expiry and device eligibility, including legacy application prefixes.
+- Require deployment/signing gates in bundled integration guidance; distinguish token-holder, explicit scope and freshness errors, preserve selected themed flows, and document native diagnostics when SDK errorCode is zero.
+- Clarify WebView navigation and export/share lifecycle handling. Checks report their evidence limits and never claim runtime acceptance or physical biometric proof.
+
 ## 0.6.1 — 2026-09-29
 
 - Fix sdk_tls_chain_check crashing on interpreters that do not export ssl.ENCODING_DER (bundled CPython 3.11): resolve the DER encoding constant with the _ssl fallback at import time; regression test added. Found in the v0.6.0 retest round (slug tls-chain-check-py311-ssl-encoding-der-crash); chain-comparison logic itself was verified correct against akinci (X1+X2 ok, X1-only reports missing ISRG Root X2).

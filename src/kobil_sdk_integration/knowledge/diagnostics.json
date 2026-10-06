@@ -30,7 +30,8 @@
     "Do not guess an error meaning from a numeric code; use version-matched evidence.",
     "GettingStarted sample handlers are not uniformly complete: improve them rather than copying their omissions.",
     "Qualify logger and diagnostic APIs against the exact SDK BINARY, not only headers: a header-declared selector can be absent from the shipped binary and crash at first use despite a clean build. Keep a runtime smoke test for logger initialization.",
-    "UI automation must filter credential-bearing fields (passwords, activation codes, OTP inputs) before returning output; never dump raw UI text during authentication (2026-09-29 validation round evidence)."
+    "UI automation must filter credential-bearing fields (passwords, activation codes, OTP inputs) before returning output; never dump raw UI text during authentication (2026-09-29 validation round evidence).",
+    "When SDK reports FAILED/errorCode=0 and no Warning/RuntimeError/FatalError, inspect sanitized native SDK and HTTP diagnostics; listener silence is not absence of an error. Distinguish issuer TLS_CLIENT_WITH_KEY rejection 510000015 (mTLS deployment mismatch), HTTP403 Client is not the holder of the token wrapped as 700000022 (token holder versus IAM exchange client), missing explicit tms scope 516004034, and freshness failure 516004035. Numeric wrappers alone do not establish the cause; retain operation/status/explanation without tokens."
   ],
   "platform_notes": {
     "android": "The inspected ErrorHandlingModel logs generic runtime/warning messages and lacks a fatal branch in that class; do not copy it as complete diagnostic coverage. The 15.16 events inherit AbstractErrorEvent getters. Java int is signed: use errorCode.toLong() and 0xffffffffL to preserve its unsigned value.",

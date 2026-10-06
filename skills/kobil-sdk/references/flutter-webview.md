@@ -9,6 +9,17 @@ the final environment/theme change; iOS device behavior is unverified. Returning
 login can use cached or refreshed tokens: success alone does not prove a SignedJWT
 grant. These observations qualify only this test tuple, not every delivery.
 
+The actual OfflineLogin factor depends on the effective SDK configuration, not
+only on `useTokenBasedLogin=true`: source review shows a non-password auth mode
+with `maverick.jwtSignKeySecurityPolicy` selects the SignedJWT factor; without the
+policy, the SDK selects the offline-token factor. Confirm the effective policy
+without exposing signed configuration contents, then require sanitized
+jwt-bearer diagnostics or equivalent issuer evidence before claiming SignedJWT.
+Fresh `iat` and OfflineLogin success are insufficient. A diagnostic test may
+clear only access and refresh tokens; `CLEAR_ALL` also removes the offline token
+and can make returning login unavailable. Qualify this behavior against the
+delivered SDK.
+
 ## Setup and activation
 - Local toolchain preflight before long builds (2026-09-29 round): confirm a
   COMPLETELY installed Android NDK (VAL-06: a half-installed NDK 26.3 was only
@@ -299,3 +310,16 @@ both the WebView request and SDK IAM configuration. Do not revert to BDDK-named
 example clients merely because this recipe uses them as a reference: those may
 select a different theme. Keep the original flow unchanged. Rendering the selected
 theme verifies presentation only; test authentication and SDK completion separately.
+
+## Deployment, navigation and physical signing gates
+
+Apply [deployment and artifact gates](deployment-preflight.md) to the actual
+mc_config and built iOS app. Preserve selected themed WebView clients; SDK IAM
+exchange client identity follows observed token ownership, not a login-label
+assumption. Missing deployment or signing choices must be resolved explicitly.
+
+Inspect Swift delegate return semantics in the delivered API: cancel only the
+verified authorization redirect, not every nonredirect/external callback. Keep
+normal navigation subject to the existing allowlist and trust checks. Query or
+fragment response parsing is specific to the verified journey; preserve exact
+redirect/state checks and do not broaden them as a blank-page workaround.

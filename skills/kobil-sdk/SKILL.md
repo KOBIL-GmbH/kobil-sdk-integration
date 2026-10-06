@@ -5,6 +5,71 @@ description: Integrate KOBIL SDK features into existing or fresh Kotlin Android,
 
 # KOBIL SDK integration
 
+## Start here: the minimal native journey (one knowledge call, one tool load)
+
+Load the standard-journey tools once with a single ToolSearch
+`select:` of these exact names: `sdk_service_catalog`, `sdk_backend_status`,
+`sdk_knowledge_bundle`, `sdk_artifact_info`, `sdk_plan`, `sdk_native_preflight`,
+`sdk_deployment_preflight`, `sdk_idp_user_search`,
+`sdk_idp_activation_code_generate`, `sdk_idp_user_credentials_list`,
+`sdk_tms_explicit_preflight`, `sdk_tms_trigger`, `sdk_tms_status`,
+`sdk_tms_result`, `sdk_tms_cancel`. Then follow this order; every later section
+of this skill refines a step, none replaces it.
+
+1. Knowledge: `sdk_knowledge_bundle(platform="android"|"ios")` returns setup,
+   activation, login, tms, logs and diagnostics in one call (replaces ~10
+   sequential `sdk_knowledge_get` calls). Read
+   [native-integration.md](references/native-integration.md) once; open
+   [tms.md](references/tms.md) and [log-export.md](references/log-export.md)
+   when you reach those steps. `lifecycle`, `multi_step`, `automated_testing`
+   stay separate `sdk_knowledge_get` topics.
+2. Backend and artifacts: `sdk_backend_status`, `sdk_artifact_info(path)` on
+   each delivery ZIP (see [sdk-delivery.md](references/sdk-delivery.md) for
+   locating AARs/xcframeworks inside it), `sdk_plan(profile)`.
+3. Gates before code: `sdk_native_preflight`, then `sdk_deployment_preflight`
+   with the actual mc_config. Proceed only on `configuration_checked`.
+   Resolve the test target against the sign-key policy first: an emulator or
+   simulator cannot satisfy `ENFORCE_STRONG_HARDWARE` / `ENFORCE_HARDWARE` and
+   would fail at activation after consuming the code. Stop and offer
+   `ALLOW_VIRTUAL_SMART_CARD` for the fixture or a physical device; see
+   [signing-policy.md](references/signing-policy.md). Never downgrade a
+   deployment policy silently.
+4. Start: register listeners, Start the SDK, observe the Start result event.
+5. Activation via trusted WebView: fixture = `sdk_idp_user_search` ->
+   `sdk_idp_activation_code_generate(user_uuid)` (code is returned once in the
+   result; no reference file needed). Allowlist + redirect pattern per platform:
+   native-integration.md "Trusted-WebView allowlist and redirect". Biometric
+   prompt timing varies by delivered SDK, platform and key policy; announce
+   possible physical prompts before activation or protected key access, then
+   record whether a prompt actually appeared. On a stall read back
+   `sdk_idp_user_credentials_list` before consuming another code.
+6. Interactive login in the trusted WebView with the token client
+   (`iam.clientId`) so that client holds the SDK's current token.
+7. Cold login: kill the process, relaunch, `OfflineLoginEvent`. This may reuse
+   an access token or refresh an offline token; success and a fresh `iat` do not
+   prove a SignedJWT grant. The biometric prompt, when enabled, is on protected
+   credential access, not necessarily at activation or interactive login.
+8. Claim SignedJWT only when the effective SDK configuration has
+   `maverick.jwtSignKeySecurityPolicy` and the selected auth mode is not password.
+   On the inspected source path, that policy selects the SignedJWT first factor;
+   without it, the SDK selects the offline-token factor. A safe diagnostic run
+   may clear only access and refresh tokens (`CLEAR_ACCESS_AND_REFRESH`), then
+   post `OfflineLoginEvent` and inspect whitelisted claims. Confirm the
+   jwt-bearer grant in sanitized SDK diagnostics or equivalent issuer evidence.
+   If the policy or grant cannot be verified, record `NOT_PROVEN`. Never use
+   `CLEAR_ALL` for this check: it also removes the offline token and can leave
+   the user without a returning-login credential. Never print tokens. Which
+   target can prove which claim (protocol vs key protection vs biometric) is
+   tabulated in [signing-policy.md](references/signing-policy.md).
+9. TMS: `sdk_tms_explicit_preflight(iam.clientId)` once, then `sdk_tms_trigger`
+   for ordinary accept, ordinary reject, explicit accept, explicit reject,
+   timeout (owner must not touch) and `sdk_tms_cancel` (server cancel); confirm
+   each with `sdk_tms_status` / `sdk_tms_result` against the SDK terminal event.
+10. Export: the reopened ZIP with non-empty, CRC-clean entries IS the pass; the
+    share sheet is optional and bounded to 60 s, then skipped.
+
+Write TEST_REPORT.md after every one of these gates, not at the end.
+
 Scope: all public SDK features across supported releases and the four
 framework/OS combinations. Activation/login is the first milestone, not the
 product boundary. The MCP supplies planning, artifact inspection and AST app/version/configuration
@@ -57,6 +122,31 @@ backend errors for investigation. Select PIN hashing/authentication policy
 consistently with the existing native flow; do not change it for existing users.
 On Swift match `.success`, `.eventFailed` and `.requestFailed` explicitly. Keep
 the detailed event's status/code/description; never match success using strings.
+
+## Mandatory deployment and signing gates
+
+Before activation, run `sdk_deployment_preflight` with the actual mc_config and
+explicit deployment mTLS choice. Before explicit-auth TMS, reconcile the IAM
+exchange client with the observed token holder. Current-token missing `tms` is
+a warning while SDK exchange/step-up is pending; require it on the resulting
+token at `granted_scope_stage="explicit_auth"`, not universally before exchange.
+Before the first explicit-auth TMS, run `sdk_tms_explicit_preflight` on the
+token client (`iam.clientId`): it needs `tms` as optional client scope, the
+KOBIL mobile browser-flow override, and it must hold the SDK's current token
+(one interactive login with it after activation through a separate enrollment
+client). See [TMS](references/tms.md) for the measured contract and failure
+signatures. For repeated TMS failures use `sdk_tms_auth_diagnose`: compare
+requested versus issued transaction scope, not a later ordinary claims lookup.
+On a decrypted SDK log, `sdk_log_markers(path)` reads the jwt-bearer proof,
+the key kind, the NOT_SUPPORTED attribution and explicit-TMS refusals
+deterministically instead of scanning by eye. Capture inherited
+error fields on confirmation/terminal events; status alone loses the cause.
+Before a physical iOS install, run `sdk_ios_signing_preflight` on the actual built
+.app for the customer-selected team and target device. Never guess missing
+values from templates or silently choose another signing team. These checks
+verify supplied metadata, not backend capability or runtime acceptance.
+See [deployment and artifact gates](references/deployment-preflight.md) for inputs,
+evidence limits and distinct error diagnostics.
 
 ## Resolve the customer's request
 

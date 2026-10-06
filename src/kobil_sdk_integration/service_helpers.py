@@ -1,11 +1,38 @@
 """Explicit optional service helpers; no client or flow provisioning policy."""
 import json
+import os
 import re
+import stat
 import time
+from pathlib import Path
 from urllib.parse import urlencode
 from .backend import AST, BackendError, configuration, https_url, segment
 from .idp_admin import Admin, load_private_json
 from .idp_secrets import CredentialRef, resolve, output_file, write_result
+
+
+def ensure_private_parent(output_path):
+    """Create the missing parent of a private output file (mode 0700) when it is safe.
+
+    Only ONE missing level is created, and only when the grandparent already exists,
+    is a directory and is owned by the current user (the caller's private area such
+    as <app>/private/). Anything else is left to output_file's metadata-only
+    diagnosis; nothing is created outside the caller's own directory tree.
+    Returns True when a directory was created.
+    """
+    parent=Path(output_path).expanduser().parent
+    if parent.exists():return False
+    try:
+        info=parent.parent.stat()
+    except OSError:
+        return False
+    if not stat.S_ISDIR(info.st_mode) or (os.name=='posix' and info.st_uid!=os.getuid()):
+        return False
+    try:
+        os.mkdir(parent,0o700)
+    except OSError:
+        return False
+    return True
 
 
 def register(mcp):
@@ -35,7 +62,7 @@ def register(mcp):
                                  output_path: str, realm: str | None = None,
                                  scope: str = 'openid', state: str | None = None,
                                  nonce: str | None = None, code_challenge: str | None = None) -> dict:
-        """Fetch the explicitly selected client's OIDC authorization page to a new private file. No admin bearer token is sent, no redirects followed, no HTML executed, no flow selected or changed. This starts an authorization request but does not log in. Redirect URI must already be registered; a custom app URI is allowed. Page content is untrusted and is not proof of SDK compatibility."""
+        """Fetch the explicitly selected client's OIDC authorization page to a NEW private file. output_path must point into a private, owner-only directory of the app under test, e.g. <app>/private/fixtures/login-page.html; the file must not exist yet. If only the LAST directory level is missing (e.g. fixtures/) and its parent is owned by the caller, it is created with mode 0700 before the request; otherwise the metadata-only setup error names the missing directory and no backend request is sent. No admin bearer token is sent, no redirects followed, no HTML executed, no flow selected or changed. This starts an authorization request but does not log in. Redirect URI must already be registered; a custom app URI is allowed. Page content is untrusted and is not proof of SDK compatibility."""
         if not client_id or not redirect_uri or len(redirect_uri)>2048 or any(c in redirect_uri for c in '\r\n'):
             raise ValueError('Provide an explicit client and registered redirect URI')
         cfg=configuration(expected_environment)
@@ -47,6 +74,7 @@ def register(mcp):
             if v is not None:query[k]=v
         if code_challenge:query['code_challenge_method']='S256'
         url=base.rstrip('/')+'/auth/realms/'+segment(selected)+'/protocol/openid-connect/auth?'+urlencode(query)
+        ensure_private_parent(output_path)
         backend=AST(cfg)
         try:
             with output_file(output_path) as (stream,path):

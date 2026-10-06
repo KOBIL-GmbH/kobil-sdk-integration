@@ -22,6 +22,148 @@ SSMS has a separate backend API and must not inherit these REST paths.
   registered through SetPushTokenEvent, and the backend's push request settings.
   See [TMS APIs](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-twv/idp/postman_usage/postman_tms).
 
+Before explicit-auth tests, run `sdk_deployment_preflight` with
+`require_explicit_authentication=true` and observed token-holder identity.
+At `granted_scope_stage="current"` (default), missing `tms` warns rather than
+blocks: the SDK may acquire it through token exchange/step-up. Recheck the actual
+resulting token using `granted_scope_stage="explicit_auth"`; missing `tms` or
+missing resulting-token scope evidence blocks that gate. See
+[deployment gates](deployment-preflight.md): scope `tms` is necessary at the
+observed AST decision, not sufficient proof of step-up/user authentication.
+A request for scope is not a grant. Never disable explicit auth
+or blindly create/assign a scope. Distinguish token-holder HTTP403/700000022,
+missing explicit scope 516004034 and freshness 516004035 using native HTTP detail,
+even when SDK result code is zero and no fatal event is emitted.
+
+## Explicit authentication: what the token client needs (measured 2026-10-01/05)
+
+The documented contract (KOBIL AST TMS Service documentation, parameter
+`requireExplicitAuthentication`): "The explicit authentication is done in terms
+of a dedicated OIDC scope. The scope to use is configured in the service's
+configuration. When a client wants to answer a TMS with this requirement set,
+it must retrieve a token with the configured scope from the IDP and use this
+token for sending the answer." The scope name is an AST deployment setting; on
+the inspected deployments it is `tms`. Read it from the AST configuration, do
+not assume it. The SDK fulfils the contract with a silent token exchange using
+`iam.clientId` (`process_transaction_task.cc:278-301`); it does not start an
+interactive step-up and does not re-check the issued scope. The IDP resolves
+the requested scope only against the client's configured default/optional
+client scopes and silently drops unknown names
+(`KobilTokenExchangeProvider.java:390-396`).
+
+Device-verified (SDK 15.16, IDP core 8.0.x, AST trusted-message-sign 0.40.0)
+on a physical Android device with a hardware-backed key and on an Android
+emulator with a software-backed key (`jwtSignKeySecurityPolicy =
+ALLOW_VIRTUAL_SMART_CARD`), each time with an isolated token client and no
+change to shared clients:
+
+| Token client state | Explicit TMS result |
+|---|---|
+| no `tms` client scope on the token client | exchange HTTP 200 without `tms`, AST HTTP 403 / SDK 516004034 |
+| `tms` optional scope, but the SDK token is still held by the enrollment client | IDP `TOKEN_EXCHANGE_ERROR not_allowed "client is not the token holder"`, SDK `FAILED/0` before the dialog, backend stays DOWNLOADED/TIMEOUT |
+| `tms` optional scope, holder fixed, realm default browser flow | interactive login `CANNOT_ACQUIRE_TOKEN_DATA`, IDP `X-KOBIL-ASTCLIENTDATA is missing` |
+| `tms` optional scope + holder + KOBIL mobile browser-flow override | `DisplayConfirmationResult OK`, `TransactionEnd OK`, AST **ACCEPTED**; reject path `USER_CANCEL` / **REJECTED** |
+
+Preconditions, all checked read-only by `sdk_tms_explicit_preflight`:
+
+1. `tms` assigned to the token client as **optional** client scope (not default,
+   not realm-wide, not on unrelated clients).
+2. The token client is the **holder of the SDK's current token** at the moment
+   the transaction is answered. Two situations break this:
+   - after activation through a separate enrollment client the SDK still holds
+     that client's token;
+   - after a cold start with `OfflineLogin` (signed-JWT or offline-token path)
+     the SDK's token is again issued to the enrollment client (`azp` =
+     enrollment client), even if an interactive login with the token client
+     happened in an earlier session.
+   One interactive login with the token client in the **current session** fixes
+   the holder; verify with the access-token claims (`azp` = token client)
+   before triggering an explicit transaction. The wrong holder fails silently:
+   SDK `FAILED/0` without a dialog, no SDK error code, backend never leaves
+   DOWNLOADED. Ordinary transactions are not affected.
+3. The token client carries the client-level browser-flow override used by the
+   KOBIL mobile clients (`authenticationFlowBindingOverrides.browser` =
+   "KOBIL Mobile Login"); kobil-support `idp_client_flow_override` sets it.
+
+Customer deployments usually do **not** have (1) and (3) on their login client
+unless explicit TMS was planned; the observed symptom there is exactly row one
+(403 / 516004034) while activation, login and ordinary TMS work. Treat it as a
+realm configuration decision for the customer, not as an SDK defect, and never
+change a customer realm from a test run.
+
+What this does not establish:
+
+- that the exchanged token represents a **fresh** user authentication. With
+  `requireFreshnessOfAuthentication` at the default 3600 s no biometric prompt
+  appears at confirmation; the exchange reuses the existing session. With
+  `0` (or any value below the confirmation latency) the transaction is created
+  but fails at confirmation with HTTP 403 "access token is N seconds older than
+  required", surfaced by the SDK only as 516004035 "A network error occurred".
+  The SDK has no step-up path for this today; whether `tms` should be bound to
+  a real re-authentication is a product decision, not a test defect.
+  How to report it: this is neither an SDK defect nor a customer configuration
+  error. If the customer only needs the scope check, use the default 3600 (or
+  `-1`). If the customer needs a **forced re-authentication at confirmation**,
+  say plainly that the current SDK/AST combination cannot deliver it and
+  escalate it as a product requirement; do not present a lower freshness value
+  as the fix for that requirement.
+- that any production integration sets `requireExplicitAuthentication=true`;
+  the inspected backend callers hard-code or default to `false`.
+
+Do not disable `requireExplicitAuthentication` and do not add `tms` as a
+default scope to make a run pass.
+
+## Diagnose requested versus issued transaction scope
+
+Use `sdk_tms_auth_diagnose` with scope names and numeric status/error codes only.
+For the inspected Maverick SDK implementation, transaction retrieval supplies
+`requiresExplicitAuthenticationScope`. The SDK compares that requirement with
+its token and internally requests OAuth token exchange using `iam.clientId` and
+the required scope. This happens before confirmation presentation; a token
+request after the decision can instead be the app's own claims lookup.
+Do not invent an extra application WebView step from missing ordinary scopes.
+Check this contract against the supplied SDK version.
+
+Record these separately: downloaded requirement, requested exchange scope,
+exchange HTTP result, issued token scopes, and AST decision result. An exchange
+HTTP200 can be followed by PATCH HTTP403/516004034: success at the token endpoint
+does not prove the requested scope was granted. Inspect the actual exchange
+result, not a later ordinary token. Compare users with the same client and
+explicit-auth policy; a prior non-explicit TMS pass is not a valid control.
+Successful activation does not prove transaction authorization, and a missing
+scope does not establish a user-creation defect. Do not recreate users or assign
+a default scope to force a pass. Correct issuance requires the documented
+server authentication contract.
+
+Capture inherited result error fields (`hasErrorOccurred`, `errorCode`,
+`errorDescription`, `reportId`, where exposed) on confirmation and terminal
+events. A Swift status39 may carry server516004034 and the full HTTP error;
+logging only status discards the diagnosis even with Warning/Runtime/Fatal
+listeners installed. Use the exact transaction ID and UTC timestamps to
+correlate SDK and backend traces. Claims lookup can update session lastAccess;
+that timestamp alone is not evidence of transaction exchange.
+
+Timeout and server cancellation are independently testable. A local timeout
+can terminate before the SDK sends a decision PATCH; accept/reject scope errors
+must not automatically block those separate gates. The inspected SDK's legacy
+explicit-auth integration tests are disabled, so do not present them or older
+non-explicit four-mode passes as current explicit-auth support evidence.
+
+## GettingStarted baseline versus explicit authentication
+
+The inspected bundled GettingStarted ApiHelper request builder uses
+`requireExplicitAuthentication=false` and `requireFreshnessOfAuthentication=-1`.
+Those ordinary transaction tests are not equivalent to an explicit-authentication
+scenario. Record these request settings with every result; match the reference
+policy for a labelled baseline comparison instead of changing users or clients.
+Do not silently relax a customer's explicit-authentication requirement or report
+a baseline pass as its fix. SDK/API-helper versions and backend must also be
+recorded. A different platform's helper binary requires its own verification.
+
+The inspected Swift sample logs success on confirmation/end without evaluating
+the event status, and UI tests can pass on navigation alone. Always check actual
+SDK status and backend terminal result rather than copying that success logic.
+
 ## App event sequence
 
 The [transaction guide](https://developer.kobil.com/docs/mcsdk-docs/shift-lite-kssidp/development/transaction/)
@@ -72,7 +214,13 @@ result may not be available while pending. While a transaction is not yet
 terminal, the backend result endpoint answers HTTP 412; `sdk_tms_result` maps
 this to an explicit lowercase status `pending` (observed 2026-09-29 during
 bounded-wait polling). Pending is not a backend error: keep bounded polling and
-never re-trigger because a result is still pending. Acceptance, rejection and expiry must
+never re-trigger because a result is still pending. Terminal transactions are
+not kept readable for long: recorded 2026-10-05, both the status and the result
+endpoint answered HTTP 404 for ACCEPTED, REJECTED, TIMEOUT and CANCELLED
+transactions about 2.5 h after completion. `sdk_tms_status` / `sdk_tms_result`
+map that to the lowercase status `not_found` (unknown id, routing, masked authorization or possible retention, not
+failure). Read status and result **directly after the SDK terminal event** and
+record them then; a later 404 proves nothing either way. Acceptance, rejection and expiry must
 be checked against the final server response, not inferred from an HTTP200,
 notification, button tap or local success banner. Cancellation and display-message
 operations are separate capabilities.
@@ -164,3 +312,5 @@ On the same iOS device tuple, foreground timeout passed: backend TIMEOUT, SDK te
 On the same iOS device tuple, foreground cancel passed: backend CANCELLED, SDK terminal event recorded and dialog/timer cleared. Server cancellation completed without a local decision.
 
 For iOS the observed terminal status values were 0 (accept), 3 (reject), 4 (timeout) and 53 (server cancellation). Each accept/reject/timeout submitted one local decision; cancellation submitted none. Returning login passed before every case. Disable debug scenario arguments after testing; normal confirmations require user input. Background push, explicit re-authentication and network interruption remain unverified.
+
+Retention intervals are deployment-specific; the observed delay is not a universal guarantee. A 404 does not by itself establish the cause.
