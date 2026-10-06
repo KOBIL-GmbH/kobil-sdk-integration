@@ -473,7 +473,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=43,<51" },
     { name = "httpx", specifier = ">=0.27,<1" },
     { name = "keyring", specifier = ">=25,<26" },
-    { name = "mcp", specifier = ">=1.0,<2" },
+    { name = "mcp", specifier = ">=1.30,<2" },
     { name = "paramiko", specifier = ">=3.5,<5" },
 ]
 

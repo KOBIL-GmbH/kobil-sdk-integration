@@ -8,7 +8,10 @@
 
 ## Unreleased
 
-(no changes yet)
+- Add project-bound IDE adapter preparation for native VS Code/Xcode plugins and Android Studio Streamable HTTP, with paired skill/reference documentation and explicit development or full-commit release selection.
+- Add authenticated loopback HTTP using the MCP library, private token-file validation, Host/Origin checks and foreground process ownership. Require MCP library 1.30 or newer.
+- Replace generic connection setup failures with redacted diagnostic categories while preserving modern and legacy profile fields.
+- Add adapter preservation, real-process isolation, HTTP lifecycle/port collision and authentication regression tests. Actual IDE agent/build qualification remains pending.
 
 ## 0.7.0 — 2026-10-05
 
