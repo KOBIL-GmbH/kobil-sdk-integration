@@ -1239,6 +1239,118 @@
         "skills/kobil-sdk/references/app-flow-sources.md"
       ],
       "qualification": "Candidate-bundled guidance and stated scenario evidence only; deployment and SDK versions must be qualified, not inferred from MCP version."
+    },
+    {
+      "id": "ios-twv-pem-der",
+      "prompt": "iOS KSTrustedWebView 9.7.3000479. SDK Start succeeds. The approved X1+X2 PEM asset covers the observed chain. App base64-decodes each PEM block into Data and passes that array to certsDataForValidation. SecTrust and hostname logs are OK, but onURLBlocked reports reason 1, subsystem 1500000, errorCode 0. Explain the likely fault, exact change, and how to verify it before activation.",
+      "expect_all": [
+        "PEM",
+        "DER",
+        "certsDataForValidation"
+      ],
+      "review_criteria": [
+        "Diagnose the supplied DER conversion as the likely version-qualified fault, prescribe unchanged approved PEM bytes, and distinguish SDK Start/system trust from TWV validation. Treat reason 1 as failure despite errorCode zero; verify positive/negative cases with real secure WebView before consuming an activation code."
+      ],
+      "source_paths": [
+        "skills/kobil-sdk/references/native-integration.md",
+        "src/kobil_sdk_integration/tls_chain.py"
+      ],
+      "qualification": "Actual SDK evidence applies to iOS KSTrustedWebView 9.7.3000479; hypothetical scenarios are comprehension tests, not runtime certification."
+    },
+    {
+      "id": "ios-twv-root-not-encoding",
+      "prompt": "Same iOS WebView version, but now certsDataForValidation contains unchanged approved PEM bytes. Only root X1 is packaged; iOS builds to self-signed X2. System trust passes and the WebView rejects the chain. Should we apply a PEM/DER conversion fix or obtain another approved root?",
+      "expect_all": [
+        "X2",
+        "PEM"
+      ],
+      "review_criteria": [
+        "Do not reflexively repeat the encoding fix when bytes already are PEM. Identify missing authentic X2 coverage for the stated mobile chain, obtain fingerprint-checked approved anchor, preserve PEM format and verification, and rerun the real WebView without treating a desktop chain as proof."
+      ],
+      "source_paths": [
+        "skills/kobil-sdk/references/native-integration.md",
+        "src/kobil_sdk_integration/tls_chain.py"
+      ],
+      "qualification": "Actual SDK evidence applies to iOS KSTrustedWebView 9.7.3000479; hypothetical scenarios are comprehension tests, not runtime certification."
+    },
+    {
+      "id": "ios-twv-external-query-collision",
+      "prompt": "After certificate and hostname validation succeed, the login page stays blank. urlExternalWhiteList contains [\"https://kobil/OpenIdRedirectUri\", \"kobil\"]. The initial URL is https://idp.example/auth?client_id=Mobile&redirect_uri=https%3A%2F%2Fkobil%2FOpenIdRedirectUri . Logs say external URL found; shouldHandleExternalUrl returns false. What is cancelled and how should these rules be written?",
+      "expect_all": [
+        "query",
+        "anchored"
+      ],
+      "review_criteria": [
+        "Explain full-URL regex matching including encoded query, bare kobil classifying initial authorization as external, and false delegate result cancelling it. Require escaped anchored exact callback pattern, bounded internal origin rule and state validation; test initial URL nonmatch, real callback match and lookalike rejection without broad wildcards."
+      ],
+      "source_paths": [
+        "skills/kobil-sdk/references/native-integration.md",
+        "src/kobil_sdk_integration/tls_chain.py"
+      ],
+      "qualification": "Actual SDK evidence applies to iOS KSTrustedWebView 9.7.3000479; hypothetical scenarios are comprehension tests, not runtime certification."
+    },
+    {
+      "id": "ios-twv-preflight-not-runtime",
+      "prompt": "sdk_tls_chain_check returns all_hosts_ok=true and sdk_deployment_preflight returns configuration_checked. The app has not opened a WebView yet. May I declare TLS integration finished and consume the activation code? State what these results prove and what they leave open.",
+      "expect_all": [
+        "runtime",
+        "WebView"
+      ],
+      "review_criteria": [
+        "Reject runtime certification from configuration/asset coverage. State that encoded bytes passed to API, mobile path, certificate validity/hostname checks and page rendering remain unproven; request a bounded actual trusted WebView read-only load and negative case before consuming the code, without disabling validation."
+      ],
+      "source_paths": [
+        "skills/kobil-sdk/references/native-integration.md",
+        "src/kobil_sdk_integration/tls_chain.py"
+      ],
+      "qualification": "Actual SDK evidence applies to iOS KSTrustedWebView 9.7.3000479; hypothetical scenarios are comprehension tests, not runtime certification."
+    },
+    {
+      "id": "ios-twv-same-name-other-key",
+      "prompt": "The server chain ends in CA subject CN=Root Example. Our asset also says CN=Root Example, but it has a different public key and fingerprint. Is that an acceptable cross-signed variant? What should the MCP check report?",
+      "expect_all": [
+        "key"
+      ],
+      "review_criteria": [
+        "Reject the different-key certificate despite matching subject. Require SPKI/public-key equality for a same-subject variant and report missing/unmatched coverage, while noting that even equal-key coverage is not path, signature, hostname or runtime validation."
+      ],
+      "source_paths": [
+        "skills/kobil-sdk/references/native-integration.md",
+        "src/kobil_sdk_integration/tls_chain.py"
+      ],
+      "qualification": "Actual SDK evidence applies to iOS KSTrustedWebView 9.7.3000479; hypothetical scenarios are comprehension tests, not runtime certification."
+    },
+    {
+      "id": "ios-twv-unknown-release",
+      "prompt": "We use KSTrustedWebView 12.0, not the version in your verified example. Should we automatically rewrite every SDK certificate input, including Start and Android, to PEM and call that qualified? What evidence is needed?",
+      "expect_all": [
+        "version",
+        "PEM"
+      ],
+      "review_criteria": [
+        "Refuse to generalize iOS 9.7.3000479 evidence to unverified release 12, Android or every Start API. Inspect actual delivery contract and perform secure positive/negative runtime checks; explicitly preserve version uncertainty and distinguish WebView inputs from other certificate APIs."
+      ],
+      "source_paths": [
+        "skills/kobil-sdk/references/native-integration.md",
+        "src/kobil_sdk_integration/tls_chain.py"
+      ],
+      "qualification": "Actual SDK evidence applies to iOS KSTrustedWebView 9.7.3000479; hypothetical scenarios are comprehension tests, not runtime certification."
+    },
+    {
+      "id": "ios-twv-cross-sign-same-key",
+      "prompt": "The server provides a cross-signed CA certificate and our approved asset has its self-signed variant. The subjects and SPKI SHA-256 are identical, but certificate fingerprints differ. Must we reject the asset or obtain an identical certificate? Give the expected MCP coverage result and its limits.",
+      "expect_all": [
+        "same_subject_and_key_variant",
+        "SPKI"
+      ],
+      "review_criteria": [
+        "Accept this as a same-subject and same-key coverage variant despite differing certificate fingerprints; do not demand certificate fingerprint equality or replace an approved root purely to match the cross-sign. Name matched_anchors match same_subject_and_key_variant and separate coverage from actual path, signature, hostname and runtime acceptance."
+      ],
+      "source_paths": [
+        "src/kobil_sdk_integration/tls_chain.py",
+        "skills/kobil-sdk/references/native-integration.md"
+      ],
+      "qualification": "Tests recognition of cross-signed variants, not certificate-path or runtime validation."
     }
   ]
 }

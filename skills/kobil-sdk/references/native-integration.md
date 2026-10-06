@@ -288,10 +288,21 @@ case and a deliberately wrong/empty trust case which must fail visibly. Keep
 certificate and hostname checks enabled. Record SDK version and installed-asset
 evidence; successful SDK Start is a separate checkpoint.
 
+
+Cross-signed variants may have DIFFERENT certificate SHA-256 fingerprints while
+sharing the SAME subject and public key (SPKI SHA-256). Do not require equal
+certificate fingerprints to recognize those variants. sdk_tls_chain_check reports
+matched_anchors.match=exact_certificate for the identical certificate, or
+same_subject_and_key_variant when subject and SPKI match despite different
+certificate fingerprints. Same subject with a different SPKI remains in
+missing_anchors and all_hosts_ok is false. Neither match establishes runtime or
+certificate-path validation; obtain anchors through an approved authenticated
+source and verify their provenance separately.
+
 ## iOS trusted WebView navigation rules (verified 2026-10-06)
 
 KSTrustedWebView 9.7 checks whitelist regexes against the full URL, including
-its query, and asks shouldHandleExternalUrl when an external rule matches.
+its literal query (no URL decoding by the regex), and asks shouldHandleExternalUrl when an external rule matches.
 Never put a bare redirect hostname such as `kobil` in urlExternalWhiteList:
 it can match redirect_uri embedded inside the IDP authorization URL. Returning
 false from that delegate then cancels the initial page after TLS succeeds.

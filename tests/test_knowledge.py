@@ -320,7 +320,8 @@ class KnowledgeTests(unittest.TestCase):
         for topic in ('setup', 'activation'):
             text = '\n'.join(get_topic(topic, 'ios')['sequence'])
             for term in ('9.7.3000479', 'PEM file bytes unchanged', 'not validate signatures',
-                         'DER fails', 'errorCode (0 here)', 'read-only HTTPS page'):
+                         'DER fails', 'errorCode (0 here)', 'read-only HTTPS page',
+                         'same_subject_and_key_variant', 'DIFFERENT certificate SHA-256'):
                 self.assertIn(term, text, (topic, term))
 
     def test_ios_external_allowlist_does_not_classify_initial_auth_as_callback(self):
