@@ -13,6 +13,13 @@ class BackendError(RuntimeError):
     pass
 
 
+class ConfigurationError(BackendError):
+    """Stable, redacted setup diagnostic. Never include profile contents."""
+    def __init__(self, code, hint):
+        self.code = code
+        super().__init__(f'{code}: {hint}')
+
+
 def segment(value):
     if not isinstance(value, str) or not value.strip() or len(value) > 256:
         raise ValueError('Expected a non-empty identifier of at most 256 characters')
@@ -75,6 +82,9 @@ def admin_reference(admin):
 
 def validate_configuration(cfg, expected_environment=None):
     """Validate profile data without reading credential values."""
+    if isinstance(cfg, dict) and 'schema_version' in cfg and (
+            type(cfg['schema_version']) is not int or cfg['schema_version'] != 2):
+        raise ConfigurationError('CONNECTION_SCHEMA_UNSUPPORTED', 'Use a supported connection schema')
     try:
         if set(cfg)-{'environment','tenant','ast_url','token_env','oauth','services','admin','schema_version','auth'}:raise ValueError()
         segment(cfg['environment']); segment(cfg['tenant']); https_url(cfg['ast_url'])
@@ -92,7 +102,7 @@ def validate_configuration(cfg, expected_environment=None):
             if not isinstance(admin['username'],str) or not re.fullmatch(r'[A-Za-z0-9._@+-]{1,120}',admin['username']):raise ValueError()
             admin_reference(admin)
     except Exception:
-        raise BackendError('Invalid connection configuration; see backend setup documentation') from None
+        raise ConfigurationError('CONNECTION_FIELDS_INVALID', 'Check connection fields and credential references in backend setup documentation') from None
     if expected_environment is not None and expected_environment != cfg['environment']:
         raise ValueError('Active environment mismatch')
     return cfg
@@ -131,19 +141,33 @@ def select_environment(connection_path, expected_current_environment, expected_e
 
 
 def _read_configuration(expected_environment=None, path=None):
+    selected = path or os.environ.get('KOBIL_SDK_CONNECTION')
+    if not selected:
+        raise ConfigurationError('CONNECTION_NOT_SELECTED', 'Select a connection file for this project')
     try:
-        source=Path(path or os.environ['KOBIL_SDK_CONNECTION']).expanduser()
-        cfg=json.loads(source.read_text())
-        if isinstance(cfg,dict) and set(cfg)=={'age_environment'}:
-            from .age_store import read_document
-            ref=cfg['age_environment']
-            if not isinstance(ref,dict) or set(ref)!={'store','identity','environment'}:raise ValueError()
-            if expected_environment is not None and expected_environment!=ref['environment']:
-                raise ValueError('Active environment mismatch')
-            cfg=read_document(ref['store'],ref['identity']).get('environments',{}).get(ref['environment'])
-            if not isinstance(cfg,dict) or cfg.get('environment')!=ref['environment']:raise ValueError()
-    except Exception:
-        raise BackendError('Invalid connection configuration; see backend setup documentation') from None
+        source = Path(selected).expanduser()
+        raw = source.read_text(encoding='utf-8')
+    except FileNotFoundError:
+        raise ConfigurationError('CONNECTION_FILE_NOT_FOUND', 'Reselect an existing connection file') from None
+    except (OSError, ValueError, TypeError):
+        raise ConfigurationError('CONNECTION_FILE_UNREADABLE', 'Check local connection file access') from None
+    try:
+        cfg = json.loads(raw)
+    except (ValueError, TypeError):
+        raise ConfigurationError('CONNECTION_JSON_INVALID', 'Repair the connection JSON locally') from None
+    if isinstance(cfg, dict) and set(cfg) == {'age_environment'}:
+        from .age_store import read_document
+        ref = cfg['age_environment']
+        if not isinstance(ref, dict) or set(ref) != {'store', 'identity', 'environment'}:
+            raise ConfigurationError('CONNECTION_FIELDS_INVALID', 'Check the age selector fields')
+        if expected_environment is not None and expected_environment != ref['environment']:
+            raise ConfigurationError('CONNECTION_ENVIRONMENT_MISMATCH', 'Selected environment does not match the requested environment')
+        try:
+            cfg = read_document(ref['store'], ref['identity']).get('environments', {}).get(ref['environment'])
+        except Exception:
+            raise ConfigurationError('CONNECTION_AGE_UNAVAILABLE', 'Check encrypted bundle access and matching local identity') from None
+        if not isinstance(cfg, dict) or cfg.get('environment') != ref['environment']:
+            raise ConfigurationError('CONNECTION_ENVIRONMENT_MISSING', 'Select an environment contained in the imported bundle')
     return validate_configuration(cfg,expected_environment)
 
 

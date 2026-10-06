@@ -134,3 +134,11 @@ clients; inspect `sdk_service_catalog` rather than assuming older tool names.
 Legacy connection profiles remain supported. Native keystore and encrypted age
 providers are optional; see [credentials](credentials.md). No SDK binaries or
 credentials are included. Existing editor registrations are not upgraded by a tag.
+
+## IDE adapter development preview
+
+See [IDE setup](ide-setup.md) for project-bound VS Code/Xcode plugin preparation
+and Android Studio's authenticated local HTTP adapter. These adapters require
+separate host qualification; preparing their files does not install them in an
+IDE or validate an app. Use a verified full commit pin for a clean release
+checkout, or explicitly label a source checkout as development.
