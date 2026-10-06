@@ -204,7 +204,7 @@ class IdpToolCatalogTests(unittest.TestCase):
                     self.assertTrue(path == '' or path.startswith('/') or path.startswith('[global]/') or path.startswith('[direct]/'), (name, path))
                     self.assertNotIn('?', path, (name, path))
                 writes = [m for m, _ in calls if m in WRITE_METHODS]
-                self.assertLessEqual(len(writes), 2, f'{name}: {len(writes)} write calls in one invocation - possible retry')
+                self.assertLessEqual(len(writes), 1, f'{name}: {len(writes)} write calls in one invocation - possible retry')
                 if result is not None:
                     text = json.dumps(result, default=str)
                     self.assertNotIn(SECRET, text, f'{name} echoes a secret-like input')
@@ -231,7 +231,32 @@ class IdpToolCatalogTests(unittest.TestCase):
         catalog = self._run_catalog()
         for name, entry in catalog.items():
             writes = [c for c in entry['calls'] if c[0] in WRITE_METHODS]
-            self.assertLessEqual(len(writes), 2, (name, writes))
+            self.assertLessEqual(len(writes), 1, (name, writes))
+
+    def test_uncertain_write_failure_is_never_retried(self):
+        """Every minimally reachable mutation fails after dispatch; do not retry it."""
+        expected = json.loads(SNAPSHOT.read_text())
+        names = [name for name, entry in expected.items()
+                 if any(method in WRITE_METHODS for method, _ in entry['calls'])]
+        self.assertGreater(len(names), 30)
+        for error_type in (TimeoutError, BackendError):
+            class FailingCalls(list):
+                def append(self, call):
+                    super().append(call)
+                    if call[0] in WRITE_METHODS:
+                        raise error_type('uncertain write result')
+            for name in names:
+                with self.subTest(tool=name, failure=error_type.__name__), tempfile.TemporaryDirectory() as td:
+                    calls = FailingCalls()
+                    FakeAdmin.calls = calls
+                    try:
+                        _invoke(self.tools[name][1], Path(td))
+                    except (TimeoutError, BackendError):
+                        pass
+                    else:
+                        self.fail(f'{name} concealed an uncertain write failure')
+                    writes = [c for c in calls if c[0] in WRITE_METHODS]
+                    self.assertEqual(len(writes), 1, f'{name} retried or skipped the mutation')
 
 
 if __name__ == '__main__':

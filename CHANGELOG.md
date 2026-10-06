@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — knowledge interrogation tests
+
+- Expand blind questions to 46 scenarios with evaluator-only semantic criteria and reader-only comprehension/retrieval packets. Add answer-bound review validation and knowledge-discovery regressions.
+- Inject uncertain IDP write failures to verify no retry and tighten minimal-call write counts.
+- Add mixed-log correlation regressions; reject ambiguous SignedJWT evidence, report per-attempt outcomes, and avoid inferring a specific cause from generic CSR or exchange errors.
+
 ## Unreleased
 
 (no changes yet)

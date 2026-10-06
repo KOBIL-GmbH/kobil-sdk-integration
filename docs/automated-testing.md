@@ -159,3 +159,7 @@ This addition does not qualify Flutter or standalone IDPSDK and does not rerun
 prior device acceptance. Native classic MCSDK/KSSIDP knowledge remains explicitly
 scoped by each recipe. It adds one topic to the existing three knowledge tools;
 it does not launch device tests or mutate a backend when retrieved.
+
+## Knowledge decisions before runtime tests
+
+Run the [knowledge interrogation workflow](knowledge-interrogation.md) before building apps: isolated reader-only questions, MCP knowledge retrieval, separately held expected answers, and answer-bound semantic review. Keyword checks alone are not acceptance.

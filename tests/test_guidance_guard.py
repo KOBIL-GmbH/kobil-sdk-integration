@@ -23,7 +23,8 @@ from kobil_sdk_integration.knowledge_api import get_topic
 ROOT = Path(__file__).resolve().parents[1]
 SKILL = ROOT / 'skills' / 'kobil-sdk'
 def _norm(text):
-    return re.sub(r'\s+', ' ', text)
+    # collapse whitespace and drop markdown code ticks so formatting cannot hide a fact
+    return re.sub(r'\s+', ' ', text.replace('`', ''))
 
 
 ASSERTIONS = json.loads((Path(__file__).parent / 'guidance_assertions.json').read_text(encoding='utf-8'))
@@ -80,6 +81,21 @@ class GuidanceAssertionTests(unittest.TestCase):
         text = _norm((SKILL / 'SKILL.md').read_text(encoding='utf-8'))
         for phrase in ASSERTIONS['skill_md_must_contain']:
             self.assertIn(phrase, text, phrase)
+
+    def test_cross_file_consistency(self):
+        """The same measured fact must be stated wherever the agent may read it."""
+        def location_text(loc):
+            kind, _, name = loc.partition(':')
+            if kind == 'topic':
+                return _norm(json.dumps(get_topic(name, 'android', sdk_version='unverified-release'), ensure_ascii=False))
+            if kind == 'ref':
+                return _norm((SKILL / 'references' / name).read_text(encoding='utf-8'))
+            if kind == 'skill':
+                return _norm((SKILL / 'SKILL.md').read_text(encoding='utf-8'))
+            raise ValueError(loc)
+        for rule in ASSERTIONS['cross_file']['rules']:
+            for loc in rule['in']:
+                self.assertTrue(rule['phrase'] in location_text(loc), f"'{rule['phrase']}' missing in {loc}")
 
 
 class LeakScanTests(unittest.TestCase):

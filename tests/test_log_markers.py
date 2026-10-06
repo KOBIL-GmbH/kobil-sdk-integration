@@ -68,6 +68,65 @@ class SignedJwtMarkerTests(unittest.TestCase):
         self.assertFalse(jwt['proven'])
         self.assertIsNone(jwt['proof'])
 
+    def test_unrelated_response_uuid_cannot_prove_grant(self):
+        text = _read('software_key_signedjwt.txt')
+        lines = text.splitlines()
+        lines[-1] = lines[-1].replace('e6c08d66-2e65-44c7-9a65-274e8840782a',
+                                     '00000000-0000-0000-0000-000000000000')
+        self.assertFalse(lm.signed_jwt_grant('\n'.join(lines))['proven'])
+
+    def test_response_before_request_cannot_prove_grant(self):
+        lines = _read('software_key_signedjwt.txt').splitlines()
+        lines[-2], lines[-1] = lines[-1], lines[-2]
+        self.assertFalse(lm.signed_jwt_grant('\n'.join(lines))['proven'])
+
+    def test_unrelated_endpoint_200_cannot_prove_grant(self):
+        text = _read('software_key_signedjwt.txt').replace('/protocol/openid-connect/token', '/userinfo')
+        self.assertFalse(lm.signed_jwt_grant(text)['proven'])
+
+    def test_later_unrelated_200_does_not_override_failed_grant(self):
+        text = _read('software_key_signedjwt.txt').replace('Success 200', 'Failed 401')
+        extra = '\n'.join(_read('software_key_signedjwt.txt').splitlines()[-2:])
+        extra = extra.replace('e6c08d66-2e65-44c7-9a65-274e8840782a',
+                              '00000000-0000-0000-0000-000000000000')
+        self.assertFalse(lm.signed_jwt_grant(text + '\n' + extra)['proven'])
+
+    def test_interleaved_other_operation_makes_event_link_ambiguous(self):
+        lines = _read('software_key_signedjwt.txt').splitlines()
+        lines.insert(-2, '[2026-10-05 19:25:29.226500] Received Event: [event=RefreshToken, client_id=other-client]')
+        self.assertFalse(lm.signed_jwt_grant('\n'.join(lines))['proven'])
+
+    def test_failed_then_successful_attempt_reports_successful_attempt(self):
+        first = _read('software_key_signedjwt.txt').replace('Success 200', 'Failed 401')
+        second = _read('software_key_signedjwt.txt').replace(
+            'e6c08d66-2e65-44c7-9a65-274e8840782a', '00000000-0000-0000-0000-000000000001')
+        result = lm.signed_jwt_grant(first + '\n' + second)
+        self.assertTrue(result['proven'])
+        self.assertTrue(result['latest_attempt_proven'])
+        self.assertEqual([a['proven'] for a in result['attempts']], [False, True])
+        self.assertEqual(result['proof']['uuid'], '00000000-0000-0000-0000-000000000001')
+
+    def test_successful_then_failed_attempt_does_not_claim_latest_success(self):
+        first = _read('software_key_signedjwt.txt')
+        second = first.replace('Success 200', 'Failed 401').replace(
+            'e6c08d66-2e65-44c7-9a65-274e8840782a', '00000000-0000-0000-0000-000000000001')
+        result = lm.signed_jwt_grant(first + '\n' + second)
+        self.assertTrue(result['proven'])
+        self.assertFalse(result['latest_attempt_proven'])
+        self.assertEqual([a['proven'] for a in result['attempts']], [True, False])
+
+    def test_interleaved_before_response_is_not_proof(self):
+        lines = _read('software_key_signedjwt.txt').splitlines()
+        lines.insert(-1, '[2026-10-05 19:25:29.230000] Received Event: [event=Other]')
+        self.assertFalse(lm.signed_jwt_grant('\n'.join(lines))['proven'])
+
+    def test_reused_request_id_cannot_reuse_an_older_response(self):
+        first = _read('software_key_signedjwt.txt')
+        unfinished = '\n'.join(first.splitlines()[-3:-1])
+        result = lm.signed_jwt_grant(first + '\n' + unfinished)
+        self.assertFalse(result['latest_attempt_proven'])
+        self.assertFalse(result['attempts'][-1]['proven'])
+
 
 class StartNotSupportedTests(unittest.TestCase):
     def test_bcpkix_trace_is_attributed_to_missing_dependency_not_hardware(self):
@@ -86,6 +145,12 @@ class StartNotSupportedTests(unittest.TestCase):
     def test_clean_log_reports_none(self):
         self.assertEqual(lm.start_not_supported(_read('hardware_key_signedjwt.txt'))['cause'], 'none')
 
+    def test_generic_csr_exception_is_not_a_missing_dependency(self):
+        result = lm.start_not_supported('generatePKCS10SignRequest - exception occurred: '
+                                        'InvalidAlgorithmParameterException\nStartResultEvent status=46')
+        self.assertEqual(result['cause'], 'undetermined')
+        self.assertFalse(result['missing_classes'])
+
 
 class ExplicitTmsMarkerTests(unittest.TestCase):
     def test_holder_scope_and_freshness_verdicts(self):
@@ -93,6 +158,12 @@ class ExplicitTmsMarkerTests(unittest.TestCase):
         self.assertEqual(lm.explicit_tms("HTTP 403 Required explicit authentication scope 'tms' is missing")['verdict'], 'missing_explicit_scope')
         self.assertEqual(lm.explicit_tms('error 516004035 access token is 85 seconds older than required')['verdict'], 'freshness_too_strict')
         self.assertEqual(lm.explicit_tms(_read('software_key_signedjwt.txt'))['verdict'], 'none')
+
+    def test_generic_exchange_denial_is_not_a_holder_diagnosis(self):
+        result = lm.explicit_tms('TOKEN_EXCHANGE_ERROR not_allowed')
+        self.assertEqual(result['verdict'], 'undetermined_exchange_denial')
+        self.assertFalse(result['token_holder_lines'])
+        self.assertEqual(result['exchange_denial_lines'], [1])
 
 
 class ToolTests(unittest.TestCase):

@@ -33,7 +33,9 @@
         "FAILED/0",
         "never change a customer realm",
         "product decision",
-        "escalate"
+        "escalate",
+        "not_found",
+        "directly after the SDK terminal event"
       ],
       "must_not_contain": []
     }
@@ -56,7 +58,8 @@
       "must_contain": [
         "holder of the SDK's current token",
         "never change a customer realm",
-        "escalate it as a product requirement"
+        "escalate it as a product requirement",
+        "not_found"
       ]
     }
   },
@@ -65,5 +68,87 @@
     "sdk_tms_explicit_preflight",
     "CLEAR_ALL",
     "Never downgrade a deployment policy silently"
-  ]
+  ],
+  "cross_file": {
+    "_comment": "Each phrase must be present in every listed location (whitespace-normalised). Guards tms.md <-> tms.json <-> login.json <-> SKILL.md against drifting apart.",
+    "rules": [
+      {
+        "phrase": "KOBIL Mobile Login",
+        "in": [
+          "topic:tms",
+          "ref:tms.md",
+          "ref:signing-policy.md"
+        ]
+      },
+      {
+        "phrase": "516004034",
+        "in": [
+          "topic:tms",
+          "ref:tms.md",
+          "ref:signing-policy.md"
+        ]
+      },
+      {
+        "phrase": "516004035",
+        "in": [
+          "topic:tms",
+          "ref:tms.md",
+          "ref:signing-policy.md"
+        ]
+      },
+      {
+        "phrase": "cold start with OfflineLogin",
+        "in": [
+          "topic:tms",
+          "ref:tms.md",
+          "topic:login"
+        ]
+      },
+      {
+        "phrase": "ALLOW_VIRTUAL_SMART_CARD",
+        "in": [
+          "topic:login",
+          "ref:signing-policy.md",
+          "skill"
+        ]
+      },
+      {
+        "phrase": "CLEAR_ACCESS_AND_REFRESH",
+        "in": [
+          "topic:login",
+          "skill"
+        ]
+      },
+      {
+        "phrase": "bcpkix",
+        "in": [
+          "topic:login",
+          "ref:signing-policy.md"
+        ]
+      },
+      {
+        "phrase": "sdk_tms_explicit_preflight",
+        "in": [
+          "topic:login",
+          "ref:signing-policy.md",
+          "skill",
+          "ref:tms.md"
+        ]
+      },
+      {
+        "phrase": "sdk_log_markers",
+        "in": [
+          "ref:signing-policy.md",
+          "skill"
+        ]
+      },
+      {
+        "phrase": "not_found",
+        "in": [
+          "topic:tms",
+          "ref:tms.md"
+        ]
+      }
+    ]
+  }
 }
