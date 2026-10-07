@@ -3,6 +3,7 @@
 ## Unreleased — TLS trust-asset gate
 
 - `sdk_tls_chain_check` now also reports, per host, the leaf hostname match (subjectAltName only), validity of the served leaf and matched asset anchors with an `expiry_warning_days` window (default 14), and a simplified desktop path check that follows the KOBIL `trusted_certs.pem` procedure (the file alone must reach a self-signed root). New per-host `problems`/`warnings` and statuses `hostname_mismatch`, `expired`, `path_invalid`; mobile anchor coverage (`missing_anchors`) is unchanged and still stricter than a desktop client. Existing result fields are kept.
+- `sdk_tls_chain_check(platform="ios"|"android")`: iOS (default) keeps the strict anchor rule; Android lets the desktop path decide and reports the strict gap as a warning (shared native OpenSSL validator per source review, not device-verified). Checked against the GettingStarted configurations: 33 of 34 reported gaps were Android-lenient cases.
 - Tests: fixture leaf carries a subjectAltName and validity is relative to the real clock; new cases for hostname, wildcard, expiry, intermediate-only/leaf-only/CA-copy assets, forged signatures, malformed PEM, concatenated DER and the live fetch path against a loopback TLS server.
 
 ## Unreleased — knowledge interrogation tests

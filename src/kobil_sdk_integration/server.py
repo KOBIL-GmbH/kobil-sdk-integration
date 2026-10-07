@@ -298,7 +298,8 @@ def sdk_config_write(expected_environment: str, certificate_paths: list[str], ou
 
 
 @mcp.tool()
-def sdk_tls_chain_check(hosts: list[str], trust_asset_path: str, expiry_warning_days: int = 14) -> dict:
+def sdk_tls_chain_check(hosts: list[str], trust_asset_path: str, expiry_warning_days: int = 14,
+                        platform: str = "ios") -> dict:
     """Compare the TLS chains servers actually serve against a local trust asset.
 
     Run this BEFORE any device round whenever trust anchors are prepared for

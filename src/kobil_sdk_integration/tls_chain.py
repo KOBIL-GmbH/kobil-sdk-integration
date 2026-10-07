@@ -26,6 +26,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 
 DEFAULT_EXPIRY_WARNING_DAYS = 14
 _MAX_PATH_DEPTH = 9
+PLATFORMS = ("ios", "android")
 _PROBLEM_ORDER = ("missing_anchors", "hostname_mismatch", "expired", "path_invalid")
 
 _PEM_MARKER = b"-----BEGIN CERTIFICATE-----"
@@ -58,7 +59,13 @@ VERIFICATION_NOTE = (
     "KSTrustedWebView or SDK runtime acceptance. An ok result therefore means: asset coverage, "
     "hostname, validity and desktop path agree at the time of the check, nothing more. "
     "For iOS KSTrustedWebView 9.7.3000479, certsDataForValidation needs PEM "
-    "trust-store bytes; do not convert those bytes to DER."
+    "trust-store bytes; do not convert those bytes to DER. "
+    "platform=ios (default) applies the strict anchor rule above. platform=android lets the "
+    "desktop path result decide, because the Android WebView proxy and the SDK core hand the "
+    "PEM to the same native OpenSSL validator (source review of the mirrored sources; "
+    "not verified on a device): a chain ending at a self-signed root in the file is accepted "
+    "even when the server serves a cross-signed top CA, and the strict gap is reported as a "
+    "warning only."
 )
 
 
@@ -277,7 +284,7 @@ def _validity(chain_certificates, chain, matched_asset, now, warning_days):
     return {"expired": expired, "expiring_soon": expiring_soon, "warning_days": warning_days}
 
 
-def _check_host(entry, asset_certificates, fetch, now, warning_days):
+def _check_host(entry, asset_certificates, fetch, now, warning_days, strict_anchors=True):
     host, port = parse_host(entry)
     der_chain = fetch(host, port)
     chain_certificates = []
@@ -320,8 +327,12 @@ def _check_host(entry, asset_certificates, fetch, now, warning_days):
     path = desktop_path_check(chain_certificates, asset_certificates, now)
     warnings = []
     problems = []
-    if missing:
+    if missing and strict_anchors:
         problems.append("missing_anchors")
+    elif missing:
+        warnings.append("Strict iOS anchor coverage is not met (missing self-signed variant of: %s); "
+                        "Android validates the path over the file instead, so the desktop path result decides. "
+                        "iOS would need these anchors." % ", ".join(missing))
     if not hostname["matches"]:
         problems.append("hostname_mismatch")
     must_be_valid = {chain[0]["subject"]} | {e["subject"] for _, e in matched_asset}
@@ -353,7 +364,9 @@ def _check_host(entry, asset_certificates, fetch, now, warning_days):
 
 
 def check(hosts, trust_asset_path, fetch=fetch_served_chain, now=None,
-          expiry_warning_days=DEFAULT_EXPIRY_WARNING_DAYS):
+          expiry_warning_days=DEFAULT_EXPIRY_WARNING_DAYS, platform="ios"):
+    if platform not in PLATFORMS:
+        raise ValueError("platform must be one of: " + ", ".join(PLATFORMS))
     if isinstance(hosts, str):
         hosts = [hosts]
     if not isinstance(hosts, list) or not hosts or len(hosts) > 50:
@@ -370,7 +383,8 @@ def check(hosts, trust_asset_path, fetch=fetch_served_chain, now=None,
     for entry in hosts:
         host, port = parse_host(entry)  # reject malformed input before any connection
         try:
-            results.append(_check_host(entry, asset_certificates, fetch, now, expiry_warning_days))
+            results.append(_check_host(entry, asset_certificates, fetch, now, expiry_warning_days,
+                                       strict_anchors=platform == "ios"))
         except (OSError, RuntimeError, ssl.SSLError) as error:
             failed.append({"host": host, "port": port, "status": "fetch_failed",
                            "error": error.__class__.__name__,
@@ -382,6 +396,7 @@ def check(hosts, trust_asset_path, fetch=fetch_served_chain, now=None,
         "all_hosts_ok": bool(results) and not failed and all(h["status"] == "ok" for h in results),
         "desktop_path_all_valid": bool(results) and not failed
                                   and all(h["desktop_path_check"]["result"] == "valid" for h in results),
+        "platform": platform,
         "expiry_warning_days": expiry_warning_days,
         "checked_at": now.isoformat(),
         "verification_scope": "asset_coverage_only",

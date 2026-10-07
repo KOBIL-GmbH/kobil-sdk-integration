@@ -386,6 +386,71 @@ class DesktopPathTests(_Base):
         self.assertIn("not a statement about", result["verification_note"])
 
 
+class PlatformTests(_Base):
+    """Android's native validator is OpenSSL full-path validation over the supplied PEM (no
+    partial chain), so the desktop path result decides there. iOS keeps the strict rule that the
+    self-signed variant of the top CA subject must be in the asset (VAL-16/VAL-36)."""
+
+    def x1_only(self):
+        return self.asset(FIXTURE.pem(FIXTURE.x1))
+
+    def test_default_is_the_strict_ios_rule(self):
+        result = check(["service.test"], self.x1_only(), fetch=self.cross_chain)
+        self.assertEqual(result["platform"], "ios")
+        self.assertEqual(result["hosts"][0]["status"], "missing_anchors")
+
+    def test_android_accepts_x1_only_when_the_desktop_path_is_valid(self):
+        result = check(["service.test"], self.x1_only(), fetch=self.cross_chain, platform="android")
+        host = result["hosts"][0]
+        self.assertEqual(result["platform"], "android")
+        self.assertEqual(host["status"], "ok")
+        self.assertTrue(result["all_hosts_ok"])
+        self.assertEqual(host["problems"], [])
+
+    def test_android_still_reports_the_strict_gap_as_a_warning_not_a_problem(self):
+        host = check(["service.test"], self.x1_only(), fetch=self.cross_chain, platform="android")["hosts"][0]
+        self.assertEqual(host["missing_anchors"], ["CN=Test Root X2"])
+        self.assertTrue(any("iOS" in w and "CN=Test Root X2" in w for w in host["warnings"]))
+
+    def test_android_does_not_hide_a_broken_path(self):
+        asset = self.asset(FIXTURE.pem(FIXTURE.ye2, FIXTURE.root_ye, FIXTURE.x2_cross))  # CA copy, no root
+        host = check(["service.test"], asset, fetch=self.cross_chain, platform="android")["hosts"][0]
+        self.assertEqual(host["status"], "path_invalid")
+
+    def test_android_keeps_hostname_and_expiry_problems(self):
+        host = check(["other.test"], self.x1_only(), fetch=self.cross_chain, platform="android")["hosts"][0]
+        self.assertEqual(host["status"], "hostname_mismatch")
+        later = NOW + datetime.timedelta(days=4000)
+        host = check(["service.test"], self.x1_only(), fetch=self.cross_chain, platform="android", now=later)["hosts"][0]
+        self.assertEqual(host["status"], "expired")
+
+    def test_android_with_unrelated_root_fails(self):
+        other = ec.generate_private_key(ec.SECP256R1())
+        impostor = _certificate("Test Root X1", "Test Root X1", other.public_key(), other)
+        host = check(["service.test"], self.asset(FIXTURE.pem(impostor)), fetch=self.cross_chain,
+                     platform="android")["hosts"][0]
+        self.assertEqual(host["status"], "path_invalid")
+
+    def test_android_top_without_self_signed_variant_is_ok_when_the_issuer_root_is_present(self):
+        served = FIXTURE.served(FIXTURE.leaf, FIXTURE.ye2, FIXTURE.root_ye)  # top Root YE, issuer X2 not served
+        host = check(["service.test"], self.asset(FIXTURE.pem(FIXTURE.x1), suffix=".x1.pem"), fetch=served,
+                     platform="android")["hosts"][0]
+        # X1 alone cannot end this path (YE <- X2 <- X1 needs the X2 cross-sign, which is not served)
+        self.assertEqual(host["status"], "path_invalid")
+        host = check(["service.test"], self.both, fetch=served, platform="android")["hosts"][0]
+        self.assertEqual(host["status"], "ok")
+
+    def test_unknown_platform_is_rejected(self):
+        for value in ("windows", "", None, 1):
+            with self.assertRaises(ValueError):
+                check(["service.test"], self.x1_only(), fetch=self.cross_chain, platform=value)
+
+    def test_note_names_the_platform_rules(self):
+        note = check(["service.test"], self.x1_only(), fetch=self.cross_chain)["verification_note"]
+        self.assertIn("Android", note)
+        self.assertIn("not verified on a device", note)
+
+
 class AssetParsingTests(_Base):
     def test_marker_with_corrupt_body_is_rejected(self):
         bad = b"-----BEGIN CERTIFICATE-----\nQUJD\n-----END CERTIFICATE-----\n"
