@@ -12,14 +12,21 @@ would reject. This module makes no trust decision, changes no app or SDK
 configuration and must never be used to justify disabling verification
 anywhere else.
 """
+import datetime
 import hashlib
+import ipaddress
 import socket
 import ssl
 from pathlib import Path
 from urllib.parse import urlsplit
 
 from cryptography import x509
+from cryptography.exceptions import InvalidSignature, UnsupportedAlgorithm
 from cryptography.hazmat.primitives import hashes, serialization
+
+DEFAULT_EXPIRY_WARNING_DAYS = 14
+_MAX_PATH_DEPTH = 9
+_PROBLEM_ORDER = ("missing_anchors", "hostname_mismatch", "expired", "path_invalid")
 
 _PEM_MARKER = b"-----BEGIN CERTIFICATE-----"
 
@@ -40,8 +47,16 @@ VERIFICATION_NOTE = (
     "variant of the top CA subject (verified 2026-09-29: iOS built to system ISRG "
     "Root X2 while desktop verification used the X1 cross-sign), so the trust asset "
     "must cover the top CA subject AND public key, not only its cross-sign parent. "
-    "An ok result establishes asset coverage only, not certificate path validation, "
-    "validity, hostname verification, SDK byte-format compatibility or runtime acceptance. "
+    "Per host it also checks the leaf hostname against the subjectAltName, the validity "
+    "dates of the served leaf and of the matched asset anchors at check time, and runs a "
+    "simplified desktop path check that follows the KOBIL Confluence procedure for trusted_certs.pem "
+    "(the file alone must carry the chain to a self-signed root, as "
+    "wget --ca-certificate or openssl verify would require; the SDK's native CertificateValidator "
+    "uses OpenSSL chain verification without a partial-chain flag in the mirrored source). "
+    "The path check follows subject, signature, validity and CA flag only; it covers no name "
+    "constraints, revocation or policy, and it is not a statement about iOS, Android, "
+    "KSTrustedWebView or SDK runtime acceptance. An ok result therefore means: asset coverage, "
+    "hostname, validity and desktop path agree at the time of the check, nothing more. "
     "For iOS KSTrustedWebView 9.7.3000479, certsDataForValidation needs PEM "
     "trust-store bytes; do not convert those bytes to DER."
 )
@@ -115,7 +130,17 @@ def fetch_served_chain(host, port, timeout=15.0):
             return der
 
 
-def describe(certificate):
+def _utcnow():
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
+def _usable_at(certificate, now):
+    return certificate.not_valid_before_utc <= now <= certificate.not_valid_after_utc
+
+
+def describe(certificate, now=None):
+    now = now or _utcnow()
+    remaining = certificate.not_valid_after_utc - now
     return {
         "subject": certificate.subject.rfc4514_string(),
         "issuer": certificate.issuer.rfc4514_string(),
@@ -123,7 +148,103 @@ def describe(certificate):
         "self_signed": certificate.subject == certificate.issuer,
         "spki_sha256": hashlib.sha256(certificate.public_key().public_bytes(
             serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)).hexdigest(),
+        "not_before": certificate.not_valid_before_utc.isoformat(),
+        "not_after": certificate.not_valid_after_utc.isoformat(),
+        "days_until_expiry": int(remaining.total_seconds() // 86400),
+        "expired": not _usable_at(certificate, now),
     }
+
+
+def _san_names(certificate):
+    """Return (dns_names, ip_addresses) from the subjectAltName extension."""
+    try:
+        san = certificate.extensions.get_extension_for_class(x509.SubjectAlternativeName).value
+    except x509.ExtensionNotFound:
+        return [], []
+    return (list(san.get_values_for_type(x509.DNSName)),
+            [str(address) for address in san.get_values_for_type(x509.IPAddress)])
+
+
+def _name_matches(pattern, host):
+    pattern, host = pattern.lower().rstrip("."), host.lower().rstrip(".")
+    if pattern.startswith("*."):
+        label, _, rest = host.partition(".")
+        return bool(label) and bool(rest) and rest == pattern[2:]
+    return pattern == host
+
+
+def hostname_match(host, leaf):
+    """Match the host against the leaf subjectAltName only (CN is ignored, as modern clients do)."""
+    dns_names, ip_addresses = _san_names(leaf)
+    try:
+        address = str(ipaddress.ip_address(host))
+    except ValueError:
+        address = None
+    if address is not None:
+        matches = address in ip_addresses
+    else:
+        matches = any(_name_matches(name, host) for name in dns_names)
+    return {"matches": matches, "names": dns_names + ip_addresses}
+
+
+def _directly_issued(certificate, issuer):
+    try:
+        certificate.verify_directly_issued_by(issuer)
+    except (ValueError, TypeError, InvalidSignature, UnsupportedAlgorithm):
+        return False
+    return True
+
+
+def _is_ca(certificate):
+    try:
+        return bool(certificate.extensions.get_extension_for_class(x509.BasicConstraints).value.ca)
+    except x509.ExtensionNotFound:
+        return False
+
+
+def desktop_path_check(served, asset, now):
+    """Simplified desktop path check: does the file alone carry the served chain to a self-signed root?
+
+    Follows subject, signature, validity and CA flag. The first served certificate is the leaf;
+    the other served certificates are only intermediates and are never trusted. Only certificates
+    from the trust asset can end the path, and only when they are self-signed.
+    """
+    leaf = served[0]
+    if not _usable_at(leaf, now):
+        return {"result": "invalid", "terminates_at": None, "failed_on_expiry": True,
+                "detail": "The served leaf certificate is expired or not yet valid."}
+    asset_fingerprints = {c.fingerprint(hashes.SHA256()) for c in asset}
+    candidates = list(asset) + [c for c in served[1:] if c.fingerprint(hashes.SHA256()) not in asset_fingerprints]
+    state = {"expired_candidate": False}
+
+    def build(certificate, depth, seen):
+        if depth > _MAX_PATH_DEPTH:
+            return None
+        for candidate in candidates:
+            fingerprint = candidate.fingerprint(hashes.SHA256())
+            if fingerprint in seen or candidate.subject != certificate.issuer or not _is_ca(candidate):
+                continue
+            if not _directly_issued(certificate, candidate):
+                continue
+            if not _usable_at(candidate, now):
+                state["expired_candidate"] = True
+                continue
+            trusted = fingerprint in asset_fingerprints
+            if trusted and candidate.subject == candidate.issuer:
+                return candidate.subject.rfc4514_string()
+            found = build(candidate, depth + 1, seen | {fingerprint})
+            if found:
+                return found
+        return None
+
+    terminus = build(leaf, 0, {leaf.fingerprint(hashes.SHA256())})
+    if terminus:
+        return {"result": "valid", "terminates_at": terminus, "failed_on_expiry": False, "detail": ""}
+    return {"result": "invalid", "terminates_at": None, "failed_on_expiry": state["expired_candidate"],
+            "detail": "No path from the served leaf to a self-signed certificate in the trust asset "
+                      "(the Confluence procedure expects the file to hold the self-signed root(s); "
+                      "intermediates or cross-signed certificates alone cannot end a path)"
+                      + (", and a certificate on the way is expired." if state["expired_candidate"] else ".")}
 
 
 def _required_anchor_subjects(chain):
@@ -143,20 +264,34 @@ def _required_anchor_subjects(chain):
     return subjects
 
 
-def _check_host(entry, asset_certificates, fetch):
+def _validity(chain_certificates, chain, matched_asset, now, warning_days):
+    """Expired/expiring served certificates and matched asset anchors at check time."""
+    described = [(c, d) for c, d in zip(chain_certificates, chain)] + matched_asset
+    expired, expiring_soon = [], []
+    for _, entry in described:
+        if entry["expired"]:
+            if entry["subject"] not in expired:
+                expired.append(entry["subject"])
+        elif entry["days_until_expiry"] <= warning_days and entry["subject"] not in expiring_soon:
+            expiring_soon.append(entry["subject"])
+    return {"expired": expired, "expiring_soon": expiring_soon, "warning_days": warning_days}
+
+
+def _check_host(entry, asset_certificates, fetch, now, warning_days):
     host, port = parse_host(entry)
     der_chain = fetch(host, port)
-    chain = []
+    chain_certificates = []
     for der in der_chain:
         try:
-            chain.append(describe(x509.load_der_x509_certificate(der)))
+            chain_certificates.append(x509.load_der_x509_certificate(der))
         except ValueError:
             raise ValueError("The server returned an unparseable certificate") from None
-    asset = [describe(c) for c in asset_certificates]
+    chain = [describe(c, now) for c in chain_certificates]
+    asset = [describe(c, now) for c in asset_certificates]
     asset_subjects = {c["subject"] for c in asset}
     asset_fingerprints = {c["sha256_fingerprint"] for c in asset}
     required = _required_anchor_subjects(chain)
-    matched, missing = [], []
+    matched, missing, matched_asset = [], [], []
     for subject in required:
         exact = any(c["subject"] == subject and c["sha256_fingerprint"] in asset_fingerprints
                     for c in chain)
@@ -166,6 +301,11 @@ def _check_host(entry, asset_certificates, fetch):
         if exact or same_key:
             matched.append({"subject": subject,
                             "match": "exact_certificate" if exact else "same_subject_and_key_variant"})
+            for certificate, entry_asset in zip(asset_certificates, asset):
+                if entry_asset["subject"] == subject and any(
+                        c["subject"] == subject and c["spki_sha256"] == entry_asset["spki_sha256"]
+                        for c in chain):
+                    matched_asset.append((certificate, entry_asset))
         else:
             missing.append(subject)
     recommended = []
@@ -175,6 +315,27 @@ def _check_host(entry, asset_certificates, fetch):
             "subject": top["issuer"],
             "reason": "Cross-sign parent of the served top CA; other TLS clients may build "
                       "the chain through it. Supply both variants when both can appear."})
+    hostname = hostname_match(host, chain_certificates[0])
+    validity = _validity(chain_certificates, chain, matched_asset, now, warning_days)
+    path = desktop_path_check(chain_certificates, asset_certificates, now)
+    warnings = []
+    problems = []
+    if missing:
+        problems.append("missing_anchors")
+    if not hostname["matches"]:
+        problems.append("hostname_mismatch")
+    must_be_valid = {chain[0]["subject"]} | {e["subject"] for _, e in matched_asset}
+    if any(subject in must_be_valid for subject in validity["expired"]) or path["failed_on_expiry"]:
+        problems.append("expired")
+    elif validity["expired"]:
+        warnings.append("Served certificate(s) expired but not required by the checked path: "
+                        + ", ".join(validity["expired"]))
+    if path["result"] != "valid" and not path["failed_on_expiry"]:
+        problems.append("path_invalid")
+    if validity["expiring_soon"]:
+        warnings.append("Certificate(s) expire within %d days: %s"
+                        % (warning_days, ", ".join(validity["expiring_soon"])))
+    problems.sort(key=_PROBLEM_ORDER.index)
     return {
         "host": host, "port": port,
         "served_chain": chain,
@@ -182,30 +343,47 @@ def _check_host(entry, asset_certificates, fetch):
         "matched_anchors": matched,
         "missing_anchors": missing,
         "recommended_additional_anchors": recommended,
-        "status": "missing_anchors" if missing else "ok",
+        "hostname_match": hostname,
+        "validity": validity,
+        "desktop_path_check": {k: path[k] for k in ("result", "terminates_at", "detail")},
+        "problems": problems,
+        "warnings": warnings,
+        "status": problems[0] if problems else "ok",
     }
 
 
-def check(hosts, trust_asset_path, fetch=fetch_served_chain):
+def check(hosts, trust_asset_path, fetch=fetch_served_chain, now=None,
+          expiry_warning_days=DEFAULT_EXPIRY_WARNING_DAYS):
     if isinstance(hosts, str):
         hosts = [hosts]
     if not isinstance(hosts, list) or not hosts or len(hosts) > 50:
         raise ValueError("Provide 1..50 hosts or https:// base URLs")
+    if isinstance(expiry_warning_days, bool) or not isinstance(expiry_warning_days, int) \
+            or not 0 <= expiry_warning_days <= 3650:
+        raise ValueError("expiry_warning_days must be an integer between 0 and 3650")
+    if now is None:
+        now = _utcnow()
+    elif not isinstance(now, datetime.datetime) or now.tzinfo is None:
+        raise ValueError("now must be a timezone-aware datetime")
     asset_certificates = load_trust_asset(trust_asset_path)
     results, failed = [], []
     for entry in hosts:
         host, port = parse_host(entry)  # reject malformed input before any connection
         try:
-            results.append(_check_host(entry, asset_certificates, fetch))
+            results.append(_check_host(entry, asset_certificates, fetch, now, expiry_warning_days))
         except (OSError, RuntimeError, ssl.SSLError) as error:
             failed.append({"host": host, "port": port, "status": "fetch_failed",
                            "error": error.__class__.__name__,
                            "detail": str(error) or "connection failed"})
     return {
         "trust_asset": {"path": str(Path(trust_asset_path).expanduser().absolute()),
-                        "certificates": [describe(c) for c in asset_certificates]},
+                        "certificates": [describe(c, now) for c in asset_certificates]},
         "hosts": results + failed,
         "all_hosts_ok": bool(results) and not failed and all(h["status"] == "ok" for h in results),
+        "desktop_path_all_valid": bool(results) and not failed
+                                  and all(h["desktop_path_check"]["result"] == "valid" for h in results),
+        "expiry_warning_days": expiry_warning_days,
+        "checked_at": now.isoformat(),
         "verification_scope": "asset_coverage_only",
         "runtime_acceptance_verified": False,
         "certificate_path_verified": False,

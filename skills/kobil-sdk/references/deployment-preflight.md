@@ -2,6 +2,11 @@
 
 These checks supplement `sdk_native_preflight` (selected flow/client bindings)
 and `sdk_tls_chain_check` (server trust anchors). They do not replace either.
+Run `sdk_tls_chain_check` again right before activation: besides anchor coverage it
+reports hostname, expiry and whether the file alone reaches a self-signed root
+(`status` other than `ok` blocks the round; `warnings` such as an anchor expiring
+soon should be resolved first). A trusted_certs.pem built only from the CA
+certificates copied out of a cross-signed served chain fails that path check.
 Keep the customer's selected themed enrollment/login clients, authentication
 mode and explicit-authentication policy. Missing deployment information is a
 prerequisite to resolve, not permission to copy a sample's values.

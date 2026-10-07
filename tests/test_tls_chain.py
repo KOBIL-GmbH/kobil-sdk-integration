@@ -21,14 +21,22 @@ def _name(common_name):
     return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
 
 
-def _certificate(subject, issuer, public_key, signing_key, ca=True):
-    now = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)
-    return (x509.CertificateBuilder()
-            .subject_name(_name(subject)).issuer_name(_name(issuer))
-            .public_key(public_key).serial_number(x509.random_serial_number())
-            .not_valid_before(now).not_valid_after(now + datetime.timedelta(days=365))
-            .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True)
-            .sign(signing_key, hashes.SHA256()))
+NOW = datetime.datetime.now(datetime.timezone.utc)
+
+
+def _certificate(subject, issuer, public_key, signing_key, ca=True, san=None,
+                 not_before=None, not_after=None):
+    # Validity is relative to the real clock so the fixture never expires under the suite.
+    builder = (x509.CertificateBuilder()
+               .subject_name(_name(subject)).issuer_name(_name(issuer))
+               .public_key(public_key).serial_number(x509.random_serial_number())
+               .not_valid_before(not_before or NOW - datetime.timedelta(days=30))
+               .not_valid_after(not_after or NOW + datetime.timedelta(days=3650))
+               .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True))
+    if san:
+        builder = builder.add_extension(
+            x509.SubjectAlternativeName([x509.DNSName(name) for name in san]), critical=False)
+    return builder.sign(signing_key, hashes.SHA256())
 
 
 class _Fixture:
@@ -42,7 +50,8 @@ class _Fixture:
         self.x2_cross = _certificate("Test Root X2", "Test Root X1", k["x2"].public_key(), k["x1"])
         self.root_ye = _certificate("Test Root YE", "Test Root X2", k["ye"].public_key(), k["x2"])
         self.ye2 = _certificate("Test YE2", "Test Root YE", k["ye2"].public_key(), k["ye"])
-        self.leaf = _certificate("service.test", "Test YE2", k["leaf"].public_key(), k["ye2"], ca=False)
+        self.leaf = _certificate("service.test", "Test YE2", k["leaf"].public_key(), k["ye2"], ca=False,
+                                 san=["service.test"])
 
     def served(self, *certificates):
         chain = [c.public_bytes(serialization.Encoding.DER) for c in certificates]
@@ -185,6 +194,251 @@ class TlsChainCheckTests(unittest.TestCase):
         from kobil_sdk_integration import tls_chain
 
         self.assertEqual(tls_chain._DER_ENCODING, _ssl.ENCODING_DER)
+
+
+class _Base(unittest.TestCase):
+    def asset(self, data, suffix=".pem"):
+        path = Path(self.directory.name) / ("asset" + suffix)
+        path.write_bytes(data)
+        return str(path)
+
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+        self.cross_chain = FIXTURE.served(FIXTURE.leaf, FIXTURE.ye2, FIXTURE.root_ye, FIXTURE.x2_cross)
+        self.both = self.asset(FIXTURE.pem(FIXTURE.x1, FIXTURE.x2_self))
+
+    def host(self, hosts, asset, fetch=None, **kwargs):
+        return check(hosts, asset, fetch=fetch or self.cross_chain, **kwargs)["hosts"][0]
+
+
+class HostnameTests(_Base):
+    def leaf_with(self, *names):
+        return _certificate("service.test", "Test YE2", FIXTURE.keys["leaf"].public_key(),
+                            FIXTURE.keys["ye2"], ca=False, san=list(names) or None)
+
+    def chain_with(self, leaf):
+        return FIXTURE.served(leaf, FIXTURE.ye2, FIXTURE.root_ye, FIXTURE.x2_cross)
+
+    def test_matching_san_is_reported(self):
+        host = self.host(["service.test"], self.both)
+        self.assertTrue(host["hostname_match"]["matches"])
+        self.assertEqual(host["hostname_match"]["names"], ["service.test"])
+        self.assertEqual(host["status"], "ok")
+
+    def test_other_host_is_a_hostname_mismatch_problem(self):
+        host = self.host(["other.test"], self.both)
+        self.assertFalse(host["hostname_match"]["matches"])
+        self.assertEqual(host["status"], "hostname_mismatch")
+        self.assertIn("hostname_mismatch", host["problems"])
+
+    def test_wildcard_matches_exactly_one_label(self):
+        fetch = self.chain_with(self.leaf_with("*.service.test"))
+        self.assertTrue(self.host(["a.service.test"], self.both, fetch)["hostname_match"]["matches"])
+        self.assertFalse(self.host(["a.b.service.test"], self.both, fetch)["hostname_match"]["matches"])
+        self.assertFalse(self.host(["service.test"], self.both, fetch)["hostname_match"]["matches"])
+
+    def test_common_name_alone_is_not_enough(self):
+        fetch = self.chain_with(self.leaf_with())
+        host = self.host(["service.test"], self.both, fetch)
+        self.assertFalse(host["hostname_match"]["matches"])
+        self.assertEqual(host["hostname_match"]["names"], [])
+
+    def test_hostname_comparison_ignores_case(self):
+        fetch = self.chain_with(self.leaf_with("Service.Test"))
+        self.assertTrue(self.host(["SERVICE.test"], self.both, fetch)["hostname_match"]["matches"])
+
+
+class ValidityTests(_Base):
+    def issue(self, subject, issuer, key, signer, **kw):
+        return _certificate(subject, issuer, FIXTURE.keys[key].public_key(), FIXTURE.keys[signer], **kw)
+
+    def test_served_certificates_report_validity_dates(self):
+        host = self.host(["service.test"], self.both)
+        for entry in host["served_chain"]:
+            self.assertRegex(entry["not_after"], r"^\d{4}-\d{2}-\d{2}T")
+            self.assertGreater(entry["days_until_expiry"], 3000)
+            self.assertFalse(entry["expired"])
+
+    def test_expired_leaf_is_an_expired_problem(self):
+        leaf = self.issue("service.test", "Test YE2", "leaf", "ye2", ca=False, san=["service.test"],
+                          not_before=NOW - datetime.timedelta(days=90),
+                          not_after=NOW - datetime.timedelta(days=1))
+        host = self.host(["service.test"], self.both, FIXTURE.served(leaf, FIXTURE.ye2, FIXTURE.root_ye, FIXTURE.x2_cross))
+        self.assertEqual(host["status"], "expired")
+        self.assertEqual(host["validity"]["expired"], ["CN=service.test"])
+
+    def test_expired_matched_anchor_in_the_asset_is_an_expired_problem(self):
+        old_x2 = self.issue("Test Root X2", "Test Root X2", "x2", "x2",
+                            not_before=NOW - datetime.timedelta(days=900),
+                            not_after=NOW - datetime.timedelta(days=5))
+        host = self.host(["service.test"], self.asset(FIXTURE.pem(FIXTURE.x1, old_x2)))
+        self.assertEqual(host["missing_anchors"], [])  # same subject and key still matches
+        self.assertEqual(host["status"], "expired")
+        self.assertIn("CN=Test Root X2", host["validity"]["expired"])
+
+    def test_expiring_soon_warns_but_does_not_fail(self):
+        leaf = self.issue("service.test", "Test YE2", "leaf", "ye2", ca=False, san=["service.test"],
+                          not_after=NOW + datetime.timedelta(days=10))
+        fetch = FIXTURE.served(leaf, FIXTURE.ye2, FIXTURE.root_ye, FIXTURE.x2_cross)
+        host = self.host(["service.test"], self.both, fetch)
+        self.assertEqual(host["status"], "ok")
+        self.assertEqual(host["validity"]["expiring_soon"], ["CN=service.test"])
+        self.assertEqual(host["validity"]["warning_days"], 14)
+        quiet = self.host(["service.test"], self.both, fetch, expiry_warning_days=5)
+        self.assertEqual(quiet["validity"]["expiring_soon"], [])
+
+    def test_expiry_is_judged_at_the_injected_time(self):
+        later = NOW + datetime.timedelta(days=4000)
+        host = self.host(["service.test"], self.both, now=later)
+        self.assertEqual(host["status"], "expired")
+
+    def test_unused_expired_asset_certificate_does_not_fail_the_host(self):
+        stale = self.issue("Unrelated Old Root", "Unrelated Old Root", "ye", "ye",
+                           not_before=NOW - datetime.timedelta(days=900),
+                           not_after=NOW - datetime.timedelta(days=5))
+        result = check(["service.test"], self.asset(FIXTURE.pem(FIXTURE.x1, FIXTURE.x2_self, stale)),
+                       fetch=self.cross_chain)
+        self.assertEqual(result["hosts"][0]["status"], "ok")
+        flags = {c["subject"]: c["expired"] for c in result["trust_asset"]["certificates"]}
+        self.assertTrue(flags["CN=Unrelated Old Root"])
+        self.assertFalse(flags["CN=Test Root X1"])
+
+    def test_invalid_warning_days_are_rejected(self):
+        for value in (-1, "7", None, 4000):
+            with self.assertRaises(ValueError):
+                check(["service.test"], self.both, fetch=self.cross_chain, expiry_warning_days=value)
+
+
+class DesktopPathTests(_Base):
+    """The KOBIL Confluence procedure for trusted_certs.pem defines 'verified' as a full path check that uses ONLY the
+    file as trust (wget/openssl): the chain must end in a self-signed certificate from the
+    file. Reported separately because the mobile rule above is stricter or looser in places."""
+
+    def test_self_signed_anchors_give_a_valid_desktop_path(self):
+        host = self.host(["service.test"], self.both)
+        self.assertEqual(host["desktop_path_check"]["result"], "valid")
+        self.assertEqual(host["desktop_path_check"]["terminates_at"], "CN=Test Root X2")
+
+    def test_x1_only_is_desktop_valid_but_still_missing_for_mobile(self):
+        host = self.host(["service.test"], self.asset(FIXTURE.pem(FIXTURE.x1)))
+        self.assertEqual(host["desktop_path_check"]["result"], "valid")
+        self.assertEqual(host["status"], "missing_anchors")
+        self.assertEqual(host["problems"], ["missing_anchors"])
+
+    def test_confluence_style_ca_copy_of_a_cross_signed_chain_is_incomplete(self):
+        # CA certificates copied from the served chain (page procedure): YE2, YE, cross-signed X2.
+        asset = self.asset(FIXTURE.pem(FIXTURE.ye2, FIXTURE.root_ye, FIXTURE.x2_cross))
+        host = self.host(["service.test"], asset)
+        self.assertEqual(host["missing_anchors"], [])
+        self.assertEqual(host["desktop_path_check"]["result"], "invalid")
+        self.assertIn("self-signed", host["desktop_path_check"]["detail"])
+        self.assertEqual(host["status"], "path_invalid")
+
+    def test_intermediate_only_asset_is_not_ok_even_when_coverage_matches(self):
+        served = FIXTURE.served(FIXTURE.leaf, FIXTURE.ye2)
+        host = self.host(["service.test"], self.asset(FIXTURE.pem(FIXTURE.ye2)), served)
+        self.assertEqual(host["missing_anchors"], [])
+        self.assertEqual(host["status"], "path_invalid")
+        self.assertFalse(check(["service.test"], self.asset(FIXTURE.pem(FIXTURE.ye2)),
+                               fetch=served)["all_hosts_ok"])
+
+    def test_leaf_only_asset_has_no_path(self):
+        host = self.host(["service.test"], self.asset(FIXTURE.pem(FIXTURE.leaf)))
+        self.assertEqual(host["desktop_path_check"]["result"], "invalid")
+        self.assertIn("missing_anchors", host["problems"])
+
+    def test_forged_intermediate_signature_is_not_a_path(self):
+        impostor = _certificate("Test YE2", "Test Root YE", FIXTURE.keys["ye2"].public_key(),
+                                ec.generate_private_key(ec.SECP256R1()))  # same names, wrong signer
+        served = FIXTURE.served(FIXTURE.leaf, impostor, FIXTURE.root_ye, FIXTURE.x2_cross)
+        host = self.host(["service.test"], self.both, served)
+        self.assertEqual(host["desktop_path_check"]["result"], "invalid")
+
+    def test_expired_intermediate_breaks_the_path(self):
+        old = _certificate("Test YE2", "Test Root YE", FIXTURE.keys["ye2"].public_key(), FIXTURE.keys["ye"],
+                           not_before=NOW - datetime.timedelta(days=900), not_after=NOW - datetime.timedelta(days=1))
+        served = FIXTURE.served(FIXTURE.leaf, old, FIXTURE.root_ye, FIXTURE.x2_cross)
+        host = self.host(["service.test"], self.both, served)
+        self.assertEqual(host["desktop_path_check"]["result"], "invalid")
+        self.assertIn("expired", host["problems"])
+
+    def test_non_ca_issuer_is_rejected(self):
+        not_ca = _certificate("Test YE2", "Test Root YE", FIXTURE.keys["ye2"].public_key(),
+                              FIXTURE.keys["ye"], ca=False)
+        served = FIXTURE.served(FIXTURE.leaf, not_ca, FIXTURE.root_ye, FIXTURE.x2_cross)
+        self.assertEqual(self.host(["service.test"], self.both, served)["desktop_path_check"]["result"], "invalid")
+
+    def test_top_that_is_not_self_signed_needs_the_self_signed_variant_for_mobile(self):
+        # Served top is Root YE (issuer X2 is not served). The asset holds X1+X2, so a desktop
+        # client builds the path, but the strict mobile rule still wants the top subject itself.
+        served = FIXTURE.served(FIXTURE.leaf, FIXTURE.ye2, FIXTURE.root_ye)
+        host = self.host(["service.test"], self.both, served)
+        self.assertEqual(host["desktop_path_check"]["result"], "valid")
+        self.assertEqual(host["missing_anchors"], ["CN=Test Root YE"])
+        self.assertEqual(host["status"], "missing_anchors")
+
+    def test_path_check_is_not_a_platform_claim(self):
+        result = check(["service.test"], self.both, fetch=self.cross_chain)
+        self.assertFalse(result["certificate_path_verified"])
+        self.assertTrue(result["desktop_path_all_valid"])
+        self.assertIn("Confluence", result["verification_note"])
+        self.assertIn("not a statement about", result["verification_note"])
+
+
+class AssetParsingTests(_Base):
+    def test_marker_with_corrupt_body_is_rejected(self):
+        bad = b"-----BEGIN CERTIFICATE-----\nQUJD\n-----END CERTIFICATE-----\n"
+        with self.assertRaises(ValueError):
+            check(["service.test"], self.asset(bad), fetch=self.cross_chain)
+
+    def test_concatenated_der_certificates_are_rejected_not_truncated(self):
+        der = FIXTURE.x1.public_bytes(serialization.Encoding.DER) + FIXTURE.x2_self.public_bytes(serialization.Encoding.DER)
+        with self.assertRaises(ValueError):
+            check(["service.test"], self.asset(der, suffix=".der"), fetch=self.cross_chain)
+
+    def test_pem_with_text_before_and_between_certificates_is_read_completely(self):
+        data = b"# trusted roots\n" + FIXTURE.pem(FIXTURE.x1) + b"\n# second\n" + FIXTURE.pem(FIXTURE.x2_self)
+        host = self.host(["service.test"], self.asset(data))
+        self.assertEqual(host["status"], "ok")
+
+
+class LiveFetchTests(unittest.TestCase):
+    def test_fetch_served_chain_returns_the_served_certificates_in_order(self):
+        import socket
+        import ssl
+        import threading
+
+        from kobil_sdk_integration.tls_chain import fetch_served_chain
+
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        certfile = Path(directory.name) / "chain.pem"
+        keyfile = Path(directory.name) / "leaf.key"
+        certfile.write_bytes(FIXTURE.pem(FIXTURE.leaf, FIXTURE.ye2, FIXTURE.root_ye))
+        keyfile.write_bytes(FIXTURE.keys["leaf"].private_bytes(
+            serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
+        server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        server_context.load_cert_chain(str(certfile), str(keyfile))
+        listener = socket.socket()
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(1)
+        listener.settimeout(10)
+        self.addCleanup(listener.close)
+
+        def serve():
+            try:
+                connection, _ = listener.accept()
+                with server_context.wrap_socket(connection, server_side=True) as tls:
+                    tls.recv(1)
+            except (OSError, ssl.SSLError):
+                pass
+        thread = threading.Thread(target=serve, daemon=True)
+        thread.start()
+        der = fetch_served_chain("127.0.0.1", listener.getsockname()[1], timeout=10)
+        thread.join(5)
+        expected = [c.public_bytes(serialization.Encoding.DER) for c in (FIXTURE.leaf, FIXTURE.ye2, FIXTURE.root_ye)]
+        self.assertEqual(der, expected)
 
 
 if __name__ == "__main__":
