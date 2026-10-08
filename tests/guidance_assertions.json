@@ -16,7 +16,9 @@
         "sdk_tms_explicit_preflight",
         "azp",
         "GetIamAccessTokenUsingJwtBearer",
-        "JWT_BEARER_GRANT_TYPE"
+        "JWT_BEARER_GRANT_TYPE",
+        "802000007",
+        "No identities are enrolled"
       ],
       "must_not_contain": []
     },

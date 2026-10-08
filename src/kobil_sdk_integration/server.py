@@ -185,7 +185,34 @@ def sdk_backend_status() -> dict:
     from .backend import configuration
     cfg = configuration()
     return {'environment': cfg['environment'], 'tenant': cfg['tenant'],
-            'configured': True, 'connection_verified': False}
+            'configured': True, 'connection_verified': False, **_connection_hosts(cfg)}
+
+
+def _connection_hosts(cfg):
+    """Hostnames and the realm base URL of the selected connection (no credentials, no paths with secrets).
+
+    Measured 2026-10-08: without these an agent guessed /realms/<tenant> (404) and
+    could not run sdk_tls_chain_check for the AST host.
+    """
+    from urllib.parse import urlsplit
+    def host(url):
+        try:
+            return urlsplit(url).hostname
+        except (ValueError, AttributeError):
+            return None
+    ast = host(cfg.get('ast_url'))
+    admin = cfg.get('admin') or {}
+    idp = host(admin.get('idp_url')) if admin else None
+    services = {s['name']: host(s['url']) for s in cfg.get('services', []) if isinstance(s, dict)}
+    realm_base = None
+    if admin.get('idp_url') and admin.get('realm'):
+        base = admin['idp_url'].rstrip('/')
+        suffix = '/realms/' + admin['realm']
+        realm_base = base if base.endswith(suffix) else base + suffix
+    hosts = sorted({h for h in [ast, idp, *services.values()] if h})
+    return {'hosts': {'ast': ast, 'idp': idp, 'services': services},
+            'idp_realm_base': realm_base, 'tls_check_hosts': hosts,
+            'hosts_note': 'Run sdk_tls_chain_check(platform=...) for every host in tls_check_hosts before the first start; the WebView authorization endpoint lives under idp_realm_base (/protocol/openid-connect/auth).'}
 
 
 @mcp.tool()

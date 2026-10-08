@@ -30,7 +30,11 @@ of this skill refines a step, none replaces it.
    [tms.md](references/tms.md) and [log-export.md](references/log-export.md)
    when you reach those steps. `lifecycle`, `multi_step`, `automated_testing`
    stay separate `sdk_knowledge_get` topics.
-2. Backend and artifacts: `sdk_backend_status`, `sdk_artifact_info(path)` on
+2. Backend and artifacts: `sdk_backend_status` (also returns `hosts`,
+   `idp_realm_base` and `tls_check_hosts`: the authorization endpoint is
+   `<idp_realm_base>/protocol/openid-connect/auth`, never guess the realm path;
+   run `sdk_tls_chain_check` for every host in `tls_check_hosts`),
+   `sdk_artifact_info(path)` on
    each delivery ZIP (see [sdk-delivery.md](references/sdk-delivery.md) for
    locating AARs/xcframeworks inside it), `sdk_plan(profile)`.
 3. Gates before code: `sdk_native_preflight`, then `sdk_deployment_preflight`

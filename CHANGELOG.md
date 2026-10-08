@@ -2,6 +2,9 @@
 
 ## Unreleased — onboarding gate
 
+- `sdk_backend_status` returns `hosts` (ast, idp, services), `idp_realm_base` and `tls_check_hosts` from the selected connection (hostnames and the realm base URL only, no credentials). Measured 2026-10-08: without them an agent guessed `/realms/<tenant>` (404) and could not run `sdk_tls_chain_check` for the AST host. SKILL.md step 2 names the authorization endpoint `<idp_realm_base>/protocol/openid-connect/auth`.
+- login knowledge: OfflineLogin 802000007 "Failed to read signature key" with the measured simulator cause (LocalAuthentication -7, Face ID enrollment reset after an Xcode/simulator restart; re-enable enrollment, no re-activation needed). Guidance guard asserts it.
+
 - `sdk_native_preflight`: new `warnings` list and per-binding `theme_warning` when a trusted-WebView client carries a plain theme (kobil-lite/keycloak/base); `POLICY['kstrustedwebview']['recommended_clients']` names the kobil-mobile themed copies. Measured 2026-10-08: an Xcode agent that took the BDDK clients showed the desktop-styled login page in the app. Native KSSIDP path unchanged.
 
 - `sdk_onboarding_prepare` and the MCP startup hook return/skip with `connection_already_configured` when `KOBIL_SDK_CONNECTION` points to an existing file; previously a credential request was written into every bound project and an Xcode agent asked for credentials it already had (measured 2026-10-08, Xcode plug-in 0.7.0 dev).
