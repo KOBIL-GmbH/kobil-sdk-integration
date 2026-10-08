@@ -6,7 +6,7 @@ endpoints come from the realm's own OpenID configuration document, so they are r
 """
 from urllib.parse import urlencode
 
-from .backend import segment
+from .backend import segment, WEBVIEW_REQUEST_HEADERS
 
 KSSIDP_FLOWS = {'KSSIDP Enrollment - Multi form flow': 'activation', 'KSSIDP Mobile App Multi Flow Login': 'login'}
 BDDK_FLOWS = {'BDDK Enrollment': 'activation', 'BDDK Login': 'login'}
@@ -91,7 +91,8 @@ def discover(api, realm_base=None, well_known=None):
         entry['redirect_uri'] = redirect
         if endpoints and endpoints.get('authorization') and redirect:
             query = urlencode({'client_id': entry['client_id'], 'redirect_uri': redirect, 'response_type': 'code', 'scope': 'openid'})
-            entry['authorization_url_template'] = endpoints['authorization'] + '?' + query + '&state=<random state>'
+            entry['required_request_headers'] = WEBVIEW_REQUEST_HEADERS
+            entry['authorization_url_template'] = endpoints['authorization'] + '?' + query + '&nonce=<random>&code_challenge=<code_challenge from GetAstClientData>&code_challenge_method=<code_challenge_method from GetAstClientData>&state=<random state>'
         found.append(entry)
     kssidp = any(c['based_on'] == 'kssidp' and c['official_flow'] for c in found)
     kinds = sorted({c['based_on'] for c in found if c['role']})
@@ -113,7 +114,7 @@ def register(mcp):
         kssidp (current standard), bddk (deprecated; KobilMobile* clients are copies of it) or other, role activation or login,
         login_theme, and whether the flow carries the official name. Also returns the realm endpoints (from the realm's own
         OpenID configuration, so they are right whatever the path layout; source "derived" means not confirmed) and, per client,
-        the registered redirect_uri and a ready authorization_url_template (replace <random state>). Use these addresses;
+        the registered redirect_uri, a ready authorization_url_template (fill nonce, state and the PKCE challenge from GetAstClientData) and the required_request_headers the WebView request must carry. Use these addresses;
         never assemble them yourself. No secrets, no attributes other than the theme.
         """
         import httpx

@@ -2,7 +2,7 @@
 from typing import Literal
 from .idp_admin import Admin
 from urllib.parse import urlencode
-from .backend import segment, realm_base_url
+from .backend import segment, realm_base_url, WEBVIEW_REQUEST_HEADERS
 
 POLICY = {
     "paths": ["kstrustedwebview", "kssidp"],
@@ -42,9 +42,10 @@ def suitable_addresses(realm_base, client_id, redirect_uris):
     if realm_base:
         endpoint = realm_base.rstrip("/") + "/protocol/openid-connect/auth"
         out["authorization_endpoint"] = endpoint
+        out["required_request_headers"] = WEBVIEW_REQUEST_HEADERS
         if redirect:
             query = urlencode({"client_id": client_id, "redirect_uri": redirect, "response_type": "code", "scope": "openid"})
-            out["authorization_url_template"] = endpoint + "?" + query + "&state=<random state>"
+            out["authorization_url_template"] = endpoint + "?" + query + "&nonce=<random>&code_challenge=<code_challenge from GetAstClientData>&code_challenge_method=<code_challenge_method from GetAstClientData>&state=<random state>"
     return out
 
 

@@ -121,6 +121,8 @@ class SuitableAddressTests(unittest.TestCase):
             self.assertIn('client_id=' + b['client_id'], b['authorization_url_template'])
             self.assertIn('redirect_uri=https%3A%2F%2Fkobil%2FOpenIdRedirectUri', b['authorization_url_template'])
             self.assertTrue(b['authorization_url_template'].endswith('state=<random state>'))
+            self.assertIn('code_challenge=<code_challenge from GetAstClientData>', b['authorization_url_template'])
+            self.assertIn('X-KOBIL-ASTCLIENTDATA', b['required_request_headers'])
 
     def test_without_realm_base_nothing_is_invented(self):
         for b in self.run_check()['bindings']:

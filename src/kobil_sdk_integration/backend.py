@@ -325,3 +325,10 @@ def realm_base_url(idp_url, realm):
     if base.endswith(suffix):
         return base
     return (base if base.endswith('/auth') else base + '/auth') + suffix
+
+
+# Headers the trusted WebView request must carry (GettingStarted: ShiftWebViewUrlRequest); the values come from GetAstClientData.
+WEBVIEW_REQUEST_HEADERS = {
+    'X-KOBIL-ASTCLIENTDATA': 'clientData from GetAstClientData',
+    'X-KOBIL-ASTCLIENTID': 'astClientId from GetAstClientData; omit it when it is all zeros (before the first activation)',
+}

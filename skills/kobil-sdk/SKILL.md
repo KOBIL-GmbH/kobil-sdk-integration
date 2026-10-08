@@ -606,3 +606,14 @@ callback (`onURLBlocked` is the usual reason for a blank page, `webViewDidFinish
 `onNSURLResponseReceived` the HTTP status) and set `KsTrustedWebView.setLogListener(...)`. `sdk_code_samples(platform="ios",
 topic="debug")` has a complete delegate that compiles against the delivered frameworks. Read the output with
 `GetConsoleOutput` instead of guessing from a blank screen.
+
+## Trusted WebView request (GettingStarted)
+
+A bare authorisation URL gives a blank page: the IDP flow needs what the SDK knows. As the GettingStarted does it: send
+`GetAstClientData` (`KSMGetAstClientDataEvent(tenantId:)`, result through the completion handler), build the authorisation
+URL from `authorization_endpoint` and the registered `redirect_uri` (from `sdk_native_preflight` or `sdk_idp_flow_overview`)
+with `code_challenge` and `code_challenge_method` from the result, create the `URLRequest` with the headers
+`X-KOBIL-ASTCLIENTDATA` (clientData) and `X-KOBIL-ASTCLIENTID` (omit when all zeros), and load that request on the
+`KsTrustedWebView` (`load(request)`, not `loadUrl`). Configure the web view with the IDP certificates and the whitelist.
+`sdk_code_samples(platform="ios", topic="webview")` has the compiled code. If the page stays blank, add the console output
+from "Debug output on the console" and read `onURLBlocked` and `webViewDidFinishLoading`.
