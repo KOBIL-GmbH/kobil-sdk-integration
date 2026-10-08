@@ -92,9 +92,11 @@ def main(argv):
                 if who and not any(a in who for a in ALLOWED_IDENTITY):
                     hits['author identity'].add((label, '<redacted>'))
             scan_text(label + ' message', msg, hits)
+        wanted = {r for r in refs if subprocess.run(['git', '-C', repo, 'rev-parse', '-q', '--verify', 'refs/tags/' + r],
+                                                   capture_output=True).returncode == 0}
         for ref in git(repo, 'for-each-ref', '--format=%(refname:short)%1f%(taggername)%1f%(taggeremail)%1f%(contents)', 'refs/tags').decode().split('\n'):
             f = ref.split('\x1f')
-            if len(f) == 4:
+            if len(f) == 4 and f[0] in wanted:
                 for who in f[1:3]:
                     who = who.strip()
                     if who and not any(a in who for a in ALLOWED_IDENTITY):
