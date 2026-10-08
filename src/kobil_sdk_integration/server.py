@@ -15,12 +15,14 @@ mcp = FastMCP("KOBILSDK", instructions="For first-time setup call sdk_onboarding
 def sdk_runtime_info() -> dict:
     """Identify the running MCP package and bundled knowledge by content hashes.
 
-    No credentials, local paths, backend requests or mobile SDK version claims.
+    No credentials, local paths, backend requests or mobile SDK version claims. project_binding says whether
+    the project was taken from the host's folder ('cwd') or from the fixed setup ('env').
     Compare with the intended installed release to detect a stale IDE registration.
     """
     from . import telemetry
     from .runtime_info import identity
     result = identity()
+    result['project_binding'] = os.environ.get('KOBIL_SDK_PROJECT_SOURCE', 'unknown')
     hint = telemetry.feedback_hint()
     if hint:
         result['feedback_prompt'] = hint

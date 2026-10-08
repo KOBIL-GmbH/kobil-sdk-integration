@@ -110,7 +110,8 @@ crashes at launch with "Library not loaded"); `sdk_artifact_info` also describes
 The skill and knowledge now carry the embed step. Performance: tool calls contain named spans and
 `scripts/perf_bench.py` measures the offline tools against budgets. Xcode reloads a project whose file
 changed on disk; the tool is tested on a project that is not open in Xcode, so close the workspace or wait
-for the reload before building.
+for the reload before building. The IDE entry point now follows the project folder the host opened, so the
+Xcode plug-in is imported once and a new app only needs a new chat in its project folder.
 
 ## v0.7.1 migration notes
 
