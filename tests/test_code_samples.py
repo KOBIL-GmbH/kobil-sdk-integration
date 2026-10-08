@@ -22,6 +22,8 @@ class CodeSamplesTest(unittest.TestCase):
             got = code_samples.get(platform)
             topics = {s['topic'] for s in got['samples']}
             self.assertTrue({'adapter', 'start', 'errors', 'timeout'} <= topics, platform)
+            if platform == 'ios':
+                self.assertIn('debug', topics)
             for s in got['samples']:
                 self.assertTrue(s['code'].strip() and s['source'] and s['about'])
         self.assertEqual(len(code_samples.get('swift', 'errors')['samples']), 1)
@@ -75,7 +77,7 @@ class CodeSamplesTest(unittest.TestCase):
     def test_swift_samples_compile_against_the_sdk(self):
         d = Path((Path.home() / '.kobil-sdk' / 'sdk-delivery').read_text().strip())
         slice_ = 'ios-arm64_x86_64-simulator'
-        frames = [d / f'{n}.xcframework' / slice_ for n in ('KSMasterController', 'hnb', 'kssidp')]
+        frames = [d / f'{n}.xcframework' / slice_ for n in ('KSMasterController', 'hnb', 'kssidp', 'KSTrustedWebView')]
         if not all(f.is_dir() for f in frames):
             self.skipTest('delivery has no simulator slices')
         cmd = ['xcrun', '--sdk', 'iphonesimulator', 'swiftc', '-typecheck', '-swift-version', '5',

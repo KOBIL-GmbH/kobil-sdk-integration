@@ -596,3 +596,13 @@ ready `authorization_url_template`. The realm `endpoints` come from the realm's 
 `derived` means not confirmed). Clients such as `KobilMobileEnrollment`/`KobilMobileLogin` are copies of the BDDK flows with the
 `kobil-mobile` theme (a styled child of `kobil-lite`). The tool only lists; the owner's selection always wins. Use its
 addresses, never assemble them yourself.
+
+## Debug output on the console
+
+Print to the console from every completion handler and every delegate callback, so that nothing stays silent: the event or
+callback name, the status, error domain, code and description. Print URLs without their query (state and authorisation code
+live there); never print codes, tokens, passwords or cookies. For the trusted WebView log every `KsTrustedWebViewDelegate`
+callback (`onURLBlocked` is the usual reason for a blank page, `webViewDidFinishLoading` carries the load error,
+`onNSURLResponseReceived` the HTTP status) and set `KsTrustedWebView.setLogListener(...)`. `sdk_code_samples(platform="ios",
+topic="debug")` has a complete delegate that compiles against the delivered frameworks. Read the output with
+`GetConsoleOutput` instead of guessing from a blank screen.

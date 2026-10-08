@@ -39,6 +39,13 @@
           "topic": "timeout",
           "source": "ADDITION (pattern of the GettingStarted UI-test adapter)",
           "about": "async request with timeout for tests and flows that must not hang."
+        },
+        {
+          "id": "debug",
+          "file": "swift/TrustedWebViewDebug.swift",
+          "topic": "debug",
+          "source": "ADDITION (callback list from the KSTrustedWebView headers)",
+          "about": "Console output for every trusted WebView callback (start/finish loading, blocked URL, response status, challenge) and the WebView log listener, so a blank page shows its reason in the console."
         }
       ]
     },
@@ -113,6 +120,7 @@
   },
   "rules": [
     "Never pass nil as completion handler for an event with a result event (Start, Restart, Activate, OfflineLogin, ...): the result comes only through the handler. nil is for events whose result is none or Acknowledge; see completion_handler.",
+    "Debug on the console: print every completion handler and every delegate callback (name, status, error domain/code/description; URLs without query; never codes, tokens, passwords). A blank WebView or a silent step is then visible in the Xcode console / GetConsoleOutput. Register KsTrustedWebView.setLogListener too; onURLBlocked is the usual reason for a blank page.",
     "The reply of a request comes only through the request itself (completion handler, then, Future); never wait for it in a pushed-event handler.",
     "Every wait gets a timeout.",
     "A failed request shows in the status of its result event; a wrong event for the SDK state gives InvalidStateEvent.",
