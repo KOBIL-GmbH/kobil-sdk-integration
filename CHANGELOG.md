@@ -8,6 +8,7 @@ Xcode plug-in round (project-bound adapter, Xcode 27, iOS 27 simulator, akinci):
 
 - Optional Sentry error reporting (`pip install kobil-sdk-integration[sentry]`, enabled only by `KOBIL_SDK_SENTRY_DSN`). Events carry exception type, error code, tool name and package-relative frames; arguments, variables, source lines, messages, hosts and user data are removed.
 - Usage breadcrumbs for every tool call (start, end, duration, result size, outcome), start and exit records, and a local usage log (`~/.kobil-sdk/usage.jsonl`, off with `KOBIL_SDK_USAGE_LOG=0`).
+- Sentry performance: one transaction per tool call (duration, status, result size), timed server start, HTTP spans without URLs or hosts (`KOBIL_SDK_SENTRY_TRACES`, default 1.0).
 - New tool `sdk_report_problem` (Sentry user feedback, optional contact email, local copy) and a once-a-day `feedback_prompt` in `sdk_runtime_info` / `sdk_backend_status`.
 
 ### IDE adapters (Xcode plug-in measured 2026-10-08)

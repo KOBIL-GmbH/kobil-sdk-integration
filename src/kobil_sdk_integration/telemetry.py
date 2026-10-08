@@ -13,6 +13,7 @@ secret shapes, plus an optional contact address the user chose to give for perso
 """
 import atexit
 import collections
+import contextlib
 import functools
 import json
 import os
@@ -142,6 +143,66 @@ def scrub(event, hint):
     return event
 
 
+SPAN_KEEP = ('http.response.status_code', 'http.request.method')
+
+
+def _rate(value):
+    try:
+        return min(1.0, max(0.0, float(value)))
+    except (TypeError, ValueError):
+        return 1.0
+
+
+def scrub_transaction(event, hint):
+    """Performance events keep names, durations and status; hosts, URLs, queries and personal data are removed."""
+    for key in ('server_name', 'user', 'request', 'extra', 'modules'):
+        event.pop(key, None)
+    event['contexts'] = {'trace': (event.get('contexts') or {}).get('trace', {})}
+    crumbs = event.get('breadcrumbs')
+    if isinstance(crumbs, dict):
+        crumbs['values'] = [c for c in crumbs.get('values', []) if str(c.get('category', '')).startswith('kobil.')]
+    else:
+        event.pop('breadcrumbs', None)
+    for span in event.get('spans', []):
+        span['description'] = span.get('op') or 'span'
+        span['data'] = {k: v for k, v in (span.get('data') or {}).items() if k in SPAN_KEEP}
+        span['tags'] = {k: v for k, v in (span.get('tags') or {}).items() if k in ('http.status_code', 'status')}
+    return event
+
+
+def _transaction(op, name):
+    if _sentry is None:
+        return contextlib.nullcontext()
+    try:
+        return _sentry.start_transaction(op=op, name=name)
+    except Exception:
+        return contextlib.nullcontext()
+
+
+def _txn(txn, status=None, **data):
+    for key, value in data.items():
+        try:
+            txn.set_data(key, value)
+        except Exception:
+            pass
+    if status:
+        try:
+            txn.set_status(status)
+        except Exception:
+            pass
+
+
+@contextlib.contextmanager
+def timed(op, name):
+    """Time a block (server start, a phase): one usage record and, with Sentry, one transaction."""
+    began = time.perf_counter()
+    with _transaction(op, '%s %s' % (op, name)) as txn:
+        try:
+            yield txn
+        finally:
+            crumb('timing', '%s %s' % (op, name), ms=int((time.perf_counter() - began) * 1000))
+
+
 def init(env):
     global _sentry
     if env.get('KOBIL_SDK_SENTRY_DISABLE') == '1':
@@ -164,8 +225,8 @@ def init(env):
     except Exception:
         release = None
     sentry_sdk.init(dsn=dsn, release=release, environment=env.get('KOBIL_SDK_SENTRY_ENVIRONMENT', 'local'),
-                    send_default_pii=False, include_local_variables=False, traces_sample_rate=0,
-                    server_name='', max_breadcrumbs=200, before_send=scrub, before_breadcrumb=_keep_crumb)
+                    send_default_pii=False, include_local_variables=False, traces_sample_rate=_rate(env.get('KOBIL_SDK_SENTRY_TRACES')),
+                    server_name='', max_breadcrumbs=200, before_send=scrub, before_send_transaction=scrub_transaction, before_breadcrumb=_keep_crumb)
     sentry_sdk.set_tag('session', _session)
     sha = git_sha()
     if sha:
@@ -209,23 +270,28 @@ def install(mcp):
         count_call()
         crumb('tool', 'call_start', tool=name, arg_keys=keys, n=_calls)
         began = time.perf_counter()
-        try:
-            result = await original(name, arguments, *args, **kwargs)
-        except Exception as wrapped:
-            error = wrapped.__cause__ or wrapped
-            code = _message(str(error))
-            crumb('tool', 'call_end', tool=name, ok=False, ms=int((time.perf_counter() - began) * 1000),
-                  error_type=type(error).__name__, error_code=code if code != '[redacted]' else 'none')
-            if _sentry is not None:
-                try:
-                    _sentry.set_tag('tool', name)
-                    _sentry.capture_exception(error)
-                except Exception:
-                    pass
-            raise wrapped
-        crumb('tool', 'call_end', tool=name, ok=True, ms=int((time.perf_counter() - began) * 1000),
-              result_bytes=_size(result), arg_keys=keys)
-        return result
+        with _transaction('mcp.tool', 'tool %s' % name) as txn:
+            _txn(txn, arg_keys=keys, n=_calls)
+            try:
+                result = await original(name, arguments, *args, **kwargs)
+            except Exception as wrapped:
+                error = wrapped.__cause__ or wrapped
+                code = _message(str(error))
+                _txn(txn, 'internal_error', error_type=type(error).__name__)
+                crumb('tool', 'call_end', tool=name, ok=False, ms=int((time.perf_counter() - began) * 1000),
+                      error_type=type(error).__name__, error_code=code if code != '[redacted]' else 'none')
+                if _sentry is not None:
+                    try:
+                        _sentry.set_tag('tool', name)
+                        _sentry.capture_exception(error)
+                    except Exception:
+                        pass
+                raise wrapped
+            size = _size(result)
+            _txn(txn, 'ok', result_bytes=size)
+            crumb('tool', 'call_end', tool=name, ok=True, ms=int((time.perf_counter() - began) * 1000),
+                  result_bytes=size, arg_keys=keys)
+            return result
 
     manager.call_tool = call_tool
 

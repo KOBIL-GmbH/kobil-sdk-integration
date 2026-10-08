@@ -196,7 +196,8 @@ def main():
     status = telemetry.init(os.environ)
     telemetry.install(mcp)
     telemetry.startup(status, os.environ.get('KOBIL_SDK_TOOLSET', 'full'), len(asyncio.run(mcp.list_tools())))
-    onboarding.startup()
+    with telemetry.timed('lifecycle', 'onboarding_startup'):
+        onboarding.startup()
     mcp.run()
 
 

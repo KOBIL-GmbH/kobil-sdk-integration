@@ -151,6 +151,8 @@ KOBIL_SDK_SENTRY_DSN=<dsn>  KOBIL_SDK_SENTRY_ENVIRONMENT=<name>
 
 Only the exception type, a leading error code, the tool name, package-relative stack frames and usage breadcrumbs (tool name, argument key names, duration, result size, outcome) are sent. Tool arguments and results, local variables, source lines, free-text messages, host names and user data are removed before sending.
 
+Performance: every tool call is one Sentry transaction (`tool <name>`, op `mcp.tool`) with duration, status and result size, and the server start is timed as well. HTTP calls appear as spans without URLs or hosts. `KOBIL_SDK_SENTRY_TRACES` sets the sample rate (default 1.0).
+
 A local usage log with the same claims is written to `~/.kobil-sdk/usage.jsonl` (mode 600, rotated at 1 MB); set `KOBIL_SDK_USAGE_LOG=0` to turn it off.
 
 Users can report problems or ideas with the `sdk_report_problem` tool (Sentry user feedback). The report is always saved under `~/.kobil-sdk/reports/` and is sent only when error reporting is enabled. An email address for personal support is optional and sent only if the user gives one. About once a day, after 20 tool calls, `sdk_runtime_info` or `sdk_backend_status` carries a `feedback_prompt` that tells the agent to ask the user for feedback.

@@ -39,6 +39,27 @@ def fake_sentry():
     mod.set_tag = lambda k, v: calls['tags'].append((k, v))
     mod.add_breadcrumb = lambda **kw: None
     mod.capture_event = lambda event: 'evt0'
+
+    class Txn:
+        def __init__(self, kw):
+            self.kw, self.data, self.status = kw, {}, None
+            calls.setdefault('txns', []).append(self)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            if exc[0] is not None and self.status is None:
+                self.status = 'internal_error'
+            return False
+
+        def set_data(self, key, value):
+            self.data[key] = value
+
+        def set_status(self, status):
+            self.status = status
+
+    mod.start_transaction = lambda **kw: Txn(kw)
     sent = calls.setdefault('envelopes', [])
     transport = types.SimpleNamespace(capture_envelope=lambda env: sent.append(env))
     mod.get_client = lambda: types.SimpleNamespace(transport=transport, options={'environment': 'test', 'release': '0'})
@@ -64,7 +85,8 @@ class InitTests(unittest.TestCase):
         self.assertEqual(kw['dsn'], 'https://k@example.invalid/1')
         self.assertFalse(kw['send_default_pii'])
         self.assertFalse(kw['include_local_variables'])
-        self.assertEqual(kw['traces_sample_rate'], 0)
+        self.assertEqual(kw['traces_sample_rate'], 1.0)
+        self.assertIs(kw['before_send_transaction'], telemetry.scrub_transaction)
         self.assertEqual(kw['server_name'], '')
         self.assertIs(kw['before_send'], telemetry.scrub)
         self.assertIsNone(kw['before_breadcrumb']({'category': 'httpx', 'message': 'GET https://h/x'}, {}))
@@ -233,6 +255,86 @@ class UsageHookTests(Base):
         server = self.run_tool(lambda: 'ok')
         asyncio.run(server._tool_manager.call_tool('sdk_x', {}))
         self.assertEqual(self.usage()[0]['message'], 'call_start')
+
+
+class PerformanceTests(Base):
+    def server(self, behaviour):
+        class Manager:
+            async def call_tool(self, name, arguments, context=None, convert_result=False):
+                return behaviour()
+
+        class Server:
+            _tool_manager = Manager()
+
+        return Server
+
+    def test_trace_rate_comes_from_the_environment(self):
+        mod, calls = fake_sentry()
+        with mock.patch.dict(sys.modules, {'sentry_sdk': mod}):
+            telemetry.init({'KOBIL_SDK_SENTRY_DSN': 'https://k@example.invalid/1', 'KOBIL_SDK_SENTRY_TRACES': '0.25'})
+        self.assertEqual(calls['init']['traces_sample_rate'], 0.25)
+
+    def test_each_tool_call_is_one_transaction_with_claims(self):
+        mod, calls = fake_sentry()
+        server = self.server(lambda: {'x': 'y' * 100})
+        with mock.patch.dict(sys.modules, {'sentry_sdk': mod}):
+            telemetry.init({'KOBIL_SDK_SENTRY_DSN': 'https://k@example.invalid/1'})
+            telemetry.install(server)
+            asyncio.run(server._tool_manager.call_tool('sdk_x', {'password': 'hunter2'}))
+        (txn,) = calls['txns']
+        self.assertEqual(txn.kw['op'], 'mcp.tool')
+        self.assertEqual(txn.kw['name'], 'tool sdk_x')
+        self.assertEqual(txn.status, 'ok')
+        self.assertGreater(txn.data['result_bytes'], 100)
+        self.assertEqual(txn.data['arg_keys'], 'password')
+        self.assertNotIn('hunter2', repr(txn.data) + repr(txn.kw))
+
+    def test_failed_call_marks_the_transaction(self):
+        mod, calls = fake_sentry()
+
+        def boom():
+            raise ValueError('PROJECT_NOT_SELECTED')
+        server = self.server(boom)
+        with mock.patch.dict(sys.modules, {'sentry_sdk': mod}):
+            telemetry.init({'KOBIL_SDK_SENTRY_DSN': 'https://k@example.invalid/1'})
+            telemetry.install(server)
+            with self.assertRaises(ValueError):
+                asyncio.run(server._tool_manager.call_tool('sdk_x', {}))
+        self.assertEqual(calls['txns'][0].status, 'internal_error')
+
+    def test_no_transaction_without_sentry(self):
+        server = self.server(lambda: 1)
+        telemetry.install(server)
+        asyncio.run(server._tool_manager.call_tool('sdk_x', {}))
+        self.assertEqual(self.usage()[-1]['data']['ok'], True)
+
+    def test_timed_block_records_a_usage_record_and_a_transaction(self):
+        mod, calls = fake_sentry()
+        with mock.patch.dict(sys.modules, {'sentry_sdk': mod}):
+            telemetry.init({'KOBIL_SDK_SENTRY_DSN': 'https://k@example.invalid/1'})
+            with telemetry.timed('lifecycle', 'startup'):
+                pass
+        self.assertEqual(calls['txns'][0].kw['name'], 'lifecycle startup')
+        end = self.usage()[-1]
+        self.assertEqual((end['category'], end['message']), ('kobil.timing', 'lifecycle startup'))
+        self.assertIn('ms', end['data'])
+
+    def test_transaction_scrub_removes_hosts_and_personal_data(self):
+        event = {'type': 'transaction', 'transaction': 'tool sdk_x', 'server_name': 'h', 'user': {'id': 1}, 'request': {'url': 'u'},
+                 'extra': {'a': 1}, 'contexts': {'trace': {'trace_id': 't', 'op': 'mcp.tool'}, 'os': {'name': 'mac'}},
+                 'breadcrumbs': {'values': [{'category': 'httpx', 'message': 'GET https://customer.example'}]},
+                 'spans': [{'op': 'http.client', 'description': 'GET https://customer.example/auth/realms/x?code=1',
+                            'data': {'url': 'https://customer.example', 'http.response.status_code': 200, 'http.request.method': 'GET', 'http.query': 'code=1'},
+                            'tags': {'http.status_code': '200'}}]}
+        out = telemetry.scrub_transaction(event, {})
+        self.assertEqual(out['transaction'], 'tool sdk_x')
+        for key in ('server_name', 'user', 'request', 'extra'):
+            self.assertNotIn(key, out)
+        self.assertEqual(out['contexts'], {'trace': {'trace_id': 't', 'op': 'mcp.tool'}})
+        span = out['spans'][0]
+        self.assertEqual(span['description'], 'http.client')
+        self.assertEqual(span['data'], {'http.response.status_code': 200, 'http.request.method': 'GET'})
+        self.assertNotIn('customer', repr(out))
 
 
 class CommitTagTests(Base):
