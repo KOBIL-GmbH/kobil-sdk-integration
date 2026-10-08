@@ -94,6 +94,34 @@
           "topic": "timeout",
           "source": "ADDITION",
           "about": "postEvent with a timeout, answered exactly once."
+        },
+        {
+          "id": "transaction",
+          "file": "kotlin/TransactionModel",
+          "topic": "events",
+          "source": "GettingStarted Kotlin Shift: TransactionModel",
+          "about": "Pushed events banner / confirmation request / result; answer with StartTransactionEvent and DisplayConfirmationEvent."
+        },
+        {
+          "id": "webview_request",
+          "file": "kotlin/TrustedWebViewRequest",
+          "topic": "webview",
+          "source": "GettingStarted Kotlin Shift: GetAstClientDataModel, TrustedWebViewModel, ShiftHelper, TrustedWebViewFragment",
+          "about": "GetAstClientData, headers X-KOBIL-ASTCLIENTDATA/-ASTCLIENTID, PKCE in the URL, loadUrl(url, headers)."
+        },
+        {
+          "id": "authorisation_code",
+          "file": "kotlin/SetAuthorisationCode",
+          "topic": "authorisation",
+          "source": "GettingStarted Kotlin Shift: TrustedWebViewModel (performSetAuthorisationCodeEvent); code reading via Uri is an ADDITION",
+          "about": "Take the code of the redirect, send SetAuthorisationCodeEvent, read SetAuthorisationCodeResultEvent in then { }. Never log the code."
+        },
+        {
+          "id": "debug",
+          "file": "kotlin/TrustedWebViewDebug",
+          "topic": "debug",
+          "source": "GettingStarted Kotlin: BaseTrustedWebViewViewModel (PinningProxy logging); rules ADDITION",
+          "about": "Console output of the WebView framework log and every WebView step, without query and secrets."
         }
       ]
     },
@@ -128,11 +156,43 @@
           "topic": "timeout",
           "source": "ADDITION",
           "about": "send with Future.timeout."
+        },
+        {
+          "id": "transaction",
+          "file": "dart/transaction_events",
+          "topic": "events",
+          "source": "Flutter superapp: transaction cubit and services",
+          "about": "Pushed events banner / confirmation request; answer with StartTransactionEventT and DisplayConfirmationEventT."
+        },
+        {
+          "id": "webview_request",
+          "file": "dart/webview_request",
+          "topic": "webview",
+          "source": "Flutter superapp: AstRepo",
+          "about": "GetAstClientData, headers X-KOBIL-ASTCLIENTDATA/-ASTCLIENTID (clientData is a list: join), PKCE in the URL, load with headers."
+        },
+        {
+          "id": "authorisation_code",
+          "file": "dart/set_authorisation_code",
+          "topic": "authorisation",
+          "source": "Flutter WLA app: SdkHandlerRepo.setAuthCode; Flutter superapp: setAuthCodeEvent; code reading via Uri is an ADDITION",
+          "about": "Take the code of the redirect, send SetAuthorisationCodeEventT, the result is the reply of send(). Never log the code."
+        },
+        {
+          "id": "debug",
+          "file": "dart/webview_debug",
+          "topic": "debug",
+          "source": "Flutter superapp: mini app WebView body; rules ADDITION",
+          "about": "Console output of every WebView step (load start/stop, error, HTTP error, navigation), without query and secrets."
         }
       ],
       "imports": {
         "mc_wrapper_handler": [
           "package:either_option/either_option",
+          "package:ksmastercontrollerwrapperdart/ksmastercontrollerwrapperdart"
+        ],
+        "webview_debug": [],
+        "transaction_events": [
           "package:ksmastercontrollerwrapperdart/ksmastercontrollerwrapperdart"
         ],
         "*": [

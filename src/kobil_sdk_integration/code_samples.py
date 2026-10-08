@@ -28,7 +28,8 @@ def _imports(entry, sample):
     spec = entry.get('imports')
     if not spec:
         return ''
-    names = spec.get(sample['file'].split('/')[-1]) or spec.get('*') or []
+    key = sample['file'].split('/')[-1]
+    names = spec[key] if key in spec else spec.get('*', [])
     return ''.join("import '%source file';\n" % n for n in names) + ('\n' if names else '')
 
 

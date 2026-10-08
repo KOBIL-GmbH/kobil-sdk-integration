@@ -21,9 +21,7 @@ class CodeSamplesTest(unittest.TestCase):
         for platform in ('ios', 'android', 'flutter'):
             got = code_samples.get(platform)
             topics = {s['topic'] for s in got['samples']}
-            self.assertTrue({'adapter', 'start', 'errors', 'timeout'} <= topics, platform)
-            if platform == 'ios':
-                self.assertIn('debug', topics)
+            self.assertTrue({'adapter', 'start', 'errors', 'timeout', 'events', 'debug', 'webview', 'authorisation'} <= topics, platform)
             for s in got['samples']:
                 self.assertTrue(s['code'].strip() and s['source'] and s['about'])
         self.assertEqual(len(code_samples.get('swift', 'errors')['samples']), 1)
