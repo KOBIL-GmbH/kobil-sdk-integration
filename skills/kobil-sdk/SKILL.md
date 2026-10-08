@@ -45,6 +45,18 @@ of this skill refines a step, none replaces it.
    `ALLOW_VIRTUAL_SMART_CARD` for the fixture or a physical device; see
    [signing-policy.md](references/signing-policy.md). Never downgrade a
    deployment policy silently.
+   iOS, before the first build with SDK code: Xcode's own agent tools cannot embed a
+   framework, and an app that is only linked builds and then crashes at launch with
+   "Library not loaded". Call `sdk_ios_project_integrate(project_path, target_name,
+   frameworks_dir)` with the debug set (`sdk_artifact_info` accepts the `.xcframework`
+   folders to check them first). It links and embeds all four with code sign on copy,
+   writes the bridging header and limits the target to iPhone and iPad; build once, then
+   check that the app starts on a simulator. Do not edit `project.pbxproj` by hand. If it
+   refuses (the project already references XCFrameworks another way), the owner does it
+   once in Xcode: target > General > Frameworks, Libraries, and Embedded Content > set all
+   four to **Embed & Sign**. The console warning that `VersionInfo` is implemented in both
+   kssidp.framework and KSMasterController.framework is a known harmless duplicate-class
+   warning.
 4. Start: register listeners, Start the SDK, observe the Start result event.
 5. For iOS KSTrustedWebView 9.7, pass PEM file bytes unchanged to
    `certsDataForValidation`, not DER. Prove a read-only page loads before

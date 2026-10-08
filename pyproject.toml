@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kobil-sdk-integration"
-version = "0.7.1"
+version = "0.8.0"
 description = "Modular KOBIL SDK integration planning for native and Flutter apps"
 readme = "README.md"
 requires-python = ">=3.11"

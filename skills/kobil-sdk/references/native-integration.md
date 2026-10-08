@@ -21,6 +21,9 @@ Flutter and SSMS require separate bindings; do not translate these calls blindly
    `sdk_app_version_ensure` with explicit platform/version, registration user and
    integrity policy. Read back the resulting record. The registration user is
    distinct from the user who will activate this device.
+   iOS: embed the frameworks with `sdk_ios_project_integrate` before the first build that
+   runs SDK code (linked but not embedded builds, then crashes at launch with "Library not
+   loaded"); see SKILL.md step 3.
 4. Request the signed configuration via `sdk_config_write`, using the selected
    trusted certificates. Package the JWT together with the delivery's matching
    app/MC configuration and referenced certificates. Preserve signed content.

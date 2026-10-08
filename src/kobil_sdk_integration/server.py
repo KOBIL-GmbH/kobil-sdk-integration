@@ -99,12 +99,44 @@ def _delivery_inventory(source):
                     'delivery; see sdk_sftp_list scope fields.'}
 
 
+def _xcframework_info(folder):
+    import plistlib
+    manifest = folder / "Info.plist"
+    if not manifest.is_file():
+        raise ValueError("The .xcframework folder has no Info.plist")
+    try:
+        libraries = plistlib.loads(manifest.read_bytes()).get("AvailableLibraries", [])
+        slices = [str(item["LibraryIdentifier"]) for item in libraries]
+    except Exception:
+        raise ValueError("The .xcframework Info.plist cannot be read") from None
+    digest = hashlib.sha256()
+    files = size = 0
+    for current, dirs, names in os.walk(folder, followlinks=False):
+        dirs.sort()
+        for name in sorted(names):
+            entry = Path(current) / name
+            relative = entry.relative_to(folder).as_posix()
+            digest.update(relative.encode() + b"\0")
+            if entry.is_symlink():
+                digest.update(b"link:" + os.readlink(entry).encode())
+                continue
+            with open(entry, "rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
+                    size += len(chunk)
+            files += 1
+    return {"path": str(folder.absolute()), "kind": "xcframework", "slices": slices, "files": files,
+            "bytes": size, "sha256": digest.hexdigest(), "compatibility_verified": False}
+
+
 @mcp.tool()
 def sdk_artifact_info(path: str) -> dict:
     """Hash a separately supplied SDK binary/archive; return metadata, never contents.
 
     Supported file suffixes: aar, jar, dll, dylib, so, zip, tar, gz, tgz.
-    Framework directories must first be packaged as an archive. This does not
+    A delivered .xcframework folder is also accepted: it returns the file count, size, the platform slices
+    named in its Info.plist and one SHA-256 over the folder tree (relative names and bytes, symlinks not
+    followed). Other folders must first be packaged as an archive. This does not
     verify authenticity, architecture, version compatibility or license rights.
     For ZIP deliveries a delivery_inventory is returned from member names only:
     native Android (.aar) / iOS (.xcframework) / Flutter classification plus
@@ -113,6 +145,8 @@ def sdk_artifact_info(path: str) -> dict:
     template assets before app scaffolding instead of guessing schemas.
     """
     source = Path(path).expanduser()
+    if source.suffix.lower() == ".xcframework" and source.is_dir():
+        return _xcframework_info(source)
     if source.suffix.lower() not in {".aar", ".jar", ".dll", ".dylib", ".so", ".zip", ".tar", ".gz", ".tgz"}:
         raise ValueError("Expected a supported SDK binary/archive file")
     try:
@@ -134,6 +168,34 @@ def sdk_artifact_info(path: str) -> dict:
               "sha256": digest.hexdigest(), "compatibility_verified": False}
     if source.suffix.lower() == ".zip":
         result["delivery_inventory"] = _delivery_inventory(source)
+    return result
+
+
+@mcp.tool()
+def sdk_ios_project_integrate(project_path: str, target_name: str, frameworks_dir: str, marketing_version: str = '1.0.0',
+                              deployment_target: str | None = None,
+                              usage_descriptions: dict[str, str] | None = None) -> dict:
+    """Add the four SDK XCFrameworks to an Xcode app target as linked and Embed & Sign.
+
+    Xcode's own agent tools cannot embed a framework, and an app that is linked but not embedded builds
+    and then crashes at launch with "Library not loaded". project_path is the .xcodeproj, target_name the
+    app target, frameworks_dir the folder with KSMasterController, hnb, kssidp and KSTrustedWebView
+    .xcframework (the debug set while developing; the release set refuses the debugger).
+
+    Copies the set to a Frameworks folder next to the .xcodeproj (outside the synchronised source folder,
+    otherwise Xcode lists each framework twice), writes <Target>-Bridging-Header.h and edits project.pbxproj:
+    file references in a "KOBIL SDK" group, link entries, an Embed Frameworks phase with code sign on copy,
+    the bridging-header setting and the marketing version. The app target is limited to iPhone and iPad.
+    usage_descriptions adds Info.plist privacy strings the project lacks (NSFaceIDUsageDescription,
+    NSCameraUsageDescription, NSPhotoLibraryUsageDescription); an existing string is never overwritten.
+    The result is read back from the file. Idempotent. Build once afterwards, before adding code.
+    Xcode reloads a project whose file changed on disk and cancels a build started before the reload.
+    Do not edit project.pbxproj by hand for this.
+    """
+    from .xcodeproj import integrate
+    result = integrate(project_path, target_name, frameworks_dir, marketing_version, deployment_target, usage_descriptions)
+    result['next_step'] = ('Build the project once and check that the app starts on a simulator; a green build proves the '
+                           'link and the embed. Then add the bundle files (trusted certificate, sdk_config.jwt, mc_config.json).')
     return result
 
 
