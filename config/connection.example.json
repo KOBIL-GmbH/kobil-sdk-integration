@@ -1,0 +1,27 @@
+{
+  "environment": "development",
+  "tenant": "your-tenant",
+  "ast_url": "https://backend.example",
+  "services": [
+    {
+      "name": "astCa",
+      "url": "https://backend.example"
+    },
+    {
+      "name": "astLogin",
+      "url": "https://backend.example"
+    }
+  ],
+  "oauth": {
+    "token_url": "https://identity.example/realms/your-realm/protocol/openid-connect/token",
+    "client_id": "your-service-client",
+    "client_secret_env": "KOBIL_SDK_CLIENT_SECRET"
+  },
+  "admin": {
+    "idp_url": "https://idp.example",
+    "realm": "master",
+    "client_id": "admin-cli",
+    "username": "your-admin",
+    "password_env": "KOBIL_SDK_ADMIN_PASSWORD"
+  }
+}

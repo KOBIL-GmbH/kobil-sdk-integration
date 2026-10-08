@@ -44,10 +44,16 @@ store. Private CA/proxy deployments need an explicit future connection extension
 2. `sdk_app_ensure(expected_environment, app_name, categories)` reads the named
    app and creates it only after an app-endpoint 404. Authentication failures
    never imply the app is absent. Existing settings are not changed or certified.
+   `categories` are push-notification categories ("tms" for transaction
+   confirmation, "chat" for messaging); `sdk_app_get` on a missing app lists the
+   values the tenant already uses.
 3. `sdk_app_version_ensure(expected_environment, app_name, platform, version,
    register_user_id, check_integrity)` reads all version pages before reuse or
-   creation. Version must be `major.minor.patch`; supply the exact platform name
-   supported by your backend. Registration user and integrity policy are explicit.
+   creation. Version must be `major.minor.patch`; supply the platform name exactly
+   as `sdk_platforms` reports it (casing matters). The registration user is any
+   existing tenant user: reuse the one `sdk_app_versions` shows on an existing
+   version, or create a dedicated one with `sdk_activation_user_ensure` when none is
+   known. Registration user and integrity policy are explicit.
    Locked/conflicting versions fail without changes. Policy-ID registration is
    not yet exposed.
 4. `sdk_config_write(expected_environment, certificate_paths, output_path)` sends
@@ -97,12 +103,20 @@ existing registration user with the device activation identity.
 
 - `sdk_tms_trigger` creates one authorized transaction for a Keycloak recipient
   UUID with explicit retrieval/confirmation timeouts in seconds and explicit
-  authentication/freshness settings. This first adapter skips push and accepts
-  plain text; it does not support arbitrary structured payloads or display messages.
+  authentication/freshness settings (`freshness_seconds=-1` disables freshness; `0`
+  refuses every answer with 403/4035). It skips push. Optional `data` (string map)
+  fills Mustache placeholders in the text; document signing uses it (see
+  [TMS: document signing](../skills/kobil-sdk/references/tms.md#document-signing)).
 - `sdk_tms_status` reads progress; `sdk_tms_result` reads final result metadata.
-  Returned data excludes transaction payloads, recipient identities and signatures.
+  Returned data excludes transaction payloads, recipient identities and signature
+  bytes; it reports `signed_data_present`, `signed_data_bytes`, `signed_data_is_der_sequence` and
+  `signed_data_sha256`.
+- `sdk_display_message_send` posts a one-way display message. HTTP 202 is accepted
+  for delivery only (`delivery_verified: false`); confirm arrival in the app.
   No-result/404 is ambiguous (pending, unknown or expired); it is never success.
 - `sdk_tms_cancel` requests cancellation; query the final result separately.
+- `sdk_tms_scope_ensure` (admin block, additive IDP write) creates the realm client scope `tms`
+  and makes it optional on the login client; explicit-authentication transactions need it.
 
 These tools do not confirm transactions on the device or cryptographically verify
 server signatures. Do not retry an uncertain creation automatically. Use only
@@ -117,7 +131,101 @@ all paginated versions with platform, version, register_user_id, check_integrity
 and locked fields. Only these fields are returned. Incomplete policy metadata
 fails explicitly; no defaults silently replace missing backend settings.
 Reuse the selected registration user and policy with sdk_app_version_ensure.
-These tools neither create activation users nor return their credentials.
+
+## First activation of a device
+
+App and version records do not make an app usable: its first launch reports
+ACTIVATION_REQUIRED. There are two ways to activate, and `sdk_idp_journeys` tells which
+the realm offers:
+
+- **Email-code journeys** (realms that serve the KOBIL super app; listed under
+  `email_code`): the end user types an email, the IDP emails a code, and registration or
+  password reset sets the password. Nothing is provisioned on the backend: no activation
+  user, no activation code, no admin-set password. The app runs these multi-page journeys
+  natively (skill: `references/ios/README.md`, "Email-code activation") and never sends
+  `acr_values` on them.
+- **Activation-code journey** (listed under `activation`): an administrator issues a
+  one-time code for a user id, as described below.
+
+Issuing an activation code is an IDP operation with administrative rights, not an AST
+one, so it needs the optional `admin` block in the connection file (`sdk_idp_journeys`
+needs it too):
+
+    "admin": {"idp_url": "https://idp.<host>", "realm": "master",
+              "client_id": "admin-cli", "username": "<admin>",
+              "password_env": "KOBIL_SDK_ADMIN_PASSWORD"}
+
+The password is read from that environment variable at runtime, exactly like the AST
+client secret; it is never an argument and never written to the connection file. Every
+other tool works when the block is absent.
+
+### The realm needs a journey that consumes the code
+
+An activation code is useless if no client offers an activation journey. The client named
+in `mc_config.json` decides which browser flow the SDK is sent through, and a realm whose
+clients only carry login and registration journeys will render a password form instead,
+whatever the app sends.
+
+`sdk_activation_flow_ensure` creates a browser flow from KOBIL's activation authenticators,
+`sdk_activation_client_ensure` creates the public client bound to it, and
+`sdk_activation_flow_describe` reads a flow back. All three are additive: an existing flow
+or client is returned unmodified, so a wrong guess is undone by deleting the two resources
+that were created.
+
+Two things decide whether the result works:
+
+- **The login theme must render well-formed XHTML.** The SDK parses the page with a strict
+  parser and fails before sending any credential when tags are unbalanced. Check a candidate
+  theme by requesting the authorisation endpoint and running the reply through an XML parser.
+- **The AST step is driven by the SDK, not by a browser.** With action `activate` it requires
+  the `X-KOBIL-ASTCLIENTID` header, so a plain request to the authorisation endpoint returns
+  HTTP 406 even when the flow is correct. Only a device can validate an activation flow.
+
+`sdk_activation_user_ensure` creates a tenant user with no credential, or reports an
+existing one unmodified. Keep this user separate from the registration user recorded on
+the version. `sdk_activation_password_set` gives that user the permanent IDP password the
+login journey checks: the activation journey sets none, so without it the first login
+fails. `sdk_activation_code_set` generates the activation code itself, stores it as an
+ACTIVATION_CODE credential, reads it back to confirm storage, and returns it once. Both
+values are generated by the tools, never taken as arguments, and shown once: never log or
+commit them, and treat a failed activation as possibly having consumed the code rather
+than reissuing blindly.
+
+`sdk_artifacts_import` installs every zip found in the delivery folder (the `sdk-delivery/`
+bundled next to the package, `KOBIL_SDK_DELIVERY`, or `~/.kobil-sdk/delivery`), iOS and
+Android, each verified against its SHA-512 sidecar, keeping the release notes;
+`sdk_artifacts_install` does one zip; `sdk_artifacts_notes` serves a delivered document;
+`sdk_artifacts_list` shows what is installed;
+`sdk_ios_project_integrate` adds the four XCFrameworks to an Xcode app target as Embed &
+Sign with the bridging header, editing project.pbxproj the way the device-verified app has
+it and verifying by readback. Verified by a headless build of a fresh Xcode 27 project.
+
+`sdk_idp_journeys` classifies the realm's clients by the journey their browser flow runs
+(activation code, or one-page login) so no client name has to be assumed. It needs the
+admin block and returns the minimum: id, flow alias, theme and step providers of the
+classified clients, a count of the rest, never secrets, redirect URIs or attributes; with
+`client_ids` it reads only those clients. Realm administrators already see all of this.
+
+`sdk_trusted_certificate_write` reads the verified TLS chain of the IDP host, saves its root
+as a new PEM file and checks every backend host in the connection file against that file
+alone, so the certificate the SDK pins is known to fit before the first device run.
+`sdk_mc_config` saves its result when `output_path` is given; it never overwrites.
+
+To regenerate a file the app already bundles (`sdk_trusted_certificate_write`,
+`sdk_config_write`, `sdk_mc_config` all refuse an existing path): write to a new path in
+an existing private directory, compare it with the bundled file, then replace the bundled
+file yourself and rebuild. Never edit the JWT.
+
+`sdk_idp_theme_check` fetches a client's first login page and parses it as strict XML, the
+way the SDK does. Run it on the login client before a device test and first whenever a login
+hangs silently; a malformed theme is dropped by the SDK without any error. Reads only.
+
+The default flow `sdk_activation_flow_ensure` creates is the one verified on a device:
+AST activate, the activation-code page, AST link, delete code. The two AST steps carry
+different settings, addressed as `ast-login-authenticator#1` and `#2` in `step_config`
+and through `occurrence` in `sdk_activation_step_config`. A password page inside the flow
+is unreachable on the current IDP build (see the skill's activation-login-findings
+reference), which is why the password is set by the tool instead.
 
 TMS status/result reads reject a conflicting transaction ID and missing status.
 Missing IDs may inherit the requested ID for endpoints that omit it. Missing

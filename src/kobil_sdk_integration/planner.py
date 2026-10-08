@@ -5,6 +5,10 @@ import json
 # Customer app targets; desktop SDK availability is outside this product scope.
 TARGETS = {"android", "ios"}
 FRAMEWORKS = {"kotlin": {"android"}, "swift": {"ios"}, "flutter": TARGETS}
+# Profile values the planner recognises. "local" is an SDK delivery already on disk,
+# including the one bundled with this MCP (sdk_artifacts_import, sdk_ios_project_integrate).
+BACKENDS = ("ast-shift", "ssms")
+ARTIFACT_SOURCES = ("local", "sftp", "teamcity")
 
 
 def catalog():
@@ -31,7 +35,8 @@ def plan(profile: dict, capabilities: list[str]) -> dict:
             raise ValueError("Provider selections must be lists of names")
     known_capabilities = {g["capability"] for g in groups.values()}
     if not isinstance(capabilities, list) or any(not isinstance(c, str) or c not in known_capabilities for c in capabilities):
-        raise ValueError("Unknown requested capability")
+        raise ValueError("Unknown requested capability; capabilities name provider groups, not SDK "
+                         "features. Valid: " + ", ".join(sorted(known_capabilities)))
     required, offered, gaps = [], [], []
     for module in data["modules"]:
         matches = True
@@ -54,10 +59,13 @@ def plan(profile: dict, capabilities: list[str]) -> dict:
             required.append(entry)
         else:
             offered.append(entry)
-    if profile.get("backend") not in {"ast-shift", "ssms"}:
-        gaps.append({"capability": "backend", "reason": "Select or implement a backend adapter"})
-    if profile.get("artifact_source") not in {"local", "teamcity", "sftp"}:
-        gaps.append({"capability": "artifacts", "reason": "Select or implement an artifact provider"})
+    if profile.get("backend") not in BACKENDS:
+        gaps.append({"capability": "backend", "value": profile.get("backend"),
+                     "reason": "Select or implement a backend adapter; recognised: " + ", ".join(BACKENDS)})
+    if profile.get("artifact_source") not in ARTIFACT_SOURCES:
+        gaps.append({"capability": "artifacts", "value": profile.get("artifact_source"),
+                     "reason": "Select or implement an artifact provider; recognised: " + ", ".join(ARTIFACT_SOURCES)
+                               + " (local = a delivery already on disk, including the one bundled with this MCP)"})
     for field, group in groups.items():
         capability = group["capability"]
         selected = profile.get(field, [])

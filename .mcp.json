@@ -1,13 +1,8 @@
 {
   "mcpServers": {
     "KOBILSDK": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--directory",
-        "${CLAUDE_PLUGIN_ROOT}",
-        "kobil-sdk-mcp"
-      ]
+      "command": "/path/to/Developer/kobil-sdk-xcode-plugin/kobil-sdk/bin/kobil-sdk-mcp",
+      "args": []
     }
   }
 }

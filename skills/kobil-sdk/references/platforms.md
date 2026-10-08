@@ -94,8 +94,10 @@ The physical test passed activation (SUCCESS / OK), persisted one user through
 force-stop/relaunch (LOGIN_REQUIRED), and passed returning login (SUCCESS / OK)
 with the same successful identity. App data and backend security settings were
 preserved. AST notification categories were resolved separately from the sample
-application's category label. Test identity provisioning still used a local
-backend helper; this is not yet fully self-contained MCP onboarding.
+application's category label. Test identity provisioning for this Android run
+used a local backend helper; since then the MCP's admin tools
+(`sdk_activation_user_ensure`, `sdk_activation_password_set`, `sdk_activation_code_set`)
+replace it and are the only permitted way to issue credentials. Do not build a helper.
 
 Flutter Android/iOS, existing-app integration, and all
 remaining SDK features require their own evidence. This milestone does not close
@@ -144,6 +146,12 @@ Use the activation-code credential key, explicit IAM certificate-chain startup
 parameter and the activated SDK user identifier for X-KOBIL-ASTUSERID. This
 backend used AuthenticationMode.no and shouldHashPin=false with a backend
 password; preserve the deployment contract rather than generalizing that mode.
+
+A second verification on 2026-09-16/17 (iPhone 15 Pro, iOS 26.6.1, same SDK release, a
+KSSIDP activation-code flow with `acr_values=1` on the authorisation request) passed first
+activation, relaunch to login required, returning login and logout. Its source is the
+reference implementation in [ios/README.md](ios/README.md); the rules behind it are in
+[activation-login-findings.md](activation-login-findings.md).
 
 The earlier simulator DM crypto key failure did not recur on the physical device.
 Do not label it a proven simulator defect or infer that every simulator is
