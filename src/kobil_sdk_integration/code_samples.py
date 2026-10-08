@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).parent / 'knowledge'
+EXTENSIONS = {'swift': '.swift', 'kotlin': '.kt', 'dart': '.dart'}
 PLATFORMS = {'ios': 'ios', 'swift': 'ios', 'android': 'android', 'kotlin': 'android', 'flutter': 'flutter', 'dart': 'flutter'}
 
 
@@ -18,7 +19,7 @@ def get(platform, topic=None):
         raise ValueError('topic must be one of: ' + ', '.join(sorted({s['topic'] for s in entry['samples']})))
     return {'platform': key, 'language': entry['language'], 'verified': entry['verified'], 'intro': index['intro'],
             'rules': index['rules'], 'completion_handler': index['completion_handler'],
-            'samples': [{**s, 'code': (ROOT / 'code_samples' / s['file']).read_text()} for s in samples]}
+            'samples': [{**s, 'code': (ROOT / 'code_samples' / (s['file'] + EXTENSIONS[entry['language']])).read_text()} for s in samples]}
 
 
 def _norm(name):

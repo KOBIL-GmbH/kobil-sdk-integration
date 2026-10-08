@@ -1,5 +1,5 @@
-// Source: Flutter WLA app sdk_handler event listeners (source file, source file,
-// source file), trimmed. A listener says which events it wants (isSubscribed) and gets them in onEventReceived.
+// Source: Flutter WLA app, sdk_handler event listeners (EventListener, RuntimeErrorEventListener,
+// AuthEventListener), trimmed. A listener says which events it wants (isSubscribed) and gets them in onEventReceived.
 // Rules from the official error-handling page: a RuntimeErrorEvent is pushed and the SDK restarts itself afterwards, so handle it
 // right away and do not wait for the result of the request that was running. Not compiled here.
 import 'dart:async';

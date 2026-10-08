@@ -7,49 +7,49 @@
       "samples": [
         {
           "id": "adapter",
-          "file": "swift/MasterControllerAdapter.swift",
+          "file": "swift/MasterControllerAdapter",
           "topic": "adapter",
           "source": "GettingStarted Swift: MasterControllerAdapter",
           "about": "One object owns the controller; sendEvent2MasterController delivers the reply of a request in its completion handler; receive gets what the SDK pushes."
         },
         {
           "id": "start",
-          "file": "swift/StartModel.swift",
+          "file": "swift/StartModel",
           "topic": "start",
           "source": "GettingStarted Swift: StartModel.startMaster",
           "about": "Send Start, wait for KSMStartResultEvent in the completion handler, continue by sdkState (activationRequired/unidentified/uninitialised, loginRequired/loggedIn)."
         },
         {
           "id": "errors",
-          "file": "swift/ErrorModel.swift",
+          "file": "swift/ErrorModel",
           "topic": "errors",
           "source": "GettingStarted Swift: ErrorModel",
           "about": "addDelegate and receive: warning, runtime error (SDK restarts itself afterwards), fatal error, invalid state."
         },
         {
           "id": "transaction",
-          "file": "swift/TransactionModel.swift",
+          "file": "swift/TransactionModel",
           "topic": "events",
           "source": "GettingStarted Swift: TransactionModel",
           "about": "Pushed events: banner, confirmation request/result, transaction finished; confirm with KSMDisplayConfirmationEvent."
         },
         {
           "id": "wait",
-          "file": "swift/WaitWithTimeout.swift",
+          "file": "swift/WaitWithTimeout",
           "topic": "timeout",
           "source": "ADDITION (pattern of the GettingStarted UI-test adapter)",
           "about": "async request with timeout for tests and flows that must not hang."
         },
         {
           "id": "debug",
-          "file": "swift/TrustedWebViewDebug.swift",
+          "file": "swift/TrustedWebViewDebug",
           "topic": "debug",
           "source": "ADDITION (callback list from the KSTrustedWebView headers)",
           "about": "Console output for every trusted WebView callback (start/finish loading, blocked URL, response status, challenge) and the WebView log listener, so a blank page shows its reason in the console."
         },
         {
           "id": "webview_request",
-          "file": "swift/TrustedWebViewRequest.swift",
+          "file": "swift/TrustedWebViewRequest",
           "topic": "webview",
           "source": "GettingStarted Swift Shift: AstClientDataModel, ShiftHelpers (ShiftWebPageHelper, ShiftWebViewUrlRequest), WebViewController.setupTrustedView",
           "about": "The trusted WebView request: GetAstClientData, authorisation URL with PKCE challenge, headers X-KOBIL-ASTCLIENTDATA/-ASTCLIENTID, web view configuration, load the URLRequest (not a bare URL)."
@@ -62,28 +62,28 @@
       "samples": [
         {
           "id": "adapter",
-          "file": "kotlin/MasterControllerAdapter.kt",
+          "file": "kotlin/MasterControllerAdapter",
           "topic": "adapter",
           "source": "GettingStarted Kotlin: MasterControllerAdapter, EventListener",
           "about": "KssIdp.init, addEventListener, fan-out of pushed events; requests go through getInstance()?.postEvent(event)?.then { result -> }."
         },
         {
           "id": "start",
-          "file": "kotlin/StartModel.kt",
+          "file": "kotlin/StartModel",
           "topic": "start",
           "source": "GettingStarted Kotlin: StartModel, StateMachine",
           "about": "Send StartEvent, check StartResultEvent status, continue by SdkState."
         },
         {
           "id": "errors",
-          "file": "kotlin/ErrorHandlingModel.kt",
+          "file": "kotlin/ErrorHandlingModel",
           "topic": "errors",
           "source": "GettingStarted Kotlin: ErrorHandlingModel",
           "about": "RuntimeErrorEvent, WarningEvent, InvalidStateEvent as a listener."
         },
         {
           "id": "wait",
-          "file": "kotlin/WaitWithTimeout.kt",
+          "file": "kotlin/WaitWithTimeout",
           "topic": "timeout",
           "source": "ADDITION",
           "about": "postEvent with a timeout, answered exactly once."
@@ -96,28 +96,28 @@
       "samples": [
         {
           "id": "adapter",
-          "file": "source file",
+          "file": "dart/mc_wrapper_handler",
           "topic": "adapter",
           "source": "Flutter app: McWrapperHandler",
           "about": "init the wrapper, send() returns Either<Error, reply>, observers get pushed events."
         },
         {
           "id": "start",
-          "file": "source file",
+          "file": "dart/start_and_continue",
           "topic": "start",
           "source": "Flutter app: splash start",
           "about": "Send Start, fold the Either, continue by sdkState."
         },
         {
           "id": "events_errors",
-          "file": "source file",
+          "file": "dart/event_listeners",
           "topic": "errors",
           "source": "Flutter WLA app: sdk_handler event listeners",
           "about": "Listeners by event type: runtime error (handle right away, SDK restarts itself), start login, login result."
         },
         {
           "id": "wait",
-          "file": "source file",
+          "file": "dart/wait_with_timeout",
           "topic": "timeout",
           "source": "ADDITION",
           "about": "send with Future.timeout."

@@ -34,7 +34,8 @@ class CodeSamplesTest(unittest.TestCase):
 
     def test_index_files_exist_and_no_strays(self):
         index = json.loads((ROOT / 'code_samples' / 'index.json').read_text())
-        listed = {s['file'] for p in index['platforms'].values() for s in p['samples']}
+        ext = code_samples.EXTENSIONS
+        listed = {s['file'] + ext[p['language']] for p in index['platforms'].values() for s in p['samples']}
         on_disk = {str(p.relative_to(ROOT / 'code_samples')) for p in (ROOT / 'code_samples').glob('*/*') if p.is_file()}
         self.assertEqual(listed, on_disk)
 

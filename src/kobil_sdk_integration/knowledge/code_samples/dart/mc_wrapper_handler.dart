@@ -1,4 +1,4 @@
-// Source: flutter-kssidp-minimal / Flutter WLA app source file, trimmed (logging removed). One handler owns the
+// Source: Flutter app, McWrapperHandler (the class that owns the wrapper), trimmed (logging removed). One handler owns the
 // wrapper: send() returns the reply of a request, pushed events go to every observer. Not compiled here.
 import 'package:source file';
 import 'package:source file';
