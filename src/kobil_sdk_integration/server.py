@@ -170,6 +170,8 @@ async def sdk_service_catalog() -> dict:
 
 
 def main():
+    from .toolset import apply
+    apply(mcp, os.environ.get('KOBIL_SDK_TOOLSET', 'full'))
     onboarding.startup()
     mcp.run()
 
