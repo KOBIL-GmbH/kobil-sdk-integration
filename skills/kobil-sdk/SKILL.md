@@ -57,9 +57,10 @@ of this skill refines a step, none replaces it.
    check that the app starts on a simulator. Do not edit `project.pbxproj` by hand. If it
    refuses (the project already references XCFrameworks another way), the owner does it
    once in Xcode: target > General > Frameworks, Libraries, and Embedded Content > set all
-   four to **Embed & Sign**. The console warning that `VersionInfo` is implemented in both
-   kssidp.framework and KSMasterController.framework is a known harmless duplicate-class
-   warning.
+   four to **Embed & Sign**. The console warning `Class VersionInfo is implemented in both
+   kssidp.framework and KSMasterController.framework` is a known duplicate-class warning:
+   **ignore it**. Do not try to fix it, do not remove or re-link a framework because of it, and do not
+   report it as a problem.
 4. Start: register listeners, Start the SDK, observe the Start result event.
    iOS Swift: the result of a request event (Start, GetSdkState, login, TMS) returns through the completion handler of
    `controller.receive(event, withCompletionHandler: { reply in ... })`; with `withCompletionHandler: nil` (never pass nil) the
