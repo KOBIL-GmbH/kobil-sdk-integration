@@ -25,6 +25,7 @@ SRC = re.compile(r'[A-Za-z0-9_./-]+\.(?:cc|cpp|cxx|hpp|java|mm|dart)(?::\d+(?:-\
 SRC_MOBILE = re.compile(r'[A-Za-z0-9_./-]+/[A-Za-z0-9_.-]+\.(?:swift|kt)\b')
 SRC_ALLOWED = re.compile(r'(gettingstarted|integratedui|integratedunit|positiveflow)', re.I)
 TICKET = re.compile(r'\b(?:AK|DS|CBE|IDP|SDSH|KHC|WLA)-\d{2,5}\b')
+OWN = set()  # base names of files that exist in the scanned history: references to them are self-references
 NAMES = re.compile(os.environ['FORBIDDEN_NAMES'], re.I) if os.environ.get('FORBIDDEN_NAMES') else None
 
 
@@ -36,7 +37,7 @@ def scan_text(label, text, hits, redact_names=True):
     for m in SRC.finditer(text):
         hits['source reference'].add((label, m.group(0)))
     for m in SRC_MOBILE.finditer(text):
-        if not SRC_ALLOWED.search(m.group(0)):
+        if not SRC_ALLOWED.search(m.group(0)) and m.group(0).rsplit('/', 1)[-1] not in OWN:
             hits['source reference'].add((label, m.group(0)))
     for m in TICKET.finditer(text):
         hits['ticket key'].add((label, m.group(0)))
@@ -53,6 +54,9 @@ def main(argv):
     repo = argv[0] if argv else '.'
     refs = argv[1:] or ['HEAD']
     hits = defaultdict(set)
+    for name in git(repo, 'log', '--name-only', '--format=', *refs).decode().splitlines():
+        if name:
+            OWN.add(name.rsplit('/', 1)[-1])
     if tip:
         listing = git(repo, 'ls-tree', '-r', '-z', refs[0]).split(b'\0')
         entries = {}
