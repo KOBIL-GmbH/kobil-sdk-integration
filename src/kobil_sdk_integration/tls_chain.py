@@ -30,7 +30,9 @@ _MAX_PATH_DEPTH = 9
 # simulator (iOS 27.0) accepted with only the issuing root in the PEM, tested 2026-10-08 against a
 # host serving leaf <- YR1 <- Root YR <- ISRG Root X1. Anything not listed keeps the strict rule
 # (VAL-16/VAL-36: akinci Root X2 with an X1-only PEM fails on iOS).
-IOS_DEVICE_TESTED_CROSS_SIGNED_TOPS = ("CN=Root YR,O=ISRG,C=US",)
+IOS_DEVICE_TESTED_CROSS_SIGNED_TOPS = {
+    "CN=Root YR,O=ISRG,C=US": "CN=ISRG Root X1,O=Internet Security Research Group,C=US",
+}
 PLATFORMS = ("ios", "android")
 _PROBLEM_ORDER = ("missing_anchors", "hostname_mismatch", "expired", "path_invalid")
 
@@ -71,8 +73,8 @@ VERIFICATION_NOTE = (
     "not verified on a device): a chain ending at a self-signed root in the file is accepted "
     "even when the server serves a cross-signed top CA, and the strict gap is reported as a "
     "warning only. On iOS the self-signed variant of a served top CA that is cross-signed by a "
-    "root in the file is only required where that was not device-tested: Root YR (signed by ISRG "
-    "Root X1) loaded on an iPhone and a simulator with only ISRG Root X1 in the PEM (2026-10-08), "
+    "root in the file is required except for Root YR (signed by ISRG Root X1), which loaded "
+    "once on an iPhone and a simulator with only ISRG Root X1 in the PEM (2026-10-08), "
     "so that gap is a warning; other tops keep the strict rule."
 )
 
@@ -335,12 +337,12 @@ def _check_host(entry, asset_certificates, fetch, now, warning_days, strict_anch
     path = desktop_path_check(chain_certificates, asset_certificates, now)
     warnings = []
     problems = []
-    tolerated = [m for m in missing if m in IOS_DEVICE_TESTED_CROSS_SIGNED_TOPS
-                 and m == top["subject"] and not top["self_signed"]]
+    tolerated = [m for m in missing if m == top["subject"] and not top["self_signed"]
+                 and IOS_DEVICE_TESTED_CROSS_SIGNED_TOPS.get(m) == top["issuer"]]
     if missing and strict_anchors and len(tolerated) == len(missing):
-        warnings.append("Strict iOS anchor coverage is not met (missing self-signed variant of: %s), but this "
-                        "cross-signed top was accepted on an iPhone and a simulator with only its issuing "
-                        "root in the file (device-tested 2026-10-08). Not verified for other iOS versions "
+        warnings.append("Strict iOS anchor coverage is not met (missing self-signed variant of: %s), but "
+                        "Root YR cross-signed by ISRG Root X1 was accepted on an iPhone and a simulator with "
+                        "ISRG Root X1 in the file (device-tested once, 2026-10-08). Not verified for other iOS versions "
                         "or inside the SDK's own validator." % ", ".join(missing))
     elif missing and strict_anchors:
         problems.append("missing_anchors")
