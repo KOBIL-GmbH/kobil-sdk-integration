@@ -156,3 +156,16 @@ Performance: every tool call is one Sentry transaction (`tool <name>`, op `mcp.t
 A local usage log with the same claims is written to `~/.kobil-sdk/usage.jsonl` (mode 600, rotated at 1 MB); set `KOBIL_SDK_USAGE_LOG=0` to turn it off.
 
 Users can report problems or ideas with the `sdk_report_problem` tool (Sentry user feedback). The report is always saved under `~/.kobil-sdk/reports/` and is sent only when error reporting is enabled. An email address for personal support is optional and sent only if the user gives one. About once a day, after 20 tool calls, `sdk_runtime_info` or `sdk_backend_status` carries a `feedback_prompt` that tells the agent to ask the user for feedback.
+
+## Performance measurement
+
+Every tool call is timed (Sentry transaction `tool <name>` and a record in the local usage log). Inside a call the slow phases carry fixed names: `kobil.process` (child processes such as the credential worker or codesign), `kobil.backend` (`http_request`) and `kobil.tls` (`served_chain_fetch`); no hosts, paths or arguments are recorded.
+
+Repeatable benchmark of the real server over stdio (offline tools only):
+
+```
+python scripts/perf_bench.py --runs 5            # table with min / p50 / p95 / max per step, exit 1 over budget
+python scripts/perf_bench.py --no-sentry         # keep the run local
+```
+
+Budgets live in `scripts/perf_budgets.json` (p95 in milliseconds); `tests/test_perf_bench.py` runs the benchmark against them. With a DSN configured the run reports to the Sentry environment `perf`.

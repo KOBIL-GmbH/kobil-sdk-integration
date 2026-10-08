@@ -60,6 +60,13 @@ def fake_sentry():
             self.status = status
 
     mod.start_transaction = lambda **kw: Txn(kw)
+
+    class Span(Txn):
+        def __init__(self, kw):
+            self.kw, self.data, self.status = kw, {}, None
+            calls.setdefault('spans', []).append(self)
+
+    mod.start_span = lambda **kw: Span(kw)
     sent = calls.setdefault('envelopes', [])
     transport = types.SimpleNamespace(capture_envelope=lambda env: sent.append(env))
     mod.get_client = lambda: types.SimpleNamespace(transport=transport, options={'environment': 'test', 'release': '0'})
@@ -335,6 +342,40 @@ class PerformanceTests(Base):
         self.assertEqual(span['description'], 'http.client')
         self.assertEqual(span['data'], {'http.response.status_code': 200, 'http.request.method': 'GET'})
         self.assertNotIn('customer', repr(out))
+
+
+class SpanTests(Base):
+    def test_named_span_is_a_child_span_and_a_usage_record(self):
+        mod, calls = fake_sentry()
+        with mock.patch.dict(sys.modules, {'sentry_sdk': mod}):
+            telemetry.init({'KOBIL_SDK_SENTRY_DSN': 'https://k@example.invalid/1'})
+            with telemetry.span('process', 'codesign'):
+                pass
+        self.assertEqual(calls['spans'][0].kw, {'op': 'kobil.process', 'name': 'codesign'})
+        end = self.usage()[-1]
+        self.assertEqual((end['category'], end['message']), ('kobil.span', 'process codesign'))
+        self.assertIn('ms', end['data'])
+
+    def test_unsafe_span_name_is_replaced(self):
+        mod, calls = fake_sentry()
+        with mock.patch.dict(sys.modules, {'sentry_sdk': mod}):
+            telemetry.init({'KOBIL_SDK_SENTRY_DSN': 'https://k@example.invalid/1'})
+            with telemetry.span('backend', 'https://customer.example/auth?code=1'):
+                pass
+        self.assertEqual(calls['spans'][0].kw['name'], 'unnamed')
+
+    def test_span_without_sentry_still_records_usage_and_does_not_swallow_errors(self):
+        with self.assertRaises(ValueError):
+            with telemetry.span('backend', 'http_request'):
+                raise ValueError('x')
+        self.assertEqual(self.usage()[-1]['data']['ok'], False)
+
+    def test_transaction_scrub_keeps_names_of_our_spans_only(self):
+        event = {'type': 'transaction', 'transaction': 'tool sdk_x', 'contexts': {'trace': {}},
+                 'spans': [{'op': 'kobil.backend', 'description': 'http_request', 'data': {'ms': 3}},
+                           {'op': 'http.client', 'description': 'GET https://customer.example/x', 'data': {}}]}
+        out = telemetry.scrub_transaction(event, {})
+        self.assertEqual([s['description'] for s in out['spans']], ['http_request', 'http.client'])
 
 
 class CommitTagTests(Base):

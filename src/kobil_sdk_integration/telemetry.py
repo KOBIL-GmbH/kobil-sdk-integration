@@ -164,8 +164,9 @@ def scrub_transaction(event, hint):
     else:
         event.pop('breadcrumbs', None)
     for span in event.get('spans', []):
-        span['description'] = span.get('op') or 'span'
-        span['data'] = {k: v for k, v in (span.get('data') or {}).items() if k in SPAN_KEEP}
+        own = str(span.get('op', '')).startswith('kobil.')
+        span['description'] = span.get('description') if own and SAFE_VALUE.match(str(span.get('description'))) else (span.get('op') or 'span')
+        span['data'] = {k: v for k, v in (span.get('data') or {}).items() if k in SPAN_KEEP or (own and isinstance(v, (int, float, bool)))}
         span['tags'] = {k: v for k, v in (span.get('tags') or {}).items() if k in ('http.status_code', 'status')}
     return event
 
@@ -201,6 +202,33 @@ def timed(op, name):
             yield txn
         finally:
             crumb('timing', '%s %s' % (op, name), ms=int((time.perf_counter() - began) * 1000))
+
+
+@contextlib.contextmanager
+def span(kind, name):
+    """A named phase inside a tool call: child span in Sentry and one usage record with its duration.
+
+    kind and name are fixed identifiers chosen in code (never hosts, paths or user input); anything else becomes
+    'unnamed'.
+    """
+    name = name if isinstance(name, str) and SAFE_VALUE.match(name) and name else 'unnamed'
+    began = time.perf_counter()
+    ok = True
+    if _sentry is None:
+        scope = contextlib.nullcontext()
+    else:
+        try:
+            scope = _sentry.start_span(op='kobil.' + kind, name=name)
+        except Exception:
+            scope = contextlib.nullcontext()
+    try:
+        with scope:
+            yield
+    except BaseException:
+        ok = False
+        raise
+    finally:
+        crumb('span', '%s %s' % (kind, name), ms=int((time.perf_counter() - began) * 1000), ok=ok)
 
 
 def init(env):

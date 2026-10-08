@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Performance: named spans for child processes, backend requests and TLS chain fetches inside tool calls; `scripts/perf_bench.py` measures start, tool listing and the offline tools (p50/p95, cold vs warm, result size) against budgets in `scripts/perf_budgets.json`, with a test that runs it.
+
 ## 0.7.1 — 2026-10-08
 
 Xcode plug-in round (project-bound adapter, Xcode 27, iOS 27 simulator, akinci): an agent driving Xcode through its MCP bridge with only the project-bound KOBILSDK server and the skill built a fresh SwiftUI app, activated, logged in, proved SignedJWT (SDK log + issuer log), ran ordinary TMS accept/reject and an encrypted log export; the friction it hit became the fixes below. Physical-device (iPhone) repetition and the Xcode-chat variant are not part of this qualification. Tool count 198 (`sdk_runtime_info` is the one addition since 0.7.0). `sdk_backend_status` and `sdk_native_preflight` gained fields only.

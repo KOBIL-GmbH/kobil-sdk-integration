@@ -1,0 +1,8 @@
+{
+  "default_ms": 250,
+  "tools": {
+    "server_start": 3000,
+    "list_tools": 500,
+    "sdk_knowledge_bundle": 800
+  }
+}

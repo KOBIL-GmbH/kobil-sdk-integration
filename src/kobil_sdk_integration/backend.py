@@ -198,6 +198,11 @@ class AST:
         return token
 
     def send(self, method, url, allow_not_found=False, **kwargs):
+        from . import telemetry
+        with telemetry.span('backend', 'http_request'):
+            return self._send(method, url, allow_not_found, **kwargs)
+
+    def _send(self, method, url, allow_not_found=False, **kwargs):
         try:
             with self.client.stream(method, url, **kwargs) as response:
                 if response.status_code == 404 and allow_not_found:

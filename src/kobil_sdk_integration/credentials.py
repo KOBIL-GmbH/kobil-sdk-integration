@@ -71,6 +71,12 @@ def validate_reference(ref, nested=False):
 
 
 def bounded_process(argv, data=b'', timeout=30, env=None):
+    from . import telemetry
+    with telemetry.span('process', os.path.basename(str(argv[0])) if argv else 'unnamed'):
+        return _bounded_process(argv, data, timeout, env)
+
+
+def _bounded_process(argv, data=b'', timeout=30, env=None):
     """Bound pipe output and runtime; never include child output in exceptions."""
     try:
         process = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,

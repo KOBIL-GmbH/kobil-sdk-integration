@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import plistlib
 import re
+import os
 import subprocess
 import tempfile
 from xml.parsers.expat import ExpatError
@@ -16,7 +17,9 @@ _LIMITS = ("Artifact checks only: does not establish device trust, installation,
 
 def _run(argv):
     # Do not return command output: profiles and diagnostics can contain private data.
-    return subprocess.run(argv, capture_output=True, timeout=_TIMEOUT, check=False)
+    from . import telemetry
+    with telemetry.span('process', os.path.basename(str(argv[0])) if argv else 'unnamed'):
+        return subprocess.run(argv, capture_output=True, timeout=_TIMEOUT, check=False)
 
 
 def _plist(result):

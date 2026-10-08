@@ -123,6 +123,12 @@ def load_trust_asset(path):
 
 
 def fetch_served_chain(host, port, timeout=15.0):
+    from . import telemetry
+    with telemetry.span('tls', 'served_chain_fetch'):
+        return _fetch_served_chain(host, port, timeout)
+
+
+def _fetch_served_chain(host, port, timeout=15.0):
     """Fetch the DER certificates the server actually serves, in served order.
 
     Validation is intentionally disabled for FETCHING only; see module docstring.
