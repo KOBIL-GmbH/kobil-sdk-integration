@@ -617,3 +617,8 @@ with `code_challenge` and `code_challenge_method` from the result, create the `U
 `KsTrustedWebView` (`load(request)`, not `loadUrl`). Configure the web view with the IDP certificates and the whitelist.
 `sdk_code_samples(platform="ios", topic="webview")` has the compiled code. If the page stays blank, add the console output
 from "Debug output on the console" and read `onURLBlocked` and `webViewDidFinishLoading`.
+
+After the page: the WebView ends by navigating to the redirect URI with `code`. Stop that navigation (`decisionHandler(false)` of
+`shouldHandleExternalUrl`), read the code, send `KSMSetAuthorisationCodeEvent(tenantId:authenticationMode:authorisationCode:clientId:)`
+with a completion handler and check the status of `KSMSetAuthorisationCodeResultEvent` there. Never print or log the code.
+`sdk_code_samples(platform="ios", topic="authorisation")` has the compiled code.

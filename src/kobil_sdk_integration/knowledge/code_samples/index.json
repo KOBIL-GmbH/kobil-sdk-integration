@@ -53,6 +53,13 @@
           "topic": "webview",
           "source": "GettingStarted Swift Shift: AstClientDataModel, ShiftHelpers (ShiftWebPageHelper, ShiftWebViewUrlRequest), WebViewController.setupTrustedView",
           "about": "The trusted WebView request: GetAstClientData, authorisation URL with PKCE challenge, headers X-KOBIL-ASTCLIENTDATA/-ASTCLIENTID, web view configuration, load the URLRequest (not a bare URL)."
+        },
+        {
+          "id": "authorisation_code",
+          "file": "swift/SetAuthorisationCode",
+          "topic": "authorisation",
+          "source": "GettingStarted Swift Shift: IdpWebModel (handleNavigationActionPolicyFor, setAuthorizationCode); code reading via URLComponents is an ADDITION",
+          "about": "The end of the WebView login: stop the redirect navigation, take the code, send KSMSetAuthorisationCodeEvent and read KSMSetAuthorisationCodeResultEvent from the completion handler. The code is never logged."
         }
       ]
     },
@@ -138,6 +145,7 @@
     "Never pass nil as completion handler for an event with a result event (Start, Restart, Activate, OfflineLogin, ...): the result comes only through the handler. nil is for events whose result is none or Acknowledge; see completion_handler.",
     "Debug on the console: print every completion handler and every delegate callback (name, status, error domain/code/description; URLs without query; never codes, tokens, passwords). A blank WebView or a silent step is then visible in the Xcode console / GetConsoleOutput. Register KsTrustedWebView.setLogListener too; onURLBlocked is the usual reason for a blank page.",
     "Trusted WebView: never load a bare authorisation URL. Send GetAstClientData first, put code_challenge/code_challenge_method (from the result) into the URL and the headers X-KOBIL-ASTCLIENTDATA and X-KOBIL-ASTCLIENTID (omit the id when all zeros) into the URLRequest, and load that request. A plain request is refused (blank page).",
+    "After the WebView redirect: stop the navigation (decision handler false), send KSMSetAuthorisationCodeEvent with a completion handler and read the status of KSMSetAuthorisationCodeResultEvent there. Never print or log the authorisation code.",
     "The reply of a request comes only through the request itself (completion handler, then, Future); never wait for it in a pushed-event handler.",
     "Every wait gets a timeout.",
     "A failed request shows in the status of its result event; a wrong event for the SDK state gives InvalidStateEvent.",
