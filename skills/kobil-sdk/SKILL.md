@@ -567,3 +567,14 @@ itself (completion handler, `then`, `Future`), never wait for it in a pushed-eve
 request shows in the `status` of its result event; a wrong event gives InvalidStateEvent; a runtime error event is pushed and the
 SDK restarts itself, so handle it right away. Swift samples are compiled against the delivered frameworks, Kotlin and Dart are
 taken from the apps and not compiled here.
+
+### When the completion handler may be nil
+
+Pass a completion handler for **every event that has a result event** (Start, Restart, Activate, AddUser, Reactivation,
+OfflineLogin, SetAuthorisationCode, DeleteUser, GetInformation, GetProperty, SetProperty, SetPushToken, ...): the result
+comes only through the handler. `nil` (or leaving it out, as `sendEvent2MasterController(event:)` allows) is for events
+whose result is *none* or *Acknowledge*: Cancel, DisplayConfirmation, StartTransaction, StartDisplayMessage, ProvidePIN,
+ProvideSetNewPIN, ProvideSetPIN, StartChangePIN, StartAddUser, StartReactivation, StartDeleteUser, GetStateEvent,
+Enable/DisableServerTracing, EnableOpenCensusTracing, Configuration. Their outcome arrives as pushed events at your delegate.
+Source: the "Result Event" column of the API reference, checked against every send of the GettingStarted Swift app. When
+unsure, pass a handler; it is never wrong. `sdk_code_samples` has the lists (`completion_handler`).

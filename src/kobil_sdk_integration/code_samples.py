@@ -16,5 +16,5 @@ def get(platform, topic=None):
     if not samples:
         raise ValueError('topic must be one of: ' + ', '.join(sorted({s['topic'] for s in entry['samples']})))
     return {'platform': key, 'language': entry['language'], 'verified': entry['verified'], 'intro': index['intro'],
-            'rules': index['rules'],
+            'rules': index['rules'], 'completion_handler': index['completion_handler'],
             'samples': [{**s, 'code': (ROOT / 'code_samples' / s['file']).read_text()} for s in samples]}

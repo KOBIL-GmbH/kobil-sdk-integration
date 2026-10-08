@@ -318,3 +318,4 @@ eight minutes. With `withCompletionHandler: { reply in ... }` feeding the same d
 simulator run passed all six gates. A fresh install answers Start with `sdk_state=ActivationRequired`, which is the expected result.
 The harmless warning `Class VersionInfo is implemented in both kssidp.framework and KSMasterController.framework` also appears in
 the test log. Give each XCTest an explicit timeout so a lost event fails the test instead of blocking the run.
+`nil` is only for events without a result event (result none or Acknowledge, for example Cancel, DisplayConfirmation, StartTransaction, ProvidePIN, GetStateEvent, tracing): see SKILL.md, section "When the completion handler may be nil".

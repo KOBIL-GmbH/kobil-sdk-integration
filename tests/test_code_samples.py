@@ -46,8 +46,18 @@ class CodeSamplesTest(unittest.TestCase):
             for a, b in ('()', '{}', '[]'):
                 self.assertEqual(text.count(a), text.count(b), p.name)
 
+    def test_completion_handler_lists_never_overlap_and_cover_start(self):
+        data = json.loads((ROOT / 'code_samples' / 'index.json').read_text())['completion_handler']
+        needed = set(data['handler_required_examples'])
+        allowed = {n.split(' ')[0] for n in data['nil_allowed']}
+        self.assertFalse(needed & allowed)
+        self.assertTrue({'Start', 'Restart', 'Activate', 'OfflineLogin'} <= needed)
+        skill = (Path(__file__).parent.parent / 'skills' / 'kobil-sdk' / 'SKILL.md').read_text()
+        self.assertIn('When the completion handler may be nil', skill)
+
     def test_reply_rule_and_restart_rule_are_stated(self):
         rules = ' '.join(code_samples.get('ios')['rules'])
+        self.assertIn('Start', code_samples.get('ios')['completion_handler']['handler_required_examples'])
         self.assertIn('RuntimeErrorEvent', rules)
         self.assertIn('timeout', rules)
 
