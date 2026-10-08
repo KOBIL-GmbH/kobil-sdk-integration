@@ -4,8 +4,21 @@ from pathlib import Path
 from .age_store import absolute, atomic_write, project_identity
 
 
+def configured_connection():
+    """Return the selected connection path when it exists; onboarding is then unnecessary."""
+    selected = os.environ.get('KOBIL_SDK_CONNECTION')
+    if selected and Path(selected).expanduser().is_file():
+        return str(Path(selected).expanduser())
+    return None
+
+
 def prepare(project_path):
     project = absolute(project_path).resolve(strict=True)
+    existing = configured_connection()
+    if existing:
+        return {'status': 'connection_already_configured', 'connection': existing,
+                'email_sent': False, 'existing_connections_preserved': True,
+                'next_step': 'A backend connection is already selected for this project. Call sdk_backend_status and continue with the standard journey; no credential request or identity is needed.'}
     info = project_identity(str(project))
     local = project / '.kobil-sdk'
     incoming = local / 'incoming'
@@ -56,7 +69,8 @@ def startup():
             if parent.name == '.kobil-sdk':
                 project = str(parent.parent)
     # Do not guess the host working directory: some clients start in / or HOME.
-    if project:
+    # A selected connection means the installation is onboarded: write no request file.
+    if project and not configured_connection():
         local = Path(project).expanduser()/'.kobil-sdk'
         if not (local/'credential-request.txt').exists():
             prepare(project)

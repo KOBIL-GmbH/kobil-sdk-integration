@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased — onboarding gate
+
+- `sdk_onboarding_prepare` and the MCP startup hook return/skip with `connection_already_configured` when `KOBIL_SDK_CONNECTION` points to an existing file; previously a credential request was written into every bound project and an Xcode agent asked for credentials it already had (measured 2026-10-08, Xcode plug-in 0.7.0 dev).
+- SKILL.md start-here step 0: `sdk_runtime_info` + `sdk_backend_status` before anything else; onboarding only on `CONNECTION_NOT_SELECTED`; stop when the bound project differs from the open project.
+
 ## Unreleased — TLS trust-asset gate
 
 - `sdk_tls_chain_check` now also reports, per host, the leaf hostname match (subjectAltName only), validity of the served leaf and matched asset anchors with an `expiry_warning_days` window (default 14), and a simplified desktop path check that follows the KOBIL `trusted_certs.pem` procedure (the file alone must reach a self-signed root). New per-host `problems`/`warnings` and statuses `hostname_mismatch`, `expired`, `path_invalid`; mobile anchor coverage (`missing_anchors`) is unchanged and still stricter than a desktop client. Existing result fields are kept.

@@ -16,6 +16,13 @@ Load the standard-journey tools once with a single ToolSearch
 `sdk_tms_result`, `sdk_tms_cancel`. Then follow this order; every later section
 of this skill refines a step, none replaces it.
 
+0. Binding first: `sdk_runtime_info` (which runtime and which project this MCP is
+   bound to) and `sdk_backend_status`. `configured: true` means the installation is
+   already onboarded: use that connection, never call `sdk_onboarding_prepare`,
+   never draft an access request, even if `.kobil-sdk/credential-request.txt`
+   exists in the project. Only the error `CONNECTION_NOT_SELECTED` leads to the
+   onboarding section at the end of this skill. If the bound project differs from
+   the project open in the IDE, stop and tell the user to regenerate the adapter.
 1. Knowledge: `sdk_knowledge_bundle(platform="android"|"ios")` returns setup,
    activation, login, tms, logs and diagnostics in one call (replaces ~10
    sequential `sdk_knowledge_get` calls). Read
@@ -432,7 +439,9 @@ For Flutter Android/iOS activation, token/SignedJWT login and foreground TMS, re
 
 ## First-start credential onboarding
 
-Call `sdk_onboarding_prepare(project_path)` before configuring a new installation.
+Only when `sdk_backend_status` fails with `CONNECTION_NOT_SELECTED`: call
+`sdk_onboarding_prepare(project_path)`. With a selected connection the tool
+returns `connection_already_configured` and nothing is to be requested.
 It creates/reuses the project's age identity, keeps its private key outside the
 project, and returns the public recipient, recipient.txt, and a copy-paste email.
 Show the complete draft and public key to the user. The email requests IDP/AST
