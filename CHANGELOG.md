@@ -20,6 +20,7 @@ Code samples, event rules and the IDP overview.
 - Android (Kotlin) and Flutter (Dart) now have the same topics as iOS: events, webview, authorisation and debug, from the GettingStarted Kotlin app and the Flutter superapp / WLA app. Not compiled here; the tests require every platform to offer every topic.
 - `sdk_native_preflight` returns per client the addresses the server accepts (authorisation endpoint, registered redirect URI, URL template, required request headers).
 - Fixed: `idp_realm_base` of `sdk_backend_status` now includes `/auth` (`<host>/auth/realms/<realm>`); without it the realm path answered 404 and the WebView stayed blank.
+- CI: the leak scan checks the pull request branch itself instead of the merge commit GitHub builds for the check.
 - Skill: when the completion handler may be nil, debug output on the console, the trusted WebView request, the IDP overview, and the explicit note that the `VersionInfo` duplicate-class warning is to be ignored.
 
 ## 0.8.0 — 2026-10-08

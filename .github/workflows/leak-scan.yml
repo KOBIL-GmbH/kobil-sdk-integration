@@ -11,6 +11,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # For pull requests scan the branch itself, not the merge commit GitHub builds for the check.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - name: Scan history for person, source-code and ticket references
         env:
           # Regular expression of names to block; kept in a repository/organization variable, not in the repo.
