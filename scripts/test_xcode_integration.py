@@ -42,7 +42,8 @@ async def probe(manifest, expected_identity, log_path):
                     if not REQUIRED <= names:
                         raise AssertionError('Required MCP capabilities missing')
                     actual = decode(await session.call_tool('sdk_runtime_info', {}))
-                    if actual != expected_identity:
+                    # sdk_runtime_info may add session fields (project_binding, feedback_prompt); compare identity only
+                    if {key: actual.get(key) for key in expected_identity} != expected_identity:
                         raise AssertionError('Running MCP identity differs from candidate')
                     topics = decode(await session.call_tool('sdk_knowledge_topics', {'platform': 'ios'}))
                     if not topics.get('topics'):
