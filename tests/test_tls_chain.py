@@ -39,6 +39,12 @@ def _certificate(subject, issuer, public_key, signing_key, ca=True, san=None,
     return builder.sign(signing_key, hashes.SHA256())
 
 
+def _full_name(common_name, organization, country="US"):
+    return x509.Name([x509.NameAttribute(NameOID.COUNTRY_NAME, country),
+                      x509.NameAttribute(NameOID.ORGANIZATION_NAME, organization),
+                      x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
+
+
 class _Fixture:
     def __init__(self):
         self.keys = {name: ec.generate_private_key(ec.SECP256R1())
@@ -52,6 +58,33 @@ class _Fixture:
         self.ye2 = _certificate("Test YE2", "Test Root YE", k["ye2"].public_key(), k["ye"])
         self.leaf = _certificate("service.test", "Test YE2", k["leaf"].public_key(), k["ye2"], ca=False,
                                  san=["service.test"])
+
+        # Let's Encrypt generation Y shape (device-tested 2026-10-08): leaf <- YR1 <- Root YR <- ISRG Root X1.
+        yr_key, yr1_key, yr_leaf_key = (ec.generate_private_key(ec.SECP256R1()) for _ in range(3))
+        isrg = "Internet Security Research Group"
+        self.x1_isrg = x509.CertificateBuilder().subject_name(_full_name("ISRG Root X1", isrg)) \
+            .issuer_name(_full_name("ISRG Root X1", isrg)).public_key(k["x1"].public_key()) \
+            .serial_number(x509.random_serial_number()) \
+            .not_valid_before(NOW - datetime.timedelta(days=30)).not_valid_after(NOW + datetime.timedelta(days=3650)) \
+            .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True).sign(k["x1"], hashes.SHA256())
+        self.root_yr = self._signed(_full_name("Root YR", "ISRG"), _full_name("ISRG Root X1", isrg),
+                                    yr_key.public_key(), k["x1"], ca=True)
+        self.yr1 = self._signed(_full_name("YR1", "Let's Encrypt"), _full_name("Root YR", "ISRG"),
+                                yr1_key.public_key(), yr_key, ca=True)
+        self.yr_leaf = self._signed(_name("yr.test"), _full_name("YR1", "Let's Encrypt"),
+                                    yr_leaf_key.public_key(), yr1_key, ca=False, san=["yr.test"])
+
+    @staticmethod
+    def _signed(subject, issuer, public_key, signing_key, ca, san=None):
+        builder = (x509.CertificateBuilder().subject_name(subject).issuer_name(issuer)
+                   .public_key(public_key).serial_number(x509.random_serial_number())
+                   .not_valid_before(NOW - datetime.timedelta(days=30))
+                   .not_valid_after(NOW + datetime.timedelta(days=3650))
+                   .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True))
+        if san:
+            builder = builder.add_extension(x509.SubjectAlternativeName([x509.DNSName(n) for n in san]),
+                                            critical=False)
+        return builder.sign(signing_key, hashes.SHA256())
 
     def served(self, *certificates):
         chain = [c.public_bytes(serialization.Encoding.DER) for c in certificates]
@@ -449,6 +482,44 @@ class PlatformTests(_Base):
         note = check(["service.test"], self.x1_only(), fetch=self.cross_chain)["verification_note"]
         self.assertIn("Android", note)
         self.assertIn("not verified on a device", note)
+
+
+class DeviceTestedCrossSignTests(_Base):
+    """Root YR served cross-signed by ISRG Root X1: an iPhone (iOS 26.7.1) and a simulator (iOS 27.0)
+    accepted the page with only ISRG Root X1 in the PEM, so the strict anchor gap is a warning there.
+    Every other missing top anchor (for example the akinci Root X2) stays an error."""
+
+    def setUp(self):
+        super().setUp()
+        self.yr_chain = FIXTURE.served(FIXTURE.yr_leaf, FIXTURE.yr1, FIXTURE.root_yr)
+
+    def test_ios_x1_only_against_root_yr_is_ok_with_a_device_tested_warning(self):
+        asset = self.asset(FIXTURE.pem(FIXTURE.x1_isrg))
+        host = check(["yr.test"], asset, fetch=self.yr_chain)["hosts"][0]
+        self.assertEqual(host["status"], "ok")
+        self.assertEqual(host["problems"], [])
+        self.assertEqual(host["missing_anchors"], ["CN=Root YR,O=ISRG,C=US"])
+        self.assertTrue(any("Root YR" in w and "device" in w for w in host["warnings"]))
+
+    def test_ios_x1_only_against_root_x2_chain_is_still_an_error(self):
+        host = check(["service.test"], self.asset(FIXTURE.pem(FIXTURE.x1)), fetch=self.cross_chain)["hosts"][0]
+        self.assertEqual(host["status"], "missing_anchors")
+
+    def test_ios_unrelated_root_against_root_yr_chain_still_fails(self):
+        other = ec.generate_private_key(ec.SECP256R1())
+        impostor = _certificate("ISRG Root X1", "ISRG Root X1", other.public_key(), other)
+        host = check(["yr.test"], self.asset(FIXTURE.pem(impostor)), fetch=self.yr_chain)["hosts"][0]
+        self.assertIn("path_invalid", host["problems"])
+        self.assertFalse(check(["yr.test"], self.asset(FIXTURE.pem(impostor)), fetch=self.yr_chain)["all_hosts_ok"])
+
+    def test_ios_ca_copy_without_a_root_against_root_yr_chain_still_fails(self):
+        host = check(["yr.test"], self.asset(FIXTURE.pem(FIXTURE.yr1, FIXTURE.root_yr)), fetch=self.yr_chain)["hosts"][0]
+        self.assertIn("path_invalid", host["problems"])
+
+    def test_android_is_unchanged_and_has_no_device_tested_warning_needed(self):
+        asset = self.asset(FIXTURE.pem(FIXTURE.x1_isrg))
+        host = check(["yr.test"], asset, fetch=self.yr_chain, platform="android")["hosts"][0]
+        self.assertEqual(host["status"], "ok")
 
 
 class AssetParsingTests(_Base):
