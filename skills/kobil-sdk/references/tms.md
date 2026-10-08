@@ -45,11 +45,10 @@ it must retrieve a token with the configured scope from the IDP and use this
 token for sending the answer." The scope name is an AST deployment setting; on
 the inspected deployments it is `tms`. Read it from the AST configuration, do
 not assume it. The SDK fulfils the contract with a silent token exchange using
-`iam.clientId` (`source file`); it does not start an
+`iam.clientId`; it does not start an
 interactive step-up and does not re-check the issued scope. The IDP resolves
 the requested scope only against the client's configured default/optional
-client scopes and silently drops unknown names
-(`source file`).
+client scopes and silently drops unknown names.
 
 Device-verified (SDK 15.16, IDP core 8.0.x, AST trusted-message-sign 0.40.0)
 on a physical Android device with a hardware-backed key and on an Android

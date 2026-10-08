@@ -38,6 +38,9 @@ FORBIDDEN = {
     'personal path': r'/Users/[a-z]+\.[a-z]+/',
     'e-mail address': r'\b[a-z0-9._-]+@[a-z0-9.-]+\.(com|de|et|test)\b',
     'internal hostname': r'\b(sicher\.men|k2ndlevel01|[a-z0-9.-]+\.kobil\.com)\b',
+    'native or server source reference': r'\b[A-Za-z0-9_./-]+\.(cc|cpp|cxx|java)(:\d+(-\d+)?)?\b',
+    'internal ticket key': r'\b(AK|DS|CBE|IDP|SDSH|KHC|WLA)-\d{2,5}\b',
+    'source-review claim': r'\b(source reviewed in|on the inspected [A-Za-z]+ source|inspected [A-Za-z]+ source)\b',
     'customer or env name': r'\b(fis_bmw|fis bmw|bddklogin|arabox|migros|nouvobanq|gondor|asgard|bekb|3beg|keb)\b',
 }
 # Functional identifiers shipped on purpose (bundled default environment and

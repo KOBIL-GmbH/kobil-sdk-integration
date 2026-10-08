@@ -234,15 +234,6 @@ hint, no URLs, hostnames, tokens or secrets. A blank page must be impossible in
 the reference integration; tests force a trust failure and assert the error
 surface exists. Surfacing the error never means weakening validation.
 
-Candidate tooling (not adopted): branch feature/ticket-ios-tooling-review commit
-773afbe carries a TLS-chain reader/root-certificate writer that saves the IDP
-host's verified root and checks every configured backend host against it. It fits
-this repo's connection-file schema, but it selects only the root of the chain the
-LOCAL (desktop) trust store verified — exactly the single-chain assumption this
-section corrects — and would have produced X1-only pinning here. Adopt it only
-after extending it to enumerate mobile-negotiated roots (or accept multiple
-anchors) with the caveats above.
-
 ## User acceptance
 
 Retrieve `sdk_integration_checklist` for each topic and retain observed results.

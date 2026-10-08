@@ -1,7 +1,7 @@
 """Golden-log tests: the four guidance claims checked against real, sanitized SDK log excerpts.
 
 Fixtures under tests/fixtures/sdk_logs/ are line excerpts of decrypted MCSDK
-15.16 logs recorded during the ticket validation (2026-10-02/05): a physical
+15.16 logs recorded during the 2026-10-02/05 validation: a physical
 Android device with a hardware key, an Android emulator with a software key
 under ALLOW_VIRTUAL_SMART_CARD, and the hardware-policy Start failure caused
 by a missing bouncycastle dependency. Realm, client ids and app paths are

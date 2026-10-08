@@ -1,0 +1,18 @@
+name: leak-scan
+on:
+  push:
+    branches: [main, develop]
+    tags: ["v*"]
+  pull_request:
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan history for person, source-code and ticket references
+        env:
+          # Regular expression of names to block; kept in a repository/organization variable, not in the repo.
+          FORBIDDEN_NAMES: ${{ vars.FORBIDDEN_NAMES }}
+        run: python3 scripts/leak_scan.py . HEAD
