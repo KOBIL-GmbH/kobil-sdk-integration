@@ -139,3 +139,18 @@ qualification and unsupported-platform gaps are reported explicitly.
 The bundled knowledge pack has 16 compile-checked native examples
 for classic MCSDK 15.16; see the [native integration handoff](skills/kobil-sdk/references/native-integration.md).
 Full live-flow acceptance remains separate from these checks.
+
+## Optional error reporting (Sentry)
+
+Off by default. Install the extra and set the DSN in the environment of the MCP server to enable it:
+
+```
+pip install "kobil-sdk-integration[sentry]"
+KOBIL_SDK_SENTRY_DSN=<dsn>  KOBIL_SDK_SENTRY_ENVIRONMENT=<name>
+```
+
+Only the exception type, a leading error code, the tool name, package-relative stack frames and usage breadcrumbs (tool name, argument key names, duration, result size, outcome) are sent. Tool arguments and results, local variables, source lines, free-text messages, host names and user data are removed before sending.
+
+A local usage log with the same claims is written to `~/.kobil-sdk/usage.jsonl` (mode 600, rotated at 1 MB); set `KOBIL_SDK_USAGE_LOG=0` to turn it off.
+
+Users can report problems or ideas with the `sdk_report_problem` tool (Sentry user feedback). The report is always saved under `~/.kobil-sdk/reports/` and is sent only when error reporting is enabled. An email address for personal support is optional and sent only if the user gives one. About once a day, after 20 tool calls, `sdk_runtime_info` or `sdk_backend_status` carries a `feedback_prompt` that tells the agent to ask the user for feedback.

@@ -9,6 +9,8 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 from kobil_sdk_integration.backend import _read_configuration, ConfigurationError
 from kobil_sdk_integration.ide_http import build_app, read_token
+os.environ.setdefault('KOBIL_SDK_SENTRY_ENVIRONMENT', 'tests')  # test runs report to Sentry, filter on environment
+os.environ.setdefault('KOBIL_SDK_USAGE_LOG', '0')
 
 
 class DiagnosticsTests(unittest.TestCase):

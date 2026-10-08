@@ -10,6 +10,9 @@ from unittest.mock import patch, AsyncMock
 SCRIPTS = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPTS))
 import test_xcode_integration as runner
+import os
+os.environ.setdefault('KOBIL_SDK_SENTRY_ENVIRONMENT', 'tests')  # test runs report to Sentry, filter on environment
+os.environ.setdefault('KOBIL_SDK_USAGE_LOG', '0')
 
 
 class XcodeRunnerTests(unittest.IsolatedAsyncioTestCase):

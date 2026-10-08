@@ -8,6 +8,8 @@ import tempfile
 import unittest
 import uuid
 from kobil_sdk_integration.credentials import store, resolve, delete, CredentialError
+os.environ.setdefault('KOBIL_SDK_SENTRY_ENVIRONMENT', 'tests')  # test runs report to Sentry, filter on environment
+os.environ.setdefault('KOBIL_SDK_USAGE_LOG', '0')
 
 
 class NativeCredentialTests(unittest.TestCase):

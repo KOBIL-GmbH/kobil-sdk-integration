@@ -9,6 +9,8 @@ import unittest
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+os.environ.setdefault('KOBIL_SDK_SENTRY_ENVIRONMENT', 'tests')  # test runs report to Sentry, filter on environment
+os.environ.setdefault('KOBIL_SDK_USAGE_LOG', '0')
 
 
 class ProtocolTests(unittest.TestCase):

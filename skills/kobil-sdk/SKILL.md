@@ -502,3 +502,10 @@ Read project instructions (including CLAUDE.md when present) for previously
 selected test policy before asking again. Reuse an explicit current-project
 ALLOW_VIRTUAL_SMART_CARD/device-PIN decision; do not extend that test choice to
 other projects. This does not authorize changing shared backend security policy.
+
+## Feedback and problem reports
+
+- If `sdk_runtime_info` or `sdk_backend_status` returns `feedback_prompt`, ask the user once, in one short sentence, whether anything was confusing or broken. Do not ask again in the same session.
+- If the user reports a problem or an idea, or the host froze or failed, offer to send a report. Show the exact text, then call `sdk_report_problem` only after the user agrees. Category is `bug`, `hang`, `idea` or `other`.
+- For personal support the user may add an email address. It is optional; never ask for it twice and never invent one.
+- Never put credentials, activation codes, tokens or customer data into the report text. The tool redacts secret shapes, but do not rely on that.

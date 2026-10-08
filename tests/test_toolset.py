@@ -14,6 +14,8 @@ PROBE = r"""
 import asyncio, json, os, sys
 from kobil_sdk_integration import server
 from kobil_sdk_integration.toolset import apply
+os.environ.setdefault('KOBIL_SDK_SENTRY_ENVIRONMENT', 'tests')  # test runs report to Sentry, filter on environment
+os.environ.setdefault('KOBIL_SDK_USAGE_LOG', '0')
 mode = os.environ.get('MODE', 'full')
 apply(server.mcp, mode)
 tools = asyncio.run(server.mcp.list_tools())

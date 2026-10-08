@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Optional Sentry error reporting (`pip install kobil-sdk-integration[sentry]`, enabled only by `KOBIL_SDK_SENTRY_DSN`). Events carry exception type, error code, tool name and package-relative frames; arguments, variables, source lines, messages, hosts and user data are removed.
+- Usage breadcrumbs for every tool call (start, end, duration, result size, outcome), start and exit records, and a local usage log (`~/.kobil-sdk/usage.jsonl`, off with `KOBIL_SDK_USAGE_LOG=0`).
+- New tool `sdk_report_problem` (Sentry user feedback, optional contact email, local copy) and a once-a-day `feedback_prompt` in `sdk_runtime_info` / `sdk_backend_status`.
+
 ## 0.7.1 — 2026-10-08
 
 Xcode plug-in round (project-bound adapter, Xcode 27, iOS 27 simulator, akinci): an agent driving Xcode through its MCP bridge with only the project-bound KOBILSDK server and the skill built a fresh SwiftUI app, activated, logged in, proved SignedJWT (SDK log + issuer log), ran ordinary TMS accept/reject and an encrypted log export; the friction it hit became the fixes below. Physical-device (iPhone) repetition and the Xcode-chat variant are not part of this qualification. Tool count 198 (`sdk_runtime_info` is the one addition since 0.7.0). `sdk_backend_status` and `sdk_native_preflight` gained fields only.

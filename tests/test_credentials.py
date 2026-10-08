@@ -14,6 +14,8 @@ from kobil_sdk_integration import credentials as c
 from kobil_sdk_integration import credential_worker as worker
 from kobil_sdk_integration.credential_cli import main
 from kobil_sdk_integration.backend import AST, configuration, BackendError
+os.environ.setdefault('KOBIL_SDK_SENTRY_ENVIRONMENT', 'tests')  # test runs report to Sentry, filter on environment
+os.environ.setdefault('KOBIL_SDK_USAGE_LOG', '0')
 
 REF = {'provider':'keyring','service':'test-service','account':'test-account'}
 CFG = {'schema_version':2,'environment':'test','tenant':'example','ast_url':'https://ast.example',

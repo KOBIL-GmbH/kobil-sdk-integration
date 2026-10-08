@@ -9,6 +9,9 @@ import unittest
 from unittest.mock import patch
 
 from kobil_sdk_integration.signing_preflight import preflight, register
+import os
+os.environ.setdefault('KOBIL_SDK_SENTRY_ENVIRONMENT', 'tests')  # test runs report to Sentry, filter on environment
+os.environ.setdefault('KOBIL_SDK_USAGE_LOG', '0')
 
 TEAM = "ABC1234567"
 UDID = "00000000-1234567890ABCDEF"

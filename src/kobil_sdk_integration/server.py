@@ -1,5 +1,6 @@
 """Stdio MCP with local inspection and explicitly configured AST operations."""
 import hashlib
+import asyncio
 import os
 from pathlib import Path, PurePath
 import stat
@@ -17,8 +18,27 @@ def sdk_runtime_info() -> dict:
     No credentials, local paths, backend requests or mobile SDK version claims.
     Compare with the intended installed release to detect a stale IDE registration.
     """
+    from . import telemetry
     from .runtime_info import identity
-    return identity()
+    result = identity()
+    hint = telemetry.feedback_hint()
+    if hint:
+        result['feedback_prompt'] = hint
+    return result
+
+
+@mcp.tool()
+def sdk_report_problem(category: str, message: str, include_activity: bool = True, contact_email: str | None = None) -> dict:
+    """Send the user's problem report or feedback to the KOBIL SDK team (Sentry user feedback).
+
+    Call this only after the user agreed to the exact text. category is bug, hang, idea or other.
+    message is the user's own words; secret shapes are redacted automatically. include_activity attaches the
+    last tool calls as claims only (tool names, durations, sizes, outcomes; no arguments or results).
+    contact_email is optional: set it only if the user wants personal support and typed an address.
+    The report is always saved locally; it is sent only if error reporting is enabled.
+    """
+    from . import telemetry
+    return telemetry.report(category, message, include_activity, contact_email)
 
 
 @mcp.tool()
@@ -172,6 +192,10 @@ async def sdk_service_catalog() -> dict:
 def main():
     from .toolset import apply
     apply(mcp, os.environ.get('KOBIL_SDK_TOOLSET', 'full'))
+    from . import telemetry
+    status = telemetry.init(os.environ)
+    telemetry.install(mcp)
+    telemetry.startup(status, os.environ.get('KOBIL_SDK_TOOLSET', 'full'), len(asyncio.run(mcp.list_tools())))
     onboarding.startup()
     mcp.run()
 
@@ -186,8 +210,13 @@ def sdk_backend_status() -> dict:
     """
     from .backend import configuration
     cfg = configuration()
-    return {'environment': cfg['environment'], 'tenant': cfg['tenant'],
-            'configured': True, 'connection_verified': False, **_connection_hosts(cfg)}
+    from . import telemetry
+    result = {'environment': cfg['environment'], 'tenant': cfg['tenant'],
+              'configured': True, 'connection_verified': False, **_connection_hosts(cfg)}
+    hint = telemetry.feedback_hint()
+    if hint:
+        result['feedback_prompt'] = hint
+    return result
 
 
 def _connection_hosts(cfg):
