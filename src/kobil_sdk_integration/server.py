@@ -317,8 +317,8 @@ def sdk_sftp_download(relative_path: str, expected_sha512: str | None = None,
 
 
 # Explicit service operations only; app orchestration belongs to app reference sources.
-from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, tms_auth, deployment_preflight, signing_preflight, environment_transfer, bundled_environment, onboarding, log_markers
-for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, tms_auth, deployment_preflight, signing_preflight, environment_transfer, bundled_environment, onboarding, log_markers):
+from . import idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, journeys, tms_auth, deployment_preflight, signing_preflight, environment_transfer, bundled_environment, onboarding, log_markers
+for _module in (idp_users, idp_secrets, idp_access, idp_extended, ast_admin, service_api, service_helpers, credential_tools, age_store, knowledge_api, native_policy, journeys, tms_auth, deployment_preflight, signing_preflight, environment_transfer, bundled_environment, onboarding, log_markers):
     _module.register(mcp)
 
 

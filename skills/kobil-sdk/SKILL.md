@@ -586,3 +586,13 @@ Do not assemble the authorization address yourself. `sdk_native_preflight` retur
 the address the server accepts: `authorization_endpoint` (`<host>/auth/realms/<realm>/protocol/openid-connect/auth`, note
 the `/auth`), the registered `redirect_uri` and a ready `authorization_url_template` (replace `<random state>`). `sdk_backend_status`
 gives the same realm base as `idp_realm_base`. A 404 on a path without `/auth` is the wrong path, not a backend outage.
+
+## Which journeys the IDP offers
+
+Call `sdk_idp_flow_overview(expected_environment)` before choosing the activation and login clients. It reads every client with
+its own browser flow and tells you per client: `based_on` (`kssidp` = current standard, `bddk` = deprecated, `other`), `role`
+(activation or login), `login_theme`, whether the flow has the official name or is a copy, the registered `redirect_uri` and a
+ready `authorization_url_template`. The realm `endpoints` come from the realm's own OpenID configuration (`source: well-known`;
+`derived` means not confirmed). Clients such as `KobilMobileEnrollment`/`KobilMobileLogin` are copies of the BDDK flows with the
+`kobil-mobile` theme (a styled child of `kobil-lite`). The tool only lists; the owner's selection always wins. Use its
+addresses, never assemble them yourself.
