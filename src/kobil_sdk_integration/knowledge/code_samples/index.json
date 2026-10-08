@@ -1,0 +1,30 @@
+{
+  "intro": "Basic code for talking to the SDK: send a request and continue from its reply, listen to events the SDK pushes, handle errors, never wait without a limit. The code is the GettingStarted code (Swift, Kotlin) and the Flutter app code, trimmed to the SDK calls; files marked ADDITION are ours.",
+  "platforms": {
+    "ios": {"language": "swift", "verified": "Compiled against the delivered KSMasterController, hnb and kssidp frameworks (debug set 195.1.3088251); only the app-owned names (Error, Start result handling) are the sample's.", "samples": [
+      {"id": "adapter", "file": "swift/MasterControllerAdapter.swift", "topic": "adapter", "source": "GettingStarted Swift: MasterControllerAdapter", "about": "One object owns the controller; sendEvent2MasterController delivers the reply of a request in its completion handler; receive gets what the SDK pushes."},
+      {"id": "start", "file": "swift/StartModel.swift", "topic": "start", "source": "GettingStarted Swift: StartModel.startMaster", "about": "Send Start, wait for KSMStartResultEvent in the completion handler, continue by sdkState (activationRequired/unidentified/uninitialised, loginRequired/loggedIn)."},
+      {"id": "errors", "file": "swift/ErrorModel.swift", "topic": "errors", "source": "GettingStarted Swift: ErrorModel", "about": "addDelegate and receive: warning, runtime error (SDK restarts itself afterwards), fatal error, invalid state."},
+      {"id": "transaction", "file": "swift/TransactionModel.swift", "topic": "events", "source": "GettingStarted Swift: TransactionModel", "about": "Pushed events: banner, confirmation request/result, transaction finished; confirm with KSMDisplayConfirmationEvent."},
+      {"id": "wait", "file": "swift/WaitWithTimeout.swift", "topic": "timeout", "source": "ADDITION (pattern of the GettingStarted UI-test adapter)", "about": "async request with timeout for tests and flows that must not hang."}
+    ]},
+    "android": {"language": "kotlin", "verified": "Taken from the GettingStarted Kotlin app; not compiled here.", "samples": [
+      {"id": "adapter", "file": "kotlin/MasterControllerAdapter.kt", "topic": "adapter", "source": "GettingStarted Kotlin: MasterControllerAdapter, EventListener", "about": "KssIdp.init, addEventListener, fan-out of pushed events; requests go through getInstance()?.postEvent(event)?.then { result -> }."},
+      {"id": "start", "file": "kotlin/StartModel.kt", "topic": "start", "source": "GettingStarted Kotlin: StartModel, StateMachine", "about": "Send StartEvent, check StartResultEvent status, continue by SdkState."},
+      {"id": "errors", "file": "kotlin/ErrorHandlingModel.kt", "topic": "errors", "source": "GettingStarted Kotlin: ErrorHandlingModel", "about": "RuntimeErrorEvent, WarningEvent, InvalidStateEvent as a listener."},
+      {"id": "wait", "file": "kotlin/WaitWithTimeout.kt", "topic": "timeout", "source": "ADDITION", "about": "postEvent with a timeout, answered exactly once."}
+    ]},
+    "flutter": {"language": "dart", "verified": "Taken from the Flutter WLA app and the Flutter GettingStarted-style app; not compiled here.", "samples": [
+      {"id": "adapter", "file": "source file", "topic": "adapter", "source": "Flutter app: McWrapperHandler", "about": "init the wrapper, send() returns Either<Error, reply>, observers get pushed events."},
+      {"id": "start", "file": "source file", "topic": "start", "source": "Flutter app: splash start", "about": "Send Start, fold the Either, continue by sdkState."},
+      {"id": "events_errors", "file": "source file", "topic": "errors", "source": "Flutter WLA app: sdk_handler event listeners", "about": "Listeners by event type: runtime error (handle right away, SDK restarts itself), start login, login result."},
+      {"id": "wait", "file": "source file", "topic": "timeout", "source": "ADDITION", "about": "send with Future.timeout."}
+    ]}
+  },
+  "rules": [
+    "The reply of a request comes only through the request itself (completion handler, then, Future); never wait for it in a pushed-event handler.",
+    "Every wait gets a timeout.",
+    "A failed request shows in the status of its result event; a wrong event for the SDK state gives InvalidStateEvent.",
+    "A RuntimeErrorEvent is pushed and the SDK restarts itself afterwards: handle it right away, do not wait for the original result or the restart."
+  ]
+}

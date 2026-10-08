@@ -124,6 +124,7 @@ def build(platform, status=_UNSET, delivery_folder=None):
         {'tool': 'sdk_runtime_info', 'args': {}, 'why': 'which runtime and which project this server is bound to'},
         {'tool': 'sdk_backend_status', 'args': {}, 'why': 'environment, tenant and the hosts for the TLS check'},
         {'tool': 'sdk_theme_get', 'args': {}, 'why': 'the look and feel to build with; the owner\'s own theme replaces the default'},
+        {'tool': 'sdk_code_samples', 'args': {'platform': 'ios'}, 'why': 'basic code from the GettingStarted: send a request and continue from its reply, listen to pushed events, handle errors, wait with a timeout'},
         {'tool': 'sdk_artifact_info', 'args': {'path': '<each .xcframework in frameworks_dir>'}, 'why': 'check the delivery before use'},
         {'tool': 'sdk_ios_project_integrate', 'args': {'project_path': decisions['project_path'] or '<.xcodeproj>',
                                                         'target_name': target or '<target>',
@@ -161,6 +162,7 @@ def _prompt(d, needs):
         'Decisions: trusted WebView enrollment with %s and SignedJWT token-based login with %s (kobil-mobile theme), biometric; '
         'jwtSignKeySecurityPolicy %s on the simulator, set before activation; mTLS false; certificate pinning on. '
         'Test users are named %s-*. '
+        'Events and errors: take the pattern from sdk_code_samples (reply of a request only through its completion handler, every wait with a timeout). '
         'Look and feel: call sdk_theme_get and build every screen from its roles with the native controls; the owner\'s own design always wins. '
         'Gates, each with SDK-log and server evidence: 1 start (pinned TLS), 2 activation, 3 login, 4 cold start and SignedJWT offline login, '
         '5 TMS accept and reject with readback (sdk_tms_trigger, sdk_tms_status, sdk_tms_result), 6 encrypted log export. '

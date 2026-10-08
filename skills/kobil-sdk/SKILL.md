@@ -556,3 +556,13 @@ The owner's own design always wins over any default. Build the screens from the 
 (iOS, Android or Flutter) and keep the values in one place of the app. Check every screen in light and dark before calling it
 done. Detail pages: [look-and-feel.md](references/look-and-feel.md), [design-system.md](references/design-system.md),
 [reference-app-design.md](references/reference-app-design.md). There is no code template to copy.
+
+## Events, errors and waiting: code samples
+
+Call `sdk_code_samples(platform)` (`ios`, `android`, `flutter`; optional `topic`: adapter, start, errors, events, timeout) before
+writing the code that talks to the SDK. It returns the GettingStarted code (Swift, Kotlin) and the Flutter app code, trimmed to the
+SDK calls; samples marked ADDITION are ours. Rules the samples follow: the reply of a request comes only through the request
+itself (completion handler, `then`, `Future`), never wait for it in a pushed-event handler; every wait has a timeout; a failed
+request shows in the `status` of its result event; a wrong event gives InvalidStateEvent; a runtime error event is pushed and the
+SDK restarts itself, so handle it right away. Swift samples are compiled against the delivered frameworks, Kotlin and Dart are
+taken from the apps and not compiled here.

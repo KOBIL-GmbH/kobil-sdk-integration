@@ -224,6 +224,18 @@ def build_app(sdk_delivery_folder: str | None = None) -> str:
 
 
 @mcp.tool()
+def sdk_code_samples(platform: str, topic: str | None = None) -> dict:
+    """Basic code for events and errors: send a request and continue from its reply, listen to pushed events, handle errors, wait with a timeout.
+
+    platform ios (Swift), android (Kotlin) or flutter (Dart); topic adapter, start, errors, events or timeout (all when omitted).
+    The code is the GettingStarted code (Swift, Kotlin) and the Flutter app code, trimmed to the SDK calls; samples marked
+    ADDITION are ours. Use it as the pattern; the reply of a request comes only through the request itself, every wait gets a timeout.
+    """
+    from . import code_samples
+    return code_samples.get(platform, topic)
+
+
+@mcp.tool()
 def sdk_theme_get() -> dict:
     """The look and feel to build the app with: a plain-language theme (colours, shapes, type, components, screens).
 

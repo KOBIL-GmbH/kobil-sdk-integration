@@ -2,6 +2,8 @@
 
 ## 0.9.0 — 2026-10-08
 
+- `sdk_code_samples(platform, topic)`: basic code for sending a request and continuing from its reply, pushed events, error handling and waiting with a timeout. Swift and Kotlin from the GettingStarted apps, Dart from the Flutter app; Swift is compiled against the delivered frameworks in the tests.
+
 The short request and the look.
 
 - New tool `sdk_build_app_brief` and MCP prompt `build_app`: "build me an app with the KOBIL SDK" expands into the complete verified task for the bound project (decisions, ordered tools with their exact parameters, six gates, rules, a ready prompt). Facts come from the server (environment and TLS hosts, Xcode target and team, SDK delivery); it asks the owner only for what it cannot find, and remembers the SDK delivery folder after the first answer. Verified for iOS.
