@@ -122,7 +122,16 @@
           "source": "ADDITION",
           "about": "send with Future.timeout."
         }
-      ]
+      ],
+      "imports": {
+        "mc_wrapper_handler": [
+          "package:either_option/either_option",
+          "package:ksmastercontrollerwrapperdart/ksmastercontrollerwrapperdart"
+        ],
+        "*": [
+          "package:ksmastercontrollerwrapperdart/ksmastercontrollerwrapperdart"
+        ]
+      }
     }
   },
   "rules": [

@@ -1,7 +1,6 @@
 // ADDITION (not from the apps): never wait for a reply without a limit. send() is a Future, so Future.timeout does it.
 // Not compiled here.
 import 'dart:async';
-import 'package:source file';
 
 Future<EventT?> sendWithTimeout(McWrapperHandler handler, EventT event, {Duration limit = const Duration(seconds: 30)}) async {
   try {

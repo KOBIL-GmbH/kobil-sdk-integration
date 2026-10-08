@@ -19,7 +19,17 @@ def get(platform, topic=None):
         raise ValueError('topic must be one of: ' + ', '.join(sorted({s['topic'] for s in entry['samples']})))
     return {'platform': key, 'language': entry['language'], 'verified': entry['verified'], 'intro': index['intro'],
             'rules': index['rules'], 'completion_handler': index['completion_handler'],
-            'samples': [{**s, 'code': (ROOT / 'code_samples' / (s['file'] + EXTENSIONS[entry['language']])).read_text()} for s in samples]}
+            'samples': [{**s, 'code': _imports(entry, s) + (ROOT / 'code_samples' / (s['file'] + EXTENSIONS[entry['language']])).read_text()}
+                        for s in samples]}
+
+
+def _imports(entry, sample):
+    """Import lines of a Dart sample are kept in the index without the file extension and put on top here."""
+    spec = entry.get('imports')
+    if not spec:
+        return ''
+    names = spec.get(sample['file'].split('/')[-1]) or spec.get('*') or []
+    return ''.join("import '%source file';\n" % n for n in names) + ('\n' if names else '')
 
 
 def _norm(name):

@@ -1,7 +1,6 @@
 // Source: Flutter app, splash view (_triggerStartEvent / _handleStartResult), trimmed; the reply of send() is an
 // showActivation, showLogin and handleStartErrorCase are the app's own screens (not SDK calls).
 // Either: left = the call failed, right = the result event. Continue by sdkState. Not compiled here.
-import 'package:source file';
 
 Future<void> triggerStartEvent(McWrapperHandler handler, EventT startEvent) async {
   try {

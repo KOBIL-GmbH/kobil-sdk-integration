@@ -3,7 +3,6 @@
 // Rules from the official error-handling page: a RuntimeErrorEvent is pushed and the SDK restarts itself afterwards, so handle it
 // right away and do not wait for the result of the request that was running. Not compiled here.
 import 'dart:async';
-import 'package:source file';
 
 abstract class EventListener {
   bool isSubscribed(EventT event);
