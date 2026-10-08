@@ -1,6 +1,6 @@
 # Versioned installation and releases
 
-## Install v0.7.0
+## Install v0.7.1
 
 Requires Git, Python 3.11+ and uv. While this repository is private, Git must
 already be authenticated with an account that has access. Never put an access
@@ -9,8 +9,8 @@ token in the clone URL or MCP configuration. SDK binaries are supplied separatel
 Install each release into its own directory; do not reuse a development checkout:
 
 ```sh
-git clone --branch v0.7.0 --depth 1 https://github.com/KOBIL-GmbH/kobil-sdk-integration.git /absolute/path/kobil-sdk/releases/v0.7.0
-cd /absolute/path/kobil-sdk/releases/v0.7.0
+git clone --branch v0.7.1 --depth 1 https://github.com/KOBIL-GmbH/kobil-sdk-integration.git /absolute/path/kobil-sdk/releases/v0.7.1
+cd /absolute/path/kobil-sdk/releases/v0.7.1
 git describe --tags --exact-match
 uv sync --frozen --python 3.11
 ```
@@ -33,7 +33,7 @@ need the absolute path to the uv executable as well.
     "KOBILSDK": {
       "type": "stdio",
       "command": "/absolute/path/to/uv",
-      "args": ["run", "--frozen", "--directory", "/absolute/path/kobil-sdk/releases/v0.7.0", "kobil-sdk-mcp"],
+      "args": ["run", "--frozen", "--directory", "/absolute/path/kobil-sdk/releases/v0.7.1", "kobil-sdk-mcp"],
       "env": {
         "KOBIL_SDK_CONNECTION": "/absolute/path/private/kobil-sdk/connection.json"
       }
@@ -50,14 +50,14 @@ it must stay outside the source and release checkout, and must not follow `main`
 No account, backend URL, SDK binary or credential is included in a release.
 
 Use the skill from the **same** release:
-`/absolute/path/kobil-sdk/releases/v0.7.0/skills/kobil-sdk/SKILL.md`.
+`/absolute/path/kobil-sdk/releases/v0.7.1/skills/kobil-sdk/SKILL.md`.
 For Copilot, create a personal `~/.copilot/skills/kobil-sdk/SKILL.md` with frontmatter
 `name: kobil-sdk` and a concise integration description. Its body should instruct
 the agent to read that absolute canonical skill path and resolve references from
 there. Custom agents should point at the same canonical path. Do not copy just
 the skill folder: it also references the release's docs directory.
 
-Start KOBILSDK in the MCP server list. Verify discovery of 197 tools and call
+Start KOBILSDK in the MCP server list. Verify discovery of 198 tools and call
 `sdk_targets`. Test backend access separately with authorized read-only operations.
 A running MCP does not prove native activation or login passed.
 
@@ -101,6 +101,22 @@ tag or artifact. SDK binary versions are independent of this integration version
 5. Install from GitHub into a new directory and verify it independently of the
    development tree before migrating consumers. Keep backend-specific evidence
    private and distinguish startup, backend and app-runtime verification.
+
+## v0.7.1 migration notes
+
+Field additions only, no behavior change for existing callers: `sdk_backend_status`
+adds `hosts`, `idp_realm_base` and `tls_check_hosts` (hostnames and the realm base
+URL of the selected connection, never credentials); `sdk_native_preflight` adds
+`warnings` and a per-binding `theme_warning` (plain kobil-lite/keycloak theme on a
+trusted-WebView client) and the policy names the kobil-mobile themed clients as the
+recommended WebView pair. `sdk_onboarding_prepare` returns
+`connection_already_configured` instead of writing a credential request when a
+connection is selected; the MCP startup hook no longer writes
+`.kobil-sdk/credential-request.txt` into a bound project. Login knowledge covers
+OfflineLogin 802000007 (signature key unreadable after a simulator Face ID
+enrollment reset). IDE adapters: one bundle per project (`scripts/ide_setup.py`),
+Xcode imports the folder through its Plug-ins pane only and keeps its own copies;
+never patch `project.pbxproj` by hand while Xcode has the project open.
 
 ## v0.7.0 migration notes
 

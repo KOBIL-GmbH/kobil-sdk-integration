@@ -1,6 +1,20 @@
 # Changelog
 
-## Unreleased — onboarding gate
+## 0.7.1 — 2026-10-08
+
+Xcode plug-in round (project-bound adapter, Xcode 27, iOS 27 simulator, akinci): an agent with only the plug-in built, activated, logged in and proved SignedJWT (SDK + issuer log) on a fresh SwiftUI app; the friction it hit became the fixes below. Tool count 198 (`sdk_runtime_info` is the one addition since 0.7.0). `sdk_backend_status` and `sdk_native_preflight` gained fields only.
+
+### IDE adapters (Xcode plug-in measured 2026-10-08)
+
+- Add an automated Xcode package acceptance runner that executes generated manifests, verifies runtime/knowledge identity and writes machine-readable results without claiming Xcode host qualification.
+- Add read-only `sdk_runtime_info` with package version and source/knowledge fingerprints for detecting stale IDE registrations.
+
+- Add project-bound IDE adapter preparation for native VS Code/Xcode plugins and Android Studio Streamable HTTP, with paired skill/reference documentation and explicit development or full-commit release selection.
+- Add authenticated loopback HTTP using the MCP library, private token-file validation, Host/Origin checks and foreground process ownership. Require MCP library 1.30 or newer.
+- Replace generic connection setup failures with redacted diagnostic categories while preserving modern and legacy profile fields.
+- Add adapter preservation, real-process isolation, HTTP lifecycle/port collision and authentication regression tests. Actual IDE agent/build qualification remains pending.
+
+### Onboarding and backend binding
 
 - `sdk_backend_status` returns `hosts` (ast, idp, services), `idp_realm_base` and `tls_check_hosts` from the selected connection (hostnames and the realm base URL only, no credentials). Measured 2026-10-08: without them an agent guessed `/realms/<tenant>` (404) and could not run `sdk_tls_chain_check` for the AST host. SKILL.md step 2 names the authorization endpoint `<idp_realm_base>/protocol/openid-connect/auth`.
 - login knowledge: OfflineLogin 802000007 "Failed to read signature key" with the measured simulator cause (LocalAuthentication -7, Face ID enrollment reset after an Xcode/simulator restart; re-enable enrollment, no re-activation needed). Guidance guard asserts it.
@@ -10,28 +24,18 @@
 - `sdk_onboarding_prepare` and the MCP startup hook return/skip with `connection_already_configured` when `KOBIL_SDK_CONNECTION` points to an existing file; previously a credential request was written into every bound project and an Xcode agent asked for credentials it already had (measured 2026-10-08, Xcode plug-in 0.7.0 dev).
 - SKILL.md start-here step 0: `sdk_runtime_info` + `sdk_backend_status` before anything else; onboarding only on `CONNECTION_NOT_SELECTED`; stop when the bound project differs from the open project.
 
-## Unreleased — TLS trust-asset gate
+### TLS trust-asset gate
 
 - `sdk_tls_chain_check` now also reports, per host, the leaf hostname match (subjectAltName only), validity of the served leaf and matched asset anchors with an `expiry_warning_days` window (default 14), and a simplified desktop path check that follows the KOBIL `trusted_certs.pem` procedure (the file alone must reach a self-signed root). New per-host `problems`/`warnings` and statuses `hostname_mismatch`, `expired`, `path_invalid`; mobile anchor coverage (`missing_anchors`) is unchanged and still stricter than a desktop client. Existing result fields are kept.
 - `sdk_tls_chain_check(platform="ios"|"android")`: iOS (default) keeps the strict anchor rule; Android lets the desktop path decide and reports the strict gap as a warning (shared native OpenSSL validator per source review, not device-verified). Checked against the GettingStarted configurations: 33 of 34 reported gaps were Android-lenient cases.
 - iOS: a missing self-signed variant of a device-tested cross-signed top (currently only `Root YR` signed by ISRG Root X1) is a warning instead of `missing_anchors`; an iPhone (iOS 26.7.1) and a simulator (iOS 27.0) loaded a real page with only ISRG Root X1 in the PEM, an X2-only PEM was still rejected (`reason=1`). Every other top, such as the akinci Root X2, keeps the strict rule. Not verified in the SDK's native validator or for other iOS versions.
 - Tests: fixture leaf carries a subjectAltName and validity is relative to the real clock; new cases for hostname, wildcard, expiry, intermediate-only/leaf-only/CA-copy assets, forged signatures, malformed PEM, concatenated DER and the live fetch path against a loopback TLS server.
 
-## Unreleased — knowledge interrogation tests
+### Knowledge interrogation tests
 
 - Expand blind questions to 46 scenarios with evaluator-only semantic criteria and reader-only comprehension/retrieval packets. Add answer-bound review validation and knowledge-discovery regressions.
 - Inject uncertain IDP write failures to verify no retry and tighten minimal-call write counts.
 - Add mixed-log correlation regressions; reject ambiguous SignedJWT evidence, report per-attempt outcomes, and avoid inferring a specific cause from generic CSR or exchange errors.
-
-## Unreleased
-
-- Add an automated Xcode package acceptance runner that executes generated manifests, verifies runtime/knowledge identity and writes machine-readable results without claiming Xcode host qualification.
-- Add read-only `sdk_runtime_info` with package version and source/knowledge fingerprints for detecting stale IDE registrations.
-
-- Add project-bound IDE adapter preparation for native VS Code/Xcode plugins and Android Studio Streamable HTTP, with paired skill/reference documentation and explicit development or full-commit release selection.
-- Add authenticated loopback HTTP using the MCP library, private token-file validation, Host/Origin checks and foreground process ownership. Require MCP library 1.30 or newer.
-- Replace generic connection setup failures with redacted diagnostic categories while preserving modern and legacy profile fields.
-- Add adapter preservation, real-process isolation, HTTP lifecycle/port collision and authentication regression tests. Actual IDE agent/build qualification remains pending.
 
 ## 0.7.0 — 2026-10-05
 
