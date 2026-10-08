@@ -1,6 +1,6 @@
 ---
 name: kobil-sdk
-description: Integrate KOBIL SDK features into existing or fresh Kotlin Android, Swift iOS and Flutter/Dart apps on Android and iOS, using separately supplied SDKs and optional customer-selected provider modules.
+description: Build a new app with the KOBIL SDK ("build me an app with MCSDK") or integrate KOBIL SDK features into existing or fresh Kotlin Android, Swift iOS and Flutter/Dart apps on Android and iOS, using separately supplied SDKs and optional customer-selected provider modules.
 ---
 
 # KOBIL SDK integration
@@ -16,6 +16,9 @@ Load the standard-journey tools once with a single ToolSearch
 `sdk_tms_result`, `sdk_tms_cancel`. Then follow this order; every later section
 of this skill refines a step, none replaces it.
 
+00. "Build me an app with the KOBIL SDK" (or any similar short request): call `sdk_build_app_brief` first. It returns
+   the complete task for this project with the exact tools and parameters, the gates and the rules; follow it without
+   asking, and ask the owner only for what its `needs_input` lists.
 0. Binding first: `sdk_runtime_info` (which runtime and which project this MCP is
    bound to) and `sdk_backend_status`. `configured: true` means the installation is
    already onboarded: use that connection, never call `sdk_onboarding_prepare`,
@@ -536,3 +539,14 @@ Required parameters only; the tool schema lists the optional ones. Agents lost t
 - `sdk_ios_signing_preflight(app_path, expected_team_id)` (no simulator mode: it checks a signed device build)
 - `sdk_ios_project_integrate(project_path, target_name, frameworks_dir)`
 - `sdk_log_markers(decrypted_log_path)` (a decrypted log file, not the encrypted ks*.log)
+
+## Look and feel
+
+Call `sdk_theme_get` before building any screen. It returns the theme in force as plain words and tables (colour roles with
+light and dark values, shapes, type scale, movement, components, screens in words, what to avoid) and says where it comes from:
+the owner's own theme or the bundled KOBIL default. The owner's own theme replaces the default: they give you the text and you
+store it with `sdk_theme_set` (scope `project` or `user`), or they put it in `.kobil-sdk/theme.md`; `sdk_theme_reset` removes it.
+The owner's own design always wins over any default. Build the screens from the roles, with the native controls of the platform
+(iOS, Android or Flutter) and keep the values in one place of the app. Check every screen in light and dark before calling it
+done. Detail pages: [look-and-feel.md](references/look-and-feel.md), [design-system.md](references/design-system.md),
+[reference-app-design.md](references/reference-app-design.md). There is no code template to copy.

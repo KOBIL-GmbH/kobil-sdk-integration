@@ -202,6 +202,61 @@ def sdk_ios_project_integrate(project_path: str, target_name: str, frameworks_di
 
 
 @mcp.tool()
+def sdk_build_app_brief(sdk_delivery_folder: str | None = None, platform: str = 'ios') -> dict:
+    """Start here when asked to "build me an app with the KOBIL SDK": the complete, verified task for this project.
+
+    Returns the decisions (environment, hosts, Xcode target, team, clients, policies), the ordered steps with the
+    exact tools and parameters, the six gates, the rules, the files to keep, a ready-to-use prompt and needs_input.
+    Ask the owner only for what needs_input lists (at most the SDK delivery folder, or the access delivery); take
+    everything else from this result and follow it without asking. Verified for iOS; for Android follow the skill.
+    """
+    from .app_brief import build
+    try:
+        status = sdk_backend_status()
+    except Exception:
+        status = None
+    return build(platform, status=status, delivery_folder=sdk_delivery_folder)
+
+
+@mcp.prompt(name='build_app', description='Build a complete KOBIL SDK app in the current project (iOS)')
+def build_app(sdk_delivery_folder: str | None = None) -> str:
+    return sdk_build_app_brief(sdk_delivery_folder)['prompt']
+
+
+@mcp.tool()
+def sdk_theme_get() -> dict:
+    """The look and feel to build the app with: a plain-language theme (colours, shapes, type, components, screens).
+
+    Returns the theme in force and where it comes from: the owner's own theme (project or user level, or a file named by
+    KOBIL_SDK_THEME) or the bundled KOBIL default. Build every screen from its roles and keep the values in one place of the
+    app. The owner's own design always wins. how_to_replace says how the owner swaps in a different theme.
+    """
+    from . import theme
+    got = theme.load()
+    return {'source': got['source'], 'sections': theme.sections(got['text']), 'text': got['text'],
+            'how_to_replace': theme.HOW_TO_REPLACE}
+
+
+@mcp.tool()
+def sdk_theme_set(theme_markdown: str, scope: str = 'project') -> dict:
+    """Replace the theme with the owner's own: plain Markdown, no code, at most 24000 characters, no credentials.
+
+    scope "project" stores it with this project (.kobil-sdk/theme.md), scope "user" for every project of this user. Start
+    from the text of sdk_theme_get and change the values; keep the headings and tables so that agents find them by role.
+    Call this only when the owner gave you the new theme or asked for the change.
+    """
+    from . import theme
+    return theme.save(theme_markdown, scope)
+
+
+@mcp.tool()
+def sdk_theme_reset(scope: str = 'project') -> dict:
+    """Remove the owner's theme of this scope, so the next level (user, then the KOBIL default) applies again."""
+    from . import theme
+    return theme.reset(scope)
+
+
+@mcp.tool()
 def sdk_sftp_list(relative_path: str = '.') -> dict:
     """List customer SDK deliveries via configured SFTP. Read-only, no credentials in arguments.
 
