@@ -2,7 +2,6 @@
 
 ## 0.9.0 — 2026-10-08
 
-- `sdk_code_samples(platform, topic)`: basic code for sending a request and continuing from its reply, pushed events, error handling and waiting with a timeout. Swift and Kotlin from the GettingStarted apps, Dart from the Flutter app; Swift is compiled against the delivered frameworks in the tests.
 
 The short request and the look.
 
@@ -10,6 +9,16 @@ The short request and the look.
 - New tools `sdk_theme_get`, `sdk_theme_set`, `sdk_theme_reset`: the look and feel as plain words and tables (colour roles with light and dark values, shapes, type scale, movement, components, screens, what to avoid). The owner's own theme replaces the bundled default at project or user level, or through a file named by `KOBIL_SDK_THEME`; text that looks like a credential is refused. The skill and the iOS, Android and Flutter guides describe the look in words; there is no code template.
 - iOS guidance: the Start result (and every request event's result) returns through the completion handler of `receive(_:withCompletionHandler:)`; passing `nil` loses it and anything that waits forever hangs. Skill, knowledge and handoff say so, name the log symptom and require a timeout on every wait for an SDK event (found when an Xcode agent's `RunAllTests` ran for more than eight minutes).
 - `sdk_ios_project_integrate` and the app brief find the Xcode project, target and team in the project folder.
+
+Code samples, event rules and the IDP overview.
+
+- New tool `sdk_code_samples(platform, topic)` (ios, android, flutter; topics adapter, start, errors, events, timeout, debug, webview): the GettingStarted code (Swift, Kotlin) and the Flutter app code, trimmed to the SDK calls, for sending a request and continuing from its reply, pushed events, error handling, waiting with a timeout, console output from every callback and the trusted WebView request. The Swift samples are compiled against the delivered frameworks in the tests; Kotlin and Dart are taken from the apps and not compiled here. Additions that are not from the GettingStarted are marked ADDITION.
+- New tool `sdk_event_result(event)`: the result event of each of the 138 events an app sends to the SDK (from the API reference) and whether the completion handler may be nil. `nil` is allowed only for events whose result is none or Acknowledge; every event with a result event needs a handler. The skill says to look up each event before writing the call.
+- Trusted WebView request from the GettingStarted: GetAstClientData, authorisation URL with PKCE challenge, headers `X-KOBIL-ASTCLIENTDATA` and `X-KOBIL-ASTCLIENTID`, load the URLRequest (a bare URL gives a blank page). Compiled Swift sample plus a debug delegate that prints every WebView callback (blocked URL, load error, HTTP status) and the WebView log listener to the console.
+- New tool `sdk_idp_flow_overview`: reads every client with its own browser flow and classifies it by official name or by its steps (`kssidp`, `bddk` (deprecated, KobilMobile* style clients are copies of it) or other), role, login theme, registered redirect URI, a ready authorisation URL template and the headers the request must carry. Endpoints come from the realm's own OpenID configuration document (`source: well-known`, otherwise `derived` and flagged as not confirmed). Read-only; it lists, it never selects or provisions.
+- `sdk_native_preflight` returns per client the addresses the server accepts (authorisation endpoint, registered redirect URI, URL template, required request headers).
+- Fixed: `idp_realm_base` of `sdk_backend_status` now includes `/auth` (`<host>/auth/realms/<realm>`); without it the realm path answered 404 and the WebView stayed blank.
+- Skill: when the completion handler may be nil, debug output on the console, the trusted WebView request, the IDP overview, and the explicit note that the `VersionInfo` duplicate-class warning is to be ignored.
 
 ## 0.8.0 — 2026-10-08
 

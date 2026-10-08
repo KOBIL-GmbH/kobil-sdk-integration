@@ -57,7 +57,7 @@ the agent to read that absolute canonical skill path and resolve references from
 there. Custom agents should point at the same canonical path. Do not copy just
 the skill folder: it also references the release's docs directory.
 
-Start KOBILSDK in the MCP server list. Verify discovery of 204 tools and call
+Start KOBILSDK in the MCP server list. Verify discovery of 207 tools and call
 `sdk_targets`. Test backend access separately with authorized read-only operations.
 A running MCP does not prove native activation or login passed.
 
