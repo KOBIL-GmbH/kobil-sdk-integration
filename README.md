@@ -1,4 +1,6 @@
 # KOBIL SDK Integration
+<!-- mcp-name: io.github.KOBIL-GmbH/kobil-sdk-integration -->
+
 
 A single-purpose skill and MCP for integrating KOBIL SDK features into existing
 or fresh apps. SDK binaries are provided separately by the customer or an

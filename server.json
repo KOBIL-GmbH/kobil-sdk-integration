@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.KOBIL-GmbH/kobil-sdk-integration",
+  "description": "KOBIL mobile SDK integration for AI coding agents: version-pinned guidance, preflights and read-only/guarded IDP and AST administration for native iOS/Android and Flutter apps.",
+  "repository": {
+    "url": "https://github.com/KOBIL-GmbH/kobil-sdk-integration",
+    "source": "github"
+  },
+  "version": "0.7.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "kobil-sdk-integration",
+      "version": "0.7.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "KOBIL_SDK_CONNECTION",
+          "description": "Path to a local connection JSON/age selector for the KOBIL IDP/AST environment (no credentials inside; optional, planning tools work without it).",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "KOBIL_SDK_PROJECT",
+          "description": "Absolute path of the app project this server is bound to (optional).",
+          "isRequired": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

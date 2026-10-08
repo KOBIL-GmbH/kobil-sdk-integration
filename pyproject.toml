@@ -6,8 +6,12 @@ build-backend = "setuptools.build_meta"
 name = "kobil-sdk-integration"
 version = "0.7.1"
 description = "Modular KOBIL SDK integration planning for native and Flutter apps"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["mcp>=1.30,<2", "httpx>=0.27,<1", "keyring>=25,<26", "cryptography>=43,<51", "paramiko>=3.5,<5"]
+
+[project.urls]
+Repository = "https://github.com/KOBIL-GmbH/kobil-sdk-integration"
 
 [project.scripts]
 kobil-sdk-credentials = "kobil_sdk_integration.credential_cli:main"

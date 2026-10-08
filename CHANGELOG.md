@@ -2,7 +2,7 @@
 
 ## 0.7.1 — 2026-10-08
 
-Xcode plug-in round (project-bound adapter, Xcode 27, iOS 27 simulator, akinci): an agent with only the plug-in built, activated, logged in and proved SignedJWT (SDK + issuer log) on a fresh SwiftUI app; the friction it hit became the fixes below. Tool count 198 (`sdk_runtime_info` is the one addition since 0.7.0). `sdk_backend_status` and `sdk_native_preflight` gained fields only.
+Xcode plug-in round (project-bound adapter, Xcode 27, iOS 27 simulator, akinci): an agent driving Xcode through its MCP bridge with only the project-bound KOBILSDK server and the skill built a fresh SwiftUI app, activated, logged in, proved SignedJWT (SDK log + issuer log), ran ordinary TMS accept/reject and an encrypted log export; the friction it hit became the fixes below. Physical-device (iPhone) repetition and the Xcode-chat variant are not part of this qualification. Tool count 198 (`sdk_runtime_info` is the one addition since 0.7.0). `sdk_backend_status` and `sdk_native_preflight` gained fields only.
 
 ### IDE adapters (Xcode plug-in measured 2026-10-08)
 
