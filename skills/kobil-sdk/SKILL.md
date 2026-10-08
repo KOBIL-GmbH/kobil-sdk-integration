@@ -110,6 +110,12 @@ For native Android/iOS select exactly one path:
 
 - KSTrustedWebView for a login journey inside the trusted WebView. Select its
   deployment clients explicitly; do not substitute the native KSSIDP clients.
+  Prefer the realm's kobil-mobile themed copies where they exist
+  (`KobilMobileEnrollment` / `KobilMobileLogin`); the BDDK clients carry the
+  plain kobil-lite theme and render a desktop-styled page inside the app.
+  `sdk_native_preflight` reports `warnings` and per-binding `theme_warning`
+  for a plain theme; treat a warning as a presentation defect to fix before
+  the first activation, not as a blocker.
 - KSSIDP: activation **BDDKEnrollment**, login **BDDKLogin**,
   **useTokenBasedLogin=true**, **astServerBackend=maverick**, login header
   **X-KOBIL-ASTUSERID** containing the selected user ID.

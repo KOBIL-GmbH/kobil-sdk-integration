@@ -9,7 +9,8 @@ POLICY = {
                "use_token_based_login": True, "ast_server_backend": "maverick",
                "login_header": "X-KOBIL-ASTUSERID"},
     "kstrustedwebview": {
-        "client_selection": "Preserve the project's explicitly selected enrollment/login clients, including themed copies. BDDK client names are examples for this path, not defaults.",
+        "recommended_clients": {"activation_client": "KobilMobileEnrollment", "login_client": "KobilMobileLogin"},
+        "client_selection": "Preserve the project's explicitly selected enrollment/login clients, including themed copies. On a realm that offers themed mobile copies (login_theme kobil-mobile, e.g. KobilMobileEnrollment/KobilMobileLogin) use them; the BDDK clients carry the plain kobil-lite theme and are NOT defaults for the WebView path (measured 2026-10-08: an agent that took BDDK* showed the desktop-styled login page in the app).",
         "theme_selection": "Inspect each selected client's login_theme and browser-flow binding; do not change shared flows or realm theme. An absent client override does not establish the effective realm theme.",
     },
     "forbidden_flow": "SuperApp Login V2",
@@ -17,9 +18,22 @@ POLICY = {
 }
 
 
+PLAIN_THEMES = {"kobil-lite", "keycloak", "base"}
+
+
+def theme_warning(path, client_id, theme):
+    """Plain desktop themes in a WebView path are a presentation defect, not a blocker."""
+    if path == "kstrustedwebview" and theme in PLAIN_THEMES:
+        rec = POLICY["kstrustedwebview"]["recommended_clients"]
+        return (f"{client_id}: login_theme {theme} is the plain desktop theme; the mobile WebView should use a "
+                f"kobil-mobile themed client ({rec['activation_client']}/{rec['login_client']} where the realm offers them).")
+    return None
+
+
 def preflight(api, path, activation_client, login_client, use_token_based_login,
               ast_server_backend, login_header):
     errors = []
+    warnings = []
     if use_token_based_login is not True:
         errors.append("useTokenBasedLogin must be true; false skips IAM setup and can cause CannotAcquireTokenData(50).")
     if ast_server_backend != "maverick":
@@ -51,8 +65,12 @@ def preflight(api, path, activation_client, login_client, use_token_based_login,
         flow = api.call("GET", "/authentication/flows/" + segment(flow_id))
         alias = flow.get("alias") if isinstance(flow, dict) else None
         attributes = client.get("attributes") or {}
+        warning = theme_warning(path, client_id, attributes.get("login_theme"))
+        if warning:
+            warnings.append(warning)
         bindings.append({"role": role, "client_id": client_id, "flow_alias": alias,
                          "login_theme_override": attributes.get("login_theme"),
+                         "theme_warning": warning,
                          "theme_source": "client_override" if attributes.get("login_theme") else "realm_default_not_checked",
                          "redirect_uris": client.get("redirectUris", [])})
         if not alias or "superapp" in alias.casefold():
@@ -60,7 +78,7 @@ def preflight(api, path, activation_client, login_client, use_token_based_login,
         if path == "kssidp" and alias != {"activation": "BDDK Enrollment", "login": "BDDK Login"}[role]:
             errors.append(f"{role}: unexpected BDDK flow binding; do not proceed.")
     return {"status": "blocked" if errors else "configuration_checked", "errors": errors,
-            "bindings": bindings, "runtime_verified": False,
+            "warnings": warnings, "bindings": bindings, "runtime_verified": False,
             "limits": "Checks client availability and flow bindings, not every authenticator configuration, PIN policy or live app behavior. TLS trust anchors and certificate-chain coverage are not verified here; derive them from the chains actually negotiated by the mobile TLS clients. WebView uses KSTrustedWebView; verify its selected journey separately."}
 
 

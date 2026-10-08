@@ -63,3 +63,38 @@ class NativePolicyTests(unittest.TestCase):
         for binding in result['bindings']:
             self.assertIsNone(binding['login_theme_override'])
             self.assertEqual(binding['theme_source'],'realm_default_not_checked')
+
+class ThemeWarningTests(unittest.TestCase):
+    """2026-10-08 Xcode run: BDDK* clients carry the plain kobil-lite theme; the themed copies exist."""
+    def make(self, theme):
+        class API2(API):
+            def call(self, method, path, params=None):
+                result=super().call(method,path,params)
+                if path=='/clients' and theme is not None:
+                    result[0]['attributes']={'login_theme':theme}
+                return result
+        return API2(alias='Customer Trusted WebView')
+    def run_webview(self, theme, **changes):
+        args=dict(path='kstrustedwebview',activation_client='BDDKEnrollment',login_client='BDDKLogin',
+                  use_token_based_login=True,ast_server_backend='maverick',login_header='X-KOBIL-ASTUSERID')
+        args.update(changes)
+        return preflight(self.make(theme),**args)
+    def test_plain_theme_is_reported_as_warning_not_block(self):
+        r=self.run_webview('kobil-lite')
+        self.assertEqual(r['status'],'configuration_checked')
+        self.assertTrue(any('kobil-lite' in w and 'kobil-mobile' in w for w in r['warnings']))
+        self.assertTrue(all(b['theme_warning'] for b in r['bindings']))
+    def test_mobile_theme_has_no_warning(self):
+        r=self.run_webview('kobil-mobile')
+        self.assertEqual(r['warnings'],[])
+        self.assertTrue(all(b['theme_warning'] is None for b in r['bindings']))
+    def test_webview_policy_recommends_the_themed_copies(self):
+        from kobil_sdk_integration.native_policy import POLICY
+        rec=POLICY['kstrustedwebview']['recommended_clients']
+        self.assertEqual((rec['activation_client'],rec['login_client']),('KobilMobileEnrollment','KobilMobileLogin'))
+        self.assertIn('kobil-lite',POLICY['kstrustedwebview']['client_selection'])
+    def test_native_kssidp_path_has_no_theme_warning(self):
+        api=self.make('kobil-lite'); api.alias=None
+        r=preflight(api,path='kssidp',activation_client='BDDKEnrollment',login_client='BDDKLogin',
+                    use_token_based_login=True,ast_server_backend='maverick',login_header='X-KOBIL-ASTUSERID')
+        self.assertEqual(r['status'],'configuration_checked'); self.assertEqual(r['warnings'],[])
