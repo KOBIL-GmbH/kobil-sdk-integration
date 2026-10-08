@@ -6,6 +6,7 @@ self-signed and cross-signed by Root X1.
 """
 import datetime
 from pathlib import Path
+import os
 import tempfile
 import unittest
 
@@ -579,3 +580,24 @@ class LiveFetchTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TrustAssetErrorTests(unittest.TestCase):
+    """The agent must learn from the message why the trust asset failed and what to pass."""
+
+    def test_missing_file_says_it_does_not_exist_and_what_is_expected(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaises(ValueError) as caught:
+                load_trust_asset(os.path.join(folder, 'roots.pem'))
+        text = str(caught.exception)
+        self.assertIn('does not exist', text)
+        self.assertIn('roots.pem', text)
+        self.assertNotIn(folder, text)
+        self.assertIn('PEM', text)
+
+    def test_directory_is_named_as_such(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            with self.assertRaisesRegex(ValueError, 'directory'):
+                load_trust_asset(folder)

@@ -6,6 +6,7 @@ Embedding and performance.
 
 - New tool `sdk_ios_project_integrate`: links and embeds the four iOS XCFrameworks (code sign on copy) in an Xcode app target, writes the bridging header, limits the app target to iPhone and iPad and can add Info.plist privacy strings; idempotent, read back from the project file. Adapted from a colleague's branch (project editor only). Tested on a copy of a fresh Xcode 27 project: build for the iOS 27 simulator succeeded, all four frameworks are in the app bundle, the app starts.
 - `sdk_artifact_info` accepts `.xcframework` folders (slices, file count, size, tree hash) instead of refusing them.
+- Sentry errors from the first in-Xcode chat fixed at the cause: `sdk_artifact_info` takes `.xcframework` folders; the skill lists the exact required parameters of the first calls (guarded by a test against the tool schemas); trust asset errors say whether the file is missing, a directory or unreadable. Argument validation errors now show only the names of missing or unexpected fields in Sentry and the usage log (tag `invalid_fields`), never values.
 - Skill, handoff and knowledge describe the embed step, the launch crash without it and the harmless duplicate-class warning for `VersionInfo`.
 - Performance: named spans for child processes, backend requests and TLS chain fetches inside tool calls; `scripts/perf_bench.py` measures start, tool listing and the offline tools (p50/p95, cold vs warm, result size) against budgets in `scripts/perf_budgets.json`, with a test that runs it.
 

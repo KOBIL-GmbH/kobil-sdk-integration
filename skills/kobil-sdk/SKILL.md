@@ -521,3 +521,18 @@ other projects. This does not authorize changing shared backend security policy.
 - If the user reports a problem or an idea, or the host froze or failed, offer to send a report. Show the exact text, then call `sdk_report_problem` only after the user agrees. Category is `bug`, `hang`, `idea` or `other`.
 - For personal support the user may add an email address. It is optional; never ask for it twice and never invent one.
 - Never put credentials, activation codes, tokens or customer data into the report text. The tool redacts secret shapes, but do not rely on that.
+
+## Exact parameters of the first calls
+
+Required parameters only; the tool schema lists the optional ones. Agents lost time guessing these names
+(`host` for `hosts`, a missing `expected_environment`, a trust asset file that did not exist yet).
+
+- `sdk_app_get(expected_environment, app_name)`
+- `sdk_app_versions(expected_environment, app_name)`
+- `sdk_tls_chain_check(hosts, trust_asset_path)` (`hosts` is a list; `trust_asset_path` must be an existing PEM bundle, `platform` is optional)
+- `sdk_artifact_info(path)` (a file, or a `.xcframework` folder)
+- `sdk_config_write(expected_environment, certificate_paths, output_path)`
+- `sdk_deployment_preflight(mc_config_path, expected_mtls)`
+- `sdk_ios_signing_preflight(app_path, expected_team_id)` (no simulator mode: it checks a signed device build)
+- `sdk_ios_project_integrate(project_path, target_name, frameworks_dir)`
+- `sdk_log_markers(decrypted_log_path)` (a decrypted log file, not the encrypted ks*.log)

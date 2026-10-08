@@ -152,3 +152,18 @@ class GuidanceTests(unittest.TestCase):
     def test_native_handoff_has_the_step(self):
         text = (self.ROOT / 'skills' / 'kobil-sdk' / 'references' / 'native-integration.md').read_text()
         self.assertIn('sdk_ios_project_integrate', text)
+
+
+class ParameterTableTests(unittest.TestCase):
+    """The skill lists the required parameters of the tools an agent calls first; the list must match the schemas."""
+
+    def test_listed_required_parameters_match_the_real_schemas(self):
+        import asyncio
+        text = (Path(__file__).resolve().parent.parent / 'skills' / 'kobil-sdk' / 'SKILL.md').read_text()
+        section = text.split('## Exact parameters of the first calls', 1)[1].split('\n## ', 1)[0]
+        listed = dict(re.findall(r'^- `(\w+)\(([^)]*)\)`', section, re.M))
+        self.assertGreaterEqual(len(listed), 8)
+        tools = {t.name: t for t in asyncio.run(server.mcp.list_tools())}
+        for name, params in listed.items():
+            self.assertIn(name, tools)
+            self.assertEqual(set(p.strip() for p in params.split(',')), set(tools[name].inputSchema.get('required', [])), name)

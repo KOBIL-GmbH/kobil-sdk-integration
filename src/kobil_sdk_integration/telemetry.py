@@ -121,6 +121,28 @@ def _is_feedback(event):
     return (event.get('tags') or {}).get('kobil_feedback') == '1'
 
 
+def invalid_fields(error):
+    """Field names (never values) of a pydantic argument validation error, e.g. 'missing:a,unexpected:b'."""
+    errors = getattr(error, 'errors', None)
+    if not callable(errors):
+        return None
+    try:
+        details = errors()
+    except Exception:
+        return None
+    groups = {}
+    for item in details:
+        kind = {'missing': 'missing', 'extra_forbidden': 'unexpected'}.get(item.get('type'), 'invalid')
+        loc = item.get('loc') or ()
+        name = str(loc[0]) if loc else ''
+        if name and SAFE_VALUE.match(name):
+            groups.setdefault(kind, [])
+            if name not in groups[kind]:
+                groups[kind].append(name)
+    parts = [kind + ':' + ','.join(groups[kind]) for kind in ('missing', 'unexpected', 'invalid') if groups.get(kind)]
+    return ','.join(parts) or None
+
+
 def scrub(event, hint):
     feedback = _is_feedback(event)
     kept = {key: event.get(key) for key in ('contexts', 'extra', 'message') if feedback and key in event}
@@ -134,8 +156,9 @@ def scrub(event, hint):
         crumbs['values'] = [c for c in crumbs.get('values', []) if str(c.get('category', '')).startswith('kobil.')]
     else:
         event.pop('breadcrumbs', None)
+    fields = (event.get('tags') or {}).get('invalid_fields')
     for item in (event.get('exception') or {}).get('values', []):
-        item['value'] = _message(item.get('value'))
+        item['value'] = ('invalid arguments (%s)' % fields) if fields and item.get('type') == 'ValidationError' else _message(item.get('value'))
         for frame in (item.get('stacktrace') or {}).get('frames', []):
             for key in FRAME_DROP:
                 frame.pop(key, None)
@@ -305,12 +328,16 @@ def install(mcp):
             except Exception as wrapped:
                 error = wrapped.__cause__ or wrapped
                 code = _message(str(error))
+                fields = invalid_fields(error)
                 _txn(txn, 'internal_error', error_type=type(error).__name__)
                 crumb('tool', 'call_end', tool=name, ok=False, ms=int((time.perf_counter() - began) * 1000),
-                      error_type=type(error).__name__, error_code=code if code != '[redacted]' else 'none')
+                      error_type=type(error).__name__, error_code=code if code != '[redacted]' else 'none',
+                      invalid_fields=fields or '')
                 if _sentry is not None:
                     try:
                         _sentry.set_tag('tool', name)
+                        if fields:
+                            _sentry.set_tag('invalid_fields', fields)
                         _sentry.capture_exception(error)
                     except Exception:
                         pass

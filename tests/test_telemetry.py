@@ -378,6 +378,65 @@ class SpanTests(Base):
         self.assertEqual([s['description'] for s in out['spans']], ['http_request', 'http.client'])
 
 
+class InvalidArgumentTests(Base):
+    def validation_error(self):
+        import pydantic
+
+        class Args(pydantic.BaseModel):
+            model_config = pydantic.ConfigDict(extra='forbid')
+            expected_environment: str
+            app_name: str
+
+        try:
+            Args(app_name='x', host='secret-value')
+        except pydantic.ValidationError as error:
+            return error
+
+    def test_field_names_of_a_validation_error_are_extracted_without_values(self):
+        text = telemetry.invalid_fields(self.validation_error())
+        self.assertEqual(text, 'missing:expected_environment,unexpected:host')
+        self.assertNotIn('secret-value', text)
+
+    def test_unsafe_field_names_are_dropped(self):
+        import pydantic
+
+        class Args(pydantic.BaseModel):
+            model_config = pydantic.ConfigDict(extra='forbid')
+
+        try:
+            Args(**{'pass word=hunter2': 1, 'ok_name': 2})
+        except pydantic.ValidationError as error:
+            self.assertEqual(telemetry.invalid_fields(error), 'unexpected:ok_name')
+
+    def test_other_errors_have_no_invalid_fields(self):
+        self.assertIsNone(telemetry.invalid_fields(ValueError('x')))
+
+    def test_call_end_record_and_sentry_tag_carry_the_field_names(self):
+        mod, calls = fake_sentry()
+        error = self.validation_error()
+
+        class Manager:
+            async def call_tool(self, name, arguments, context=None, convert_result=False):
+                raise error
+
+        class Server:
+            _tool_manager = Manager()
+
+        with mock.patch.dict(sys.modules, {'sentry_sdk': mod}):
+            telemetry.init({'KOBIL_SDK_SENTRY_DSN': 'https://k@example.invalid/1'})
+            telemetry.install(Server)
+            with self.assertRaises(Exception):
+                asyncio.run(Server._tool_manager.call_tool('sdk_app_get', {'app_name': 'x', 'host': 'v'}))
+        self.assertEqual(self.usage()[-1]['data']['invalid_fields'], 'missing:expected_environment,unexpected:host')
+        self.assertIn(('invalid_fields', 'missing:expected_environment,unexpected:host'), calls['tags'])
+
+    def test_scrub_shows_the_field_names_instead_of_redacted(self):
+        event = {'exception': {'values': [{'type': 'ValidationError', 'value': '2 validation errors for Args host secret-value', 'stacktrace': {'frames': []}}]},
+                 'tags': {'invalid_fields': 'missing:expected_environment'}}
+        out = telemetry.scrub(event, {})
+        self.assertEqual(out['exception']['values'][0]['value'], 'invalid arguments (missing:expected_environment)')
+
+
 class CommitTagTests(Base):
     def test_git_sha_of_a_checkout_is_a_short_hex_string(self):
         sha = telemetry.git_sha()

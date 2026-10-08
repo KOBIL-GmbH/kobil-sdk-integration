@@ -106,8 +106,13 @@ def load_trust_asset(path):
     source = Path(path).expanduser()
     try:
         raw = source.read_bytes()
+    except FileNotFoundError:
+        raise ValueError("The trust asset file %s does not exist; pass the path of an existing PEM bundle "
+                         "(or one DER certificate) with the trusted root certificates" % source.name) from None
+    except IsADirectoryError:
+        raise ValueError("The trust asset path %s is a directory; pass the PEM bundle file itself" % source.name) from None
     except OSError:
-        raise ValueError("Cannot read the trust asset file") from None
+        raise ValueError("Cannot read the trust asset file %s (permissions or I/O error)" % source.name) from None
     if not raw:
         raise ValueError("The trust asset file is empty")
     if _PEM_MARKER in raw:
