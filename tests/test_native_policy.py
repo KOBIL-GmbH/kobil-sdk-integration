@@ -98,3 +98,38 @@ class ThemeWarningTests(unittest.TestCase):
         r=preflight(api,path='kssidp',activation_client='BDDKEnrollment',login_client='BDDKLogin',
                     use_token_based_login=True,ast_server_backend='maverick',login_header='X-KOBIL-ASTUSERID')
         self.assertEqual(r['status'],'configuration_checked'); self.assertEqual(r['warnings'],[])
+
+
+class SuitableAddressTests(unittest.TestCase):
+    """The server decides which addresses fit a client: the agent must not assemble them itself."""
+    class API2(API):
+        def call(self, method, path, params=None):
+            result = super().call(method, path, params)
+            if path == '/clients':
+                result[0]['redirectUris'] = ['https://kobil/OpenIdRedirectUri', 'https://other.example/cb']
+            return result
+
+    def run_check(self, **extra):
+        return preflight(self.API2(alias='Customer Trusted WebView'), path='kstrustedwebview', activation_client='A', login_client='L',
+                         use_token_based_login=True, ast_server_backend='maverick', login_header='X-KOBIL-ASTUSERID', **extra)
+
+    def test_binding_carries_authorization_endpoint_and_registered_redirect(self):
+        r = self.run_check(realm_base='https://idp.example.test/auth/realms/superapp')
+        for b in r['bindings']:
+            self.assertEqual(b['authorization_endpoint'], 'https://idp.example.test/auth/realms/superapp/protocol/openid-connect/auth')
+            self.assertEqual(b['redirect_uri'], 'https://kobil/OpenIdRedirectUri')
+            self.assertIn('client_id=' + b['client_id'], b['authorization_url_template'])
+            self.assertIn('redirect_uri=https%3A%2F%2Fkobil%2FOpenIdRedirectUri', b['authorization_url_template'])
+            self.assertTrue(b['authorization_url_template'].endswith('state=<random state>'))
+
+    def test_without_realm_base_nothing_is_invented(self):
+        for b in self.run_check()['bindings']:
+            self.assertNotIn('authorization_endpoint', b)
+
+    def test_client_without_redirect_uri_gets_no_redirect(self):
+        r = preflight(API(alias='Customer Trusted WebView'), path='kstrustedwebview', activation_client='A', login_client='L',
+                      use_token_based_login=True, ast_server_backend='maverick', login_header='X-KOBIL-ASTUSERID',
+                      realm_base='https://idp.example.test/auth/realms/superapp')
+        for b in r['bindings']:
+            self.assertIsNone(b['redirect_uri'])
+            self.assertNotIn('authorization_url_template', b)

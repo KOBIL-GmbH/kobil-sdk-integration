@@ -1,7 +1,8 @@
 """Read-only native integration preflight; never substitutes or provisions flows."""
 from typing import Literal
 from .idp_admin import Admin
-from .backend import segment
+from urllib.parse import urlencode
+from .backend import segment, realm_base_url
 
 POLICY = {
     "paths": ["kstrustedwebview", "kssidp"],
@@ -30,8 +31,25 @@ def theme_warning(path, client_id, theme):
     return None
 
 
+def suitable_addresses(realm_base, client_id, redirect_uris):
+    """The addresses the server accepts for this client, so the app does not assemble them itself.
+
+    The authorization endpoint is the realm base plus /protocol/openid-connect/auth; the redirect URI must be one the
+    client has registered (the first one is returned). Nothing is invented when the realm base or a redirect is missing.
+    """
+    redirect = next((u for u in (redirect_uris or []) if isinstance(u, str) and u and '*' not in u), None)
+    out = {"redirect_uri": redirect}
+    if realm_base:
+        endpoint = realm_base.rstrip("/") + "/protocol/openid-connect/auth"
+        out["authorization_endpoint"] = endpoint
+        if redirect:
+            query = urlencode({"client_id": client_id, "redirect_uri": redirect, "response_type": "code", "scope": "openid"})
+            out["authorization_url_template"] = endpoint + "?" + query + "&state=<random state>"
+    return out
+
+
 def preflight(api, path, activation_client, login_client, use_token_based_login,
-              ast_server_backend, login_header):
+              ast_server_backend, login_header, realm_base=None):
     errors = []
     warnings = []
     if use_token_based_login is not True:
@@ -73,6 +91,7 @@ def preflight(api, path, activation_client, login_client, use_token_based_login,
                          "theme_warning": warning,
                          "theme_source": "client_override" if attributes.get("login_theme") else "realm_default_not_checked",
                          "redirect_uris": client.get("redirectUris", [])})
+        bindings[-1].update(suitable_addresses(realm_base, client_id, client.get("redirectUris")))
         if not alias or "superapp" in alias.casefold():
             errors.append(f"{role}: missing or SuperApp flow is incompatible with this native integration.")
         if path == "kssidp" and alias != {"activation": "BDDK Enrollment", "login": "BDDK Login"}[role]:
@@ -95,14 +114,17 @@ def register(mcp):
         maverick and X-KOBIL-ASTUSERID. WebView means KSTrustedWebView with
         explicitly selected deployment clients, including user-selected themed copies.
         Preserve those selections instead of defaulting to the BDDK examples.
-        Returns client theme overrides and redirect URIs for review; an absent
+        Returns for each client the addresses the server accepts (authorization_endpoint, registered redirect_uri,
+        authorization_url_template), client theme overrides and redirect URIs for review; an absent
         override means the realm default is not checked. Reject missing/substituted clients
         and SuperApp bindings. Never mutate flows to make a preflight pass.
         Configuration checked is NOT live acceptance; backend/auth failures propagate.
         """
         with Admin(expected_environment, realm) as api:
+            admin = api.cfg.get("admin") or {}
+            base = realm_base_url(admin["idp_url"], api.realm) if admin.get("idp_url") else None
             result = preflight(api, path, activation_client, login_client,
-                               use_token_based_login, ast_server_backend, login_header)
+                               use_token_based_login, ast_server_backend, login_header, realm_base=base)
         return {**result, "platform": platform, "path": path, "policy": POLICY,
                 "required_followup_checks": ["sdk_deployment_preflight", "sdk_tls_chain_check"] +
                     (["sdk_ios_signing_preflight"] if platform == "ios" else []),

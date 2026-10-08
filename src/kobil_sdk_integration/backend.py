@@ -316,3 +316,12 @@ class AST:
                 'isCheckIntegrity': check_integrity}
         self.request('POST', '/versions', body)
         return {'app_name': app_name, 'platform': platform, 'version': version, 'created': True}
+
+
+def realm_base_url(idp_url, realm):
+    """The Keycloak realm base of an IDP URL: <host>/auth/realms/<realm> (the prefix the admin client and token call use)."""
+    base = idp_url.rstrip('/')
+    suffix = '/realms/' + realm
+    if base.endswith(suffix):
+        return base
+    return (base if base.endswith('/auth') else base + '/auth') + suffix

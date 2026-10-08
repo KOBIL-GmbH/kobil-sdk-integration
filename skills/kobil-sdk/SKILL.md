@@ -579,3 +579,10 @@ Enable/DisableServerTracing, EnableOpenCensusTracing, Configuration. Their outco
 Source: the "Result Event" column of the API reference, checked against every send of the GettingStarted Swift app. When
 unsure, pass a handler; it is never wrong. **Look up every event you send with `sdk_event_result(event)` before writing the call**
 (it gives the result event and whether nil is allowed; without a name it returns the whole table of 138 events).
+
+## Addresses for the trusted WebView
+
+Do not assemble the authorization address yourself. `sdk_native_preflight` returns for each client (activation and login)
+the address the server accepts: `authorization_endpoint` (`<host>/auth/realms/<realm>/protocol/openid-connect/auth`, note
+the `/auth`), the registered `redirect_uri` and a ready `authorization_url_template` (replace `<random state>`). `sdk_backend_status`
+gives the same realm base as `idp_realm_base`. A 404 on a path without `/auth` is the wrong path, not a backend outage.
