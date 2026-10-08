@@ -55,6 +55,16 @@ class CodeSamplesTest(unittest.TestCase):
         skill = (Path(__file__).parent.parent / 'skills' / 'kobil-sdk' / 'SKILL.md').read_text()
         self.assertIn('When the completion handler may be nil', skill)
 
+    def test_event_result_lookup(self):
+        self.assertEqual(code_samples.event_result('KSMStartEvent')['completion_handler'], 'handler_required')
+        self.assertEqual(code_samples.event_result('Start')['result_event'], 'StartResult')
+        self.assertEqual(code_samples.event_result('startTransactionEvent')['completion_handler'], 'nil_allowed')
+        self.assertEqual(code_samples.event_result('ProvidePIN')['completion_handler'], 'nil_allowed')
+        self.assertGreater(len(code_samples.event_result()['events']), 100)
+        with self.assertRaises(ValueError):
+            code_samples.event_result('Warning')
+        self.assertIn('sdk_event_result', {t.name for t in asyncio.run(server.mcp.list_tools())})
+
     def test_reply_rule_and_restart_rule_are_stated(self):
         rules = ' '.join(code_samples.get('ios')['rules'])
         self.assertIn('Start', code_samples.get('ios')['completion_handler']['handler_required_examples'])

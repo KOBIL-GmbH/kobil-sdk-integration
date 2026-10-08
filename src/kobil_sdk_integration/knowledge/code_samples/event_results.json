@@ -1,0 +1,558 @@
+{
+ "about": "Every event the app sends to the SDK (UI->MC) with its result event, from the API reference column \"Result Event\". Look the event up here before you send it: result none or Acknowledge -> nil completion handler is allowed and the outcome arrives as pushed events at the delegate; any other result event -> pass a completion handler. When unsure pass a handler.",
+ "events": {
+  "Activate": {
+   "result_event": "LoginResult if auto-login is requested. Otherwise, ActivationResult",
+   "completion_handler": "handler_required"
+  },
+  "ActivateWithToken": {
+   "result_event": "LoginResult if auto-login is requested. Otherwise, ActivationResult",
+   "completion_handler": "handler_required"
+  },
+  "AddGroupParticipants": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "AddUser": {
+   "result_event": "LoginResult if auto-login is requested. Otherwise, AddUserResult",
+   "completion_handler": "handler_required"
+  },
+  "AddUserWithToken": {
+   "result_event": "LoginResult if auto-login is requested. Otherwise, AddUserResult",
+   "completion_handler": "handler_required"
+  },
+  "AutocompleteSmartScreenServicesEvent": {
+   "result_event": "AutocompleteSmartScreenServicesResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "Cancel": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ClearIamTokenCache": {
+   "result_event": "ClearIamTokenCacheResult",
+   "completion_handler": "handler_required"
+  },
+  "Configuration": {
+   "result_event": "Acknowledge",
+   "completion_handler": "nil_allowed"
+  },
+  "ConfigureRestEndpointEvent": {
+   "result_event": "Acknowledge",
+   "completion_handler": "nil_allowed"
+  },
+  "CreateAnonymousUser": {
+   "result_event": "CreateAnonymousUserResult",
+   "completion_handler": "handler_required"
+  },
+  "CreateGroup": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "CreateHttpCommonRequest": {
+   "result_event": "CreateHttpRequestResult",
+   "completion_handler": "handler_required"
+  },
+  "DeRegisterForConversation": {
+   "result_event": "Acknowledge",
+   "completion_handler": "nil_allowed"
+  },
+  "DeRegisterForMessages": {
+   "result_event": "Acknowledge",
+   "completion_handler": "nil_allowed"
+  },
+  "DecryptDataEvent": {
+   "result_event": "DecryptDataResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "DeleteFile": {
+   "result_event": "DeleteFileResult",
+   "completion_handler": "handler_required"
+  },
+  "DeleteGroup": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "DeleteIamTokenByAudience": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "DeleteUser": {
+   "result_event": "DeleteUserResult",
+   "completion_handler": "handler_required"
+  },
+  "DisableServerTracing": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "DisplayConfirmation": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "EnableAtcResynchronizationDuringNextLogin": {
+   "result_event": "Acknowledge",
+   "completion_handler": "nil_allowed"
+  },
+  "EnableOpenCensusTracing": {
+   "result_event": "Acknowledge",
+   "completion_handler": "nil_allowed"
+  },
+  "EnableServerTracing": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "EnrollAnonymousUser": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "ExchangeIamToken": {
+   "result_event": "ExchangeIamTokenResult",
+   "completion_handler": "handler_required"
+  },
+  "ExecuteUpdate": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "GenerateOtp": {
+   "result_event": "GenerateOtpResult",
+   "completion_handler": "handler_required"
+  },
+  "GenerateSecureSequence": {
+   "result_event": "GenerateSecureSequenceResult",
+   "completion_handler": "handler_required"
+  },
+  "GetAstClientData": {
+   "result_event": "GetAstClientDataResult",
+   "completion_handler": "handler_required"
+  },
+  "GetContactById": {
+   "result_event": "GetContactByIdResult",
+   "completion_handler": "handler_required"
+  },
+  "GetContactList": {
+   "result_event": "GetContactListResult",
+   "completion_handler": "handler_required"
+  },
+  "GetContactListFiltered": {
+   "result_event": "GetContactListFilteredResult",
+   "completion_handler": "handler_required"
+  },
+  "GetContactsForConversationId": {
+   "result_event": "GetContactsForConversationIdResult",
+   "completion_handler": "handler_required"
+  },
+  "GetContactsForListId": {
+   "result_event": "GetContactsForListIdResult",
+   "completion_handler": "handler_required"
+  },
+  "GetConversation": {
+   "result_event": "GetConversationResult",
+   "completion_handler": "handler_required"
+  },
+  "GetConversationList": {
+   "result_event": "GetConversationListResult",
+   "completion_handler": "handler_required"
+  },
+  "GetConversationListEntry": {
+   "result_event": "GetConversationListEntryResult",
+   "completion_handler": "handler_required"
+  },
+  "GetDataEntry": {
+   "result_event": "GetDataEntryResult",
+   "completion_handler": "handler_required"
+  },
+  "GetDataModelCryptoKey": {
+   "result_event": "GetDataModelCryptoKeyResult",
+   "completion_handler": "handler_required"
+  },
+  "GetDeviceInformation": {
+   "result_event": "GetDeviceInformationResult",
+   "completion_handler": "handler_required"
+  },
+  "GetFile": {
+   "result_event": "GetFileResult",
+   "completion_handler": "handler_required"
+  },
+  "GetIAMAccessToken": {
+   "result_event": "GetIAMAccessTokenResult",
+   "completion_handler": "handler_required"
+  },
+  "GetIamAccessTokenClaims": {
+   "result_event": "GetIamAccessTokenClaimsResult",
+   "completion_handler": "handler_required"
+  },
+  "GetIamAuthorizationCode": {
+   "result_event": "GetIamAuthorizationCodeResult",
+   "completion_handler": "handler_required"
+  },
+  "GetInformation": {
+   "result_event": "GetInformationResult",
+   "completion_handler": "handler_required"
+  },
+  "GetInternalSettingProperty": {
+   "result_event": "GetInternalSettingPropertyResult",
+   "completion_handler": "handler_required"
+  },
+  "GetListDetailsForConversationId": {
+   "result_event": "GetListDetailsForConversationIdResult",
+   "completion_handler": "handler_required"
+  },
+  "GetListDetailsForListId": {
+   "result_event": "GetListDetailsForListIdResult",
+   "completion_handler": "handler_required"
+  },
+  "GetLoggedInUser": {
+   "result_event": "GetLoggedInUserResult",
+   "completion_handler": "handler_required"
+  },
+  "GetMedia": {
+   "result_event": "GetMediaResult",
+   "completion_handler": "handler_required"
+  },
+  "GetMediaMetaDataForConversation": {
+   "result_event": "GetMediaMetaDataForConversationResult",
+   "completion_handler": "handler_required"
+  },
+  "GetMessages": {
+   "result_event": "GetMessagesResult",
+   "completion_handler": "handler_required"
+  },
+  "GetMessagesByCategory": {
+   "result_event": "GetMessagesByCategoryResult",
+   "completion_handler": "handler_required"
+  },
+  "GetMessagesByTag": {
+   "result_event": "GetMessagesByTagResult",
+   "completion_handler": "handler_required"
+  },
+  "GetMutedEntries": {
+   "result_event": "GetMutedEntriesResult",
+   "completion_handler": "handler_required"
+  },
+  "GetP2PList": {
+   "result_event": "GetP2PListResult",
+   "completion_handler": "handler_required"
+  },
+  "GetP2PListEntry": {
+   "result_event": "GetP2PListEntryResult",
+   "completion_handler": "handler_required"
+  },
+  "GetProperty": {
+   "result_event": "GetPropertyResult",
+   "completion_handler": "handler_required"
+  },
+  "GetResynchronizationData": {
+   "result_event": "GetResynchronizationDataResult",
+   "completion_handler": "handler_required"
+  },
+  "GetSmartScreenBanners": {
+   "result_event": "GetSmartScreenBannersResult",
+   "completion_handler": "handler_required"
+  },
+  "GetSmartScreenMediaEvent": {
+   "result_event": "GetSmartScreenMediaResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "GetSmartScreenSectionContentEvent": {
+   "result_event": "GetSmartScreenSectionContentResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "GetSmartScreenSectionEvent": {
+   "result_event": "GetSmartScreenSectionResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "GetSmartScreenSectionsEvent": {
+   "result_event": "GetSmartScreenSectionsResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "GetSmartScreenServiceEvent": {
+   "result_event": "GetSmartScreenServiceResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "GetSmartScreenServices": {
+   "result_event": "GetSmartScreenServicesResult",
+   "completion_handler": "handler_required"
+  },
+  "GetSsmsUserList": {
+   "result_event": "GetSsmsUserListResult",
+   "completion_handler": "handler_required"
+  },
+  "GetStateEvent": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "GetUnreadResponses": {
+   "result_event": "GetUnreadResponsesResult",
+   "completion_handler": "handler_required"
+  },
+  "GetUpdateInformation": {
+   "result_event": "UpdateInformation",
+   "completion_handler": "handler_required"
+  },
+  "GetUserDataEntry": {
+   "result_event": "GetUserDataEntryResult",
+   "completion_handler": "handler_required"
+  },
+  "InitiateTransactionEvent": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "InitiatedTransactionDataSendEvent": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "IsChatInitialised": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "Login": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "LoginWithToken": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "MessageRead": {
+   "result_event": "MessageReadResult",
+   "completion_handler": "handler_required"
+  },
+  "MuteAll": {
+   "result_event": "MuteUnmuteResult",
+   "completion_handler": "handler_required"
+  },
+  "MuteCategory": {
+   "result_event": "MuteUnmuteResult",
+   "completion_handler": "handler_required"
+  },
+  "MuteConversation": {
+   "result_event": "MuteUnmuteResult",
+   "completion_handler": "handler_required"
+  },
+  "MuteUser": {
+   "result_event": "MuteUnmuteResult",
+   "completion_handler": "handler_required"
+  },
+  "OfflineLogin": {
+   "result_event": "OfflineLoginResult",
+   "completion_handler": "handler_required"
+  },
+  "OpenInfoUrl": {
+   "result_event": "OpenInfoUrlResult",
+   "completion_handler": "handler_required"
+  },
+  "ProvideActivationCodeAndUserId": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideActivationCodeAndUserIdForAddUser": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideActivationCodeAndUserIdForReactivation": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideNonce": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "ProvidePIN": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideSetNewPIN": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideSetPIN": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideSetPINForAddUser": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideSetPINForReactivation": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideSetUserIdToDelete": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideToken": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideTokenAndUserId": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProvideTokenAndUserIdForAddUser": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "ProviderSearchSmartScreenServicesEvent": {
+   "result_event": "ProviderSearchSmartScreenServicesResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "Reactivation": {
+   "result_event": "LoginResult if auto-login is requested. Otherwise, ReactivationResult",
+   "completion_handler": "handler_required"
+  },
+  "RegisterForEvents": {
+   "result_event": "RegisterForEventsResult",
+   "completion_handler": "handler_required"
+  },
+  "RemoveGroupParticipants": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "RequestLicenses": {
+   "result_event": "RequestLicensesResult",
+   "completion_handler": "handler_required"
+  },
+  "RequestToken": {
+   "result_event": "RequestTokenResult",
+   "completion_handler": "handler_required"
+  },
+  "ResponseRead": {
+   "result_event": "ResponseReadResult",
+   "completion_handler": "handler_required"
+  },
+  "Restart": {
+   "result_event": "RestartResult",
+   "completion_handler": "handler_required"
+  },
+  "SearchSmartScreenServicesEvent": {
+   "result_event": "SearchSmartScreenServicesResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "SendMessage": {
+   "result_event": "SendMessageResult",
+   "completion_handler": "handler_required"
+  },
+  "SendResponse": {
+   "result_event": "SendResponseResult",
+   "completion_handler": "handler_required"
+  },
+  "SetAuthorisationCode": {
+   "result_event": "SetAuthorisationCodeResult",
+   "completion_handler": "handler_required"
+  },
+  "SetDataEntry": {
+   "result_event": "SetDataEntryResult",
+   "completion_handler": "handler_required"
+  },
+  "SetDeviceName": {
+   "result_event": "SetDeviceNameResult",
+   "completion_handler": "handler_required"
+  },
+  "SetExportOfMediaEvent": {
+   "result_event": "SetExportOfMediaResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "SetFile": {
+   "result_event": "SetFileResult",
+   "completion_handler": "handler_required"
+  },
+  "SetGroupParticipantsRole": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "SetInternalSettingProperty": {
+   "result_event": "SetInternalSettingPropertyResult",
+   "completion_handler": "handler_required"
+  },
+  "SetLocales": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "SetProperty": {
+   "result_event": "SetPropertyResult",
+   "completion_handler": "handler_required"
+  },
+  "SetPushToken": {
+   "result_event": "SetPushTokenResult",
+   "completion_handler": "handler_required"
+  },
+  "SetUserDataEntry": {
+   "result_event": "SetUserDataEntryResult",
+   "completion_handler": "handler_required"
+  },
+  "SignData": {
+   "result_event": "SignDataResult",
+   "completion_handler": "handler_required"
+  },
+  "Start": {
+   "result_event": "StartResult",
+   "completion_handler": "handler_required"
+  },
+  "StartAddUser": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "StartChangePIN": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "StartDeleteUser": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "StartDisplayMessage": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "StartReactivation": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "StartTransaction": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "SwitchWorkspace": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "UnmuteAll": {
+   "result_event": "MuteUnmuteResult",
+   "completion_handler": "handler_required"
+  },
+  "UnmuteCategory": {
+   "result_event": "MuteUnmuteResult",
+   "completion_handler": "handler_required"
+  },
+  "UnmuteCoversation": {
+   "result_event": "MuteUnmuteResult",
+   "completion_handler": "handler_required"
+  },
+  "UnmuteUser": {
+   "result_event": "MuteUnmuteResult",
+   "completion_handler": "handler_required"
+  },
+  "Update": {
+   "result_event": "none",
+   "completion_handler": "nil_allowed"
+  },
+  "UpdateGroup": {
+   "result_event": "StatusResult",
+   "completion_handler": "handler_required"
+  },
+  "UpdateSmartScreenLocalDataEvent": {
+   "result_event": "UpdateSmartScreenLocalDataResultEvent",
+   "completion_handler": "handler_required"
+  },
+  "UploadMedia": {
+   "result_event": "UploadMediaResult",
+   "completion_handler": "handler_required"
+  },
+  "VerifyPushContent": {
+   "result_event": "VerifyPushContentResult",
+   "completion_handler": "handler_required"
+  }
+ },
+ "note": "Some events the table lists with result none are sent by the GettingStarted with a handler anyway (Login, Provide...ActivationCode...); a handler is never wrong. Events not in this table (pushed SDK->UI events) are not sent by the app."
+}

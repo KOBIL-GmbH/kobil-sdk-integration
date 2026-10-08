@@ -236,6 +236,19 @@ def sdk_code_samples(platform: str, topic: str | None = None) -> dict:
 
 
 @mcp.tool()
+def sdk_event_result(event: str | None = None) -> dict:
+    """Look up an event the app sends to the SDK: its result event and whether the completion handler may be nil.
+
+    Check EVERY event here before you send it. Result none or Acknowledge: nil is allowed, the outcome arrives as pushed
+    events at the delegate. Any other result event (StartResult, LoginResult, ...): pass a completion handler, the result
+    comes only through it. Names work with or without KSM prefix and Event suffix. Without a name you get the whole table
+    (from the API reference column "Result Event").
+    """
+    from . import code_samples
+    return code_samples.event_result(event)
+
+
+@mcp.tool()
 def sdk_theme_get() -> dict:
     """The look and feel to build the app with: a plain-language theme (colours, shapes, type, components, screens).
 

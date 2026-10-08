@@ -577,4 +577,5 @@ whose result is *none* or *Acknowledge*: Cancel, DisplayConfirmation, StartTrans
 ProvideSetNewPIN, ProvideSetPIN, StartChangePIN, StartAddUser, StartReactivation, StartDeleteUser, GetStateEvent,
 Enable/DisableServerTracing, EnableOpenCensusTracing, Configuration. Their outcome arrives as pushed events at your delegate.
 Source: the "Result Event" column of the API reference, checked against every send of the GettingStarted Swift app. When
-unsure, pass a handler; it is never wrong. `sdk_code_samples` has the lists (`completion_handler`).
+unsure, pass a handler; it is never wrong. **Look up every event you send with `sdk_event_result(event)` before writing the call**
+(it gives the result event and whether nil is allowed; without a name it returns the whole table of 138 events).

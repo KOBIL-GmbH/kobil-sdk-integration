@@ -164,6 +164,7 @@
       "EnableOpenCensusTracing (Acknowledge)",
       "Configuration (Acknowledge)"
     ],
-    "note": "The GettingStarted still passes a handler for a few events the table lists as none (for example Login and Provide...ActivationCode...); a handler is never wrong."
+    "note": "The GettingStarted still passes a handler for a few events the table lists as none (for example Login and Provide...ActivationCode...); a handler is never wrong.",
+    "lookup": "sdk_event_result(event) gives the result event of every event the app sends and whether nil is allowed; check each event there."
   }
 }
