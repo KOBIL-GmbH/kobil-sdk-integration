@@ -307,3 +307,14 @@ Still validate scheme/host/effective port/path/state in the callback handler.
 Test that the initial authorization URL with its encoded redirect_uri does NOT
 match the external rule, while the actual callback does; reject lookalike hosts
 and callback paths. Observe a rendered page, not only successful TLS.
+
+## iOS: the Start result arrives in the completion handler (verified 2026-10-08)
+
+Observed in a unit test of an Xcode agent run: the code sent `KSMStartEventEx` with `withCompletionHandler: nil` and resumed its
+continuation only in the consumer's `receive(_:withCompletionHandler:)`. The SDK log showed `Set Result ... StartResult(47) ...
+status=Ok`, `returnedFuture gots event 47`, then `send event(KSMStartActivationUserIdAndCodeOnlyEvent) to (<consumer>)` and
+no further log line: the StartResult was handed to the (nil) completion handler, not to the consumer, so `RunAllTests` ran for more than
+eight minutes. With `withCompletionHandler: { reply in ... }` feeding the same dispatch as the consumer events, the earlier
+simulator run passed all six gates. A fresh install answers Start with `sdk_state=ActivationRequired`, which is the expected result.
+The harmless warning `Class VersionInfo is implemented in both kssidp.framework and KSMasterController.framework` also appears in
+the test log. Give each XCTest an explicit timeout so a lost event fails the test instead of blocking the run.

@@ -6,6 +6,7 @@ The short request and the look.
 
 - New tool `sdk_build_app_brief` and MCP prompt `build_app`: "build me an app with the KOBIL SDK" expands into the complete verified task for the bound project (decisions, ordered tools with their exact parameters, six gates, rules, a ready prompt). Facts come from the server (environment and TLS hosts, Xcode target and team, SDK delivery); it asks the owner only for what it cannot find, and remembers the SDK delivery folder after the first answer. Verified for iOS.
 - New tools `sdk_theme_get`, `sdk_theme_set`, `sdk_theme_reset`: the look and feel as plain words and tables (colour roles with light and dark values, shapes, type scale, movement, components, screens, what to avoid). The owner's own theme replaces the bundled default at project or user level, or through a file named by `KOBIL_SDK_THEME`; text that looks like a credential is refused. The skill and the iOS, Android and Flutter guides describe the look in words; there is no code template.
+- iOS guidance: the Start result (and every request event's result) returns through the completion handler of `receive(_:withCompletionHandler:)`; passing `nil` loses it and anything that waits forever hangs. Skill, knowledge and handoff say so, name the log symptom and require a timeout on every wait for an SDK event (found when an Xcode agent's `RunAllTests` ran for more than eight minutes).
 - `sdk_ios_project_integrate` and the app brief find the Xcode project, target and team in the project folder.
 
 ## 0.8.0 — 2026-10-08

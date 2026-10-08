@@ -61,6 +61,12 @@ of this skill refines a step, none replaces it.
    kssidp.framework and KSMasterController.framework is a known harmless duplicate-class
    warning.
 4. Start: register listeners, Start the SDK, observe the Start result event.
+   iOS Swift: the result of a request event (Start, GetSdkState, login, TMS) returns through the completion handler of
+   `controller.receive(event, withCompletionHandler: { reply in ... })`; with `withCompletionHandler: nil` (never pass nil) the
+   `KSMStartResultEvent` is lost and anything that waits for it, a continuation or a test, waits forever. Feed the reply of the
+   handler and the events the consumer's `receive` gets into one dispatch function. Every wait on an SDK event, in the app and in
+   tests, needs a timeout (for example 30 seconds) that fails with a message. Symptom of the trap: the SDK log shows
+   `StartResult ... status=Ok` and the next event, then no further log line and the test never ends.
 5. For iOS KSTrustedWebView 9.7, pass PEM file bytes unchanged to
    `certsDataForValidation`, not DER. Prove a read-only page loads before
    consuming activation codes; TLS asset coverage is not runtime acceptance.
