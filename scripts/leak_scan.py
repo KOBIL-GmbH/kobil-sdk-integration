@@ -18,7 +18,7 @@ from collections import defaultdict
 
 ALLOWED_IDENTITY = ('KOBIL SDK Contributors', 'contributors@example.invalid', 'GitHub', 'noreply@github.com')
 EMAIL = re.compile(r'[\w.+-]+@[\w-]+(?:\.[\w-]+)+')
-EMAIL_OK = re.compile(r'(example\.(?:com|org|invalid)|backend\.example|noreply)')
+EMAIL_OK = re.compile(r'(example\.(?:com|org|invalid)|\.example\b|\.test\b|\.invalid\b|noreply)')
 # Native, server or Flutter/Dart source files; public SDK headers (.h) are API, not source.
 SRC = re.compile(r'[A-Za-z0-9_./-]+\.(?:cc|cpp|cxx|hpp|java|mm|dart)(?::\d+(?:-\d+)?)?\b')
 # Swift/Kotlin files may only be cited from the GettingStarted samples.
