@@ -384,7 +384,11 @@ def _connection_hosts(cfg):
     if admin.get('idp_url') and admin.get('realm'):
         base = admin['idp_url'].rstrip('/')
         suffix = '/realms/' + admin['realm']
-        realm_base = base if base.endswith(suffix) else base + suffix
+        if base.endswith(suffix):
+            realm_base = base
+        else:
+            # Keycloak serves the realm under /auth (the admin client and the token call use the same prefix).
+            realm_base = (base if base.endswith('/auth') else base + '/auth') + suffix
     hosts = sorted({h for h in [ast, idp, *services.values()] if h})
     return {'hosts': {'ast': ast, 'idp': idp, 'services': services},
             'idp_realm_base': realm_base, 'tls_check_hosts': hosts,

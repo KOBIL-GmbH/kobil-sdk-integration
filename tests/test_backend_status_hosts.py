@@ -42,3 +42,13 @@ class BackendStatusHostsTests(unittest.TestCase):
                   'admin': {'idp_url': 'https://idp.example.test/auth/realms/t', 'realm': 't',
                             'client_id': 'c', 'username': 'u', 'password_env': 'FIXTURE_ADMIN'}})
         self.assertEqual(sdk_backend_status()['idp_realm_base'], 'https://idp.example.test/auth/realms/t')
+
+    def test_realm_base_has_auth_prefix_when_idp_url_is_a_bare_host(self):
+        # Measured 2026-10-08: an agent built https://host/realms/<realm> (404); the Keycloak path is /auth/realms/<realm>,
+        # the same prefix the admin client and the token call use.
+        for idp_url in ('https://idp.example.test', 'https://idp.example.test/', 'https://idp.example.test/auth/',
+                        'https://idp.example.test/auth/realms/superapp/'):
+            self.use({'environment': 'e', 'tenant': 't', 'ast_url': 'https://ast.example.test', 'token_env': 'FIXTURE_TOKEN',
+                      'admin': {'idp_url': idp_url, 'realm': 'superapp', 'client_id': 'c', 'username': 'u',
+                                'password_env': 'FIXTURE_ADMIN'}})
+            self.assertEqual(sdk_backend_status()['idp_realm_base'], 'https://idp.example.test/auth/realms/superapp', idp_url)
