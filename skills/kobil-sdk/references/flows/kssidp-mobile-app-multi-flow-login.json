@@ -1,0 +1,98 @@
+{
+  "alias": "KSSIDP Mobile App Multi Flow Login",
+  "description": "KSSIDP Mobile App Login Flow ",
+  "providerId": "basic-flow",
+  "topFlowOldAlias": "KSSIDP Mobile App Multi Flow Login",
+  "authenticationFlows": [
+    {
+      "id": "391bac41-776f-4105-9312-20f7f81a3d0c",
+      "alias": "KSSIDP Mobile App Multi Flow Login",
+      "description": "KSSIDP Mobile App Login Flow ",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "ast-headers-to-session",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 2,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "AST Validation ID_10108313818024492",
+          "authenticator": "ast-login-authenticator",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 3,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "Check Ris ID_10108313821262893",
+          "authenticator": "kobil-risk-and-policy-evaluator",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 4,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "kobil username password config",
+          "authenticator": "kobil-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 5,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "verify-password ID_10108313821322665",
+          "authenticator": "kssidp-configure-or-verify-password",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 6,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfigs": [
+    {
+      "id": "f4a1e130-d1cb-4632-a6af-4c22e87b28f0",
+      "alias": "AST Validation ID_10108313818024492",
+      "config": {
+        "disconnect_clients": "Select a option",
+        "Action": "login",
+        "json-script": "{\n\"formId\": \"unlink-all-devices\",\n\"formDisplayTitle\": {\n\"en\": \"Unlink All Previous Devices\"\n},\n\"formDescription\": null,\n\"backButtonAction\": \"exit\",\n\"formInputs\": [\n{\n\"key\": \"titleDisplayText\",\n\"attName\": \"\",\n\"type\": \"displayText\",\n\"value\": \"\",\n\"name\": {\n\"en\": \"Unlink AlL Previous Devices\" \n}\n},\n{\n\"key\": \"msgDisplayText\",\n\"attName\": \"\",\n\"type\": \"displayText\",\n\"value\": \"\",\n\"name\": {\n\"en\": \"Confirm Unlink all your previously linked devices?\" \n}\n},\n{\n\"key\": \"confirmButton\",\n\"type\": \"button\",\n\"value\": \"outlined\",\n\"name\": {\"en\": \"\"},\n\"isClicked\":false,\n\"placeholder\": {\n\"en\": \"\"\n},\n\"attributes\": {\n\"optional\": true,\n\"actionButton\": {\n\"action\": \"submit\",\n\"text\": {\n\"en\": \"Confirm\"\n}\n}\n}\n},\n{\n\"key\": \"declineButton\",\n\"type\": \"button\",\n\"value\": \"outlined\",\n\"name\": {\"en\": \"\"},\n\"isClicked\":false,\n\"placeholder\": {\n\"en\": \"\"\n},\n\"attributes\": {\n\"optional\": true,\n\"actionButton\": {\n\"action\": \"submit\",\n\"text\": {\n\"en\": \"Decline\"\n}\n}\n}\n}\n]\n}",
+        "read_ast_data_from_session": "true",
+        "MLoA": "out-of-band"
+      }
+    },
+    {
+      "id": "c1d0c34a-f2a6-4c2c-89d7-93f7726be46b",
+      "alias": "Check Ris ID_10108313821262893",
+      "config": {}
+    },
+    {
+      "id": "40650575-431e-4527-b180-94337cddb468",
+      "alias": "kobil username password config",
+      "config": {
+        "CUSTOM_METRICS_DESCRIPTION": "KOBIL Username Password Form",
+        "json-error-script": "{\"userAccountDisabled\":{\"errTitle\":\"UserDisabled\",\"errMsg\":\"Userhasbeendiabled\",\"helpText\":\"userisdisabled\"},\"userTemporarilyDisabled\":{\"errTitle\":\"Locked\",\"errMsg\":\"Userislocked\",\"helpText\":\"useristemporarilydisabled\"},\"invalidUserId\":{\"errTitle\":\"InvalidCredentials\",\"errMsg\":\"YouhaveeneredinvalidCreds\",\"helpText\":\"Invaliduser\"},\"invalidCredentials\":{\"errTitle\":\"invalidcreds\",\"errMsg\":\"Invalidusernameorpassword\",\"helpText\":\"Invalidusercredential\"},\"credentialsAreMissing\":{\"errTitle\":\"credentialsAreMissing\",\"errMsg\":\"Credentials Are Missing In Form Data.\",\"helpText\":\"Username And Password Both Are Missing In Form Data.\"}}",
+        "json-script": "{\"formDisplayTitle\":{\"en\":\"LogIn\"},\"formId\":\"username-password-form\",\"formDescription\":null,\"formDisplayHeader\":false,\"formActionStatus\":false,\"showPreviousInputs\":true,\"formDisplayButtons\":[{\"action\":\"submit\",\"text\":{\"en\":\"Submit\",\"de\":\"Anmeldung\"},\"isClicked\":false,\"key\":\"login\",\"includeInFormElement\":false}],\"backButtonAction\":\"\",\"proceedAction\":false,\"executeAction\":\"\",\"invalidUser\":false,\"formInputs\":[{\"key\":\"username\",\"attName\":\"\",\"type\":\"text\",\"value\":\"\",\"name\":{\"en\":\"username\",\"tr\":\"username\",\"de\":\"username\"},\"isClicked\":false,\"placeholder\":{\"en\":\"UsernameorEmail\",\"tr\":\"Username\",\"de\":\"Username\"},\"error\":{\"title\":null,\"errorCode\":\"\",\"errorMessage\":null,\"buttons\":[]},\"attributes\":{\"minLength\":0,\"maxLength\":0,\"regex\":\"\",\"allowedChars\":\"\",\"optional\":false,\"mask\":\"\",\"dateFormat\":\"\",\"otpExpiry\":0,\"otpRetryTime\":0,\"smsMsgTemplate\":\"\",\"region\":\"\",\"editable\":false,\"actionButton\":null,\"resendCodeModel\":{\"resend\":false,\"resendButtonText\":null,\"resendTimerText\":null,\"timer\":0},\"saveInputs\":false,\"capitalize\":false}},{\"key\":\"password\",\"attName\":\"\",\"type\":\"password\",\"value\":\"\",\"name\":{\"en\":\"Password\",\"tr\":\"Password\",\"de\":\"Password\"},\"isClicked\":false,\"placeholder\":{\"en\":\"Password\",\"tr\":\"Password\",\"de\":\"Password\"},\"error\":{\"title\":null,\"errorCode\":\"\",\"errorMessage\":null,\"buttons\":[]},\"attributes\":{\"minLength\":0,\"maxLength\":0,\"regex\":\"\",\"allowedChars\":\"\",\"optional\":false,\"mask\":\"\",\"dateFormat\":\"\",\"otpExpiry\":0,\"otpRetryTime\":0,\"smsMsgTemplate\":\"\",\"region\":\"\",\"editable\":false,\"actionButton\":null,\"resendCodeModel\":{\"resend\":false,\"resendButtonText\":null,\"resendTimerText\":null,\"timer\":0},\"saveInputs\":false,\"capitalize\":false}}]}",
+        "attr_time_unit": "Seconds",
+        "CUSTOM_METRICS_NAME": "kobil_username_password_form"
+      }
+    },
+    {
+      "id": "7a6be725-2c92-4514-a373-67874fee0693",
+      "alias": "verify-password ID_10108313821322665",
+      "config": {
+        "ForceResetTemporaryPwdConfig": "Without Password Verification"
+      }
+    }
+  ]
+}

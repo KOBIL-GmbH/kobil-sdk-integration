@@ -34,7 +34,7 @@ history are included.
 ## Install a fixed release
 
 Use [versioned installation](docs/releases.md) for a fixed MCP and skill version.
-The current release is **v0.3.3**. Upgrades are explicit; do not deploy from `main`.
+The current release is **v0.4.0**. Upgrades are explicit; do not deploy from `main`.
 
 ## Run from a development checkout
 
@@ -65,6 +65,8 @@ Tools:
 | sdk_tms_trigger | Create an authorized foreground transaction with explicit policy |
 | sdk_tms_status / sdk_tms_result | Read redacted progress and final-result metadata |
 | sdk_tms_cancel | Request cancellation; final result checked separately |
+| sdk_tms_test_sequence / sdk_tms_test_sequence_status | Send a display message, a signature request and a payment one after another in the background; report each step's final status |
+| sdk_tms_scope_ensure | Add the realm "tms" client scope as optional on the login client (explicit-authentication transactions); admin block |
 
 Example `sdk_plan` arguments:
 
@@ -99,8 +101,26 @@ preconfigured. Only connect services needed for the requested capability.
 
 ## Validation
 
+The unit tests live in the source repository
+(https://github.com/KOBIL-GmbH/kobil-sdk-integration), not in the hand-over plugin folder:
+
 ```sh
 uv run python -m unittest discover -s tests -v
 ```
 
 The tests do not contact customer services or validate native SDK activation.
+The repository's `tests/test_self_contained.py` checks that the shipped skills and docs need nothing outside
+the plugin (no home-folder paths, no assistant memory, links and named skills resolve) and
+runs the MCP from a bare copy with an empty home folder.
+
+The iOS reference code is type-checked against an installed SDK release (Xcode required).
+`kobil-sdk-refcheck` also works in the plugin folder once `sdk_artifacts_install` has installed
+a release:
+
+```sh
+uv run kobil-sdk-refcheck
+# in the source repository, also: KOBIL_SDK_COMPILE_REFERENCES=1 uv run python -m unittest tests.test_self_contained
+```
+
+It compiles every activation variant with the feature folders in Swift 5 and 6, Debug and
+Release, and lists any reference file no variant compiles.

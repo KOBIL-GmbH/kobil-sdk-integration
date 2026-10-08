@@ -54,7 +54,10 @@ def write_config(certificate_paths: list[str], output_path: str, request_config)
                 raise RuntimeError("Backend did not return a signed SDK configuration JWT")
             stream.write(jwt)
         return {"path": str(output), "sha256": hashlib.sha256(jwt.encode("ascii")).hexdigest(),
-                "signature_verified": False}
+                "signature_verified": False,
+                "note": "Saved exactly as the backend issued it over TLS; this tool does not check "
+                        "the JWT signature. A successful SDK Start with this file is the first "
+                        "runtime evidence that it is usable."}
     except BaseException:
         output.unlink(missing_ok=True)
         raise

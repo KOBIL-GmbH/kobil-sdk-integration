@@ -40,3 +40,7 @@ logs/
 *.tar
 *.gz
 .DS_Store
+
+# Real plugin connection and Keychain mapping stay local; connection.example.json is the template
+config/connection.json
+config/keychain.txt

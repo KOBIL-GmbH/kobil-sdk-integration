@@ -1,0 +1,50 @@
+#!/bin/sh
+# Starts the KOBIL SDK MCP from this plugin folder. Secrets come from the login Keychain
+# entries in config/keychain.txt at every start; they are never written to a file.
+set -eu
+ROOT=$(cd "$(dirname "$0")/.." && pwd -P)
+# A host may start this without HOME; the shell still knows the user's home folder.
+[ -n "${HOME:-}" ] || HOME=$(cd ~ && pwd -P)
+export HOME
+
+# The Python environment lives outside this folder, one per folder path, so the folder never
+# holds machine-specific files: Xcode copies it, and it can be zipped again as it is.
+UV_PROJECT_ENVIRONMENT="${KOBIL_SDK_VENV:-$HOME/.kobil-sdk/venvs/$(/sbin/md5 -q -s "$ROOT")}"
+PYTHONPYCACHEPREFIX="$HOME/.kobil-sdk/pycache"
+export UV_PROJECT_ENVIRONMENT PYTHONPYCACHEPREFIX
+
+KOBIL_SDK_CONNECTION="${KOBIL_SDK_CONNECTION:-$ROOT/config/connection.json}"
+export KOBIL_SDK_CONNECTION
+
+if [ -f "$ROOT/config/keychain.txt" ]; then
+  # Absolute path: a host may start this without a usable PATH, and a bare `security` would
+  # then fail silently and every entry would look missing.
+  SECURITY=/usr/bin/security
+  [ -x "$SECURITY" ] || echo "kobil-sdk: $SECURITY not found; no Keychain secret can be read" >&2
+  while read -r NAME SERVICE ACCOUNT; do
+    case "$NAME" in ''|'#'*) continue ;; esac
+    if [ -n "${ACCOUNT:-}" ]; then
+      VALUE=$("$SECURITY" find-generic-password -s "$SERVICE" -a "$ACCOUNT" -w 2>/dev/null) || VALUE=
+    else
+      VALUE=$("$SECURITY" find-generic-password -s "$SERVICE" -w 2>/dev/null) || VALUE=
+    fi
+    if [ -n "$VALUE" ]; then
+      export "$NAME=$VALUE"
+    else
+      echo "kobil-sdk: $NAME not in the Keychain ($SERVICE); tools that need it will say so" >&2
+    fi
+  done < "$ROOT/config/keychain.txt"
+  unset VALUE
+fi
+
+# Xcode starts this without a shell PATH, so look for uv where installers put it.
+UV="${KOBIL_SDK_UV:-}"
+for CANDIDATE in "$HOME/.local/bin/uv" /opt/homebrew/bin/uv /usr/local/bin/uv "$HOME/.cargo/bin/uv"; do
+  [ -n "$UV" ] && break
+  [ -x "$CANDIDATE" ] && UV="$CANDIDATE"
+done
+[ -n "$UV" ] || UV=$(command -v uv 2>/dev/null) || {
+  echo "kobil-sdk: uv not found; install it from https://docs.astral.sh/uv/ and restart the chat" >&2
+  exit 1
+}
+exec "$UV" run --quiet --frozen --directory "$ROOT" kobil-sdk-mcp

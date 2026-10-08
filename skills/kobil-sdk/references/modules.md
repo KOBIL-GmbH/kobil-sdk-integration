@@ -33,10 +33,18 @@ The initial Updraft/TestFlight contracts cover Android/iOS respectively. Desktop
 provider coverage and broader service support require implementation and tests.
 A missing distribution adapter must not prevent unrelated SDK build work.
 
+## SDK capability gaps
+- Chat: the native iOS MCSDK has lifecycle events only, no send/receive API. See
+  [TMS: chat](tms.md#chat-is-not-in-the-ios-mcsdk). Use display messages for a
+  one-way inbox.
+- Document signing: done through an accepted TMS whose signature the backend keeps.
+  See [TMS: document signing](tms.md#document-signing).
+
 ## AST implementation status
 The bundled AST module now implements app/version ensure and signed configuration
-file delivery. See [backend setup](../../../docs/backend.md). Selected backend flows have passed live verification; customer-independent
-test-user provisioning remains pending. Read-only sdk_app_get/sdk_app_versions
+file delivery. See [backend setup](../../../docs/backend.md). Selected backend flows have passed live verification.
+Test users are provisioned with the IDP admin tools (`sdk_activation_user_ensure`,
+`sdk_activation_password_set`, `sdk_activation_code_set`), which need the optional admin block. Read-only sdk_app_get/sdk_app_versions
 expose existing registration metadata without modifying resources. Other provider modules
 remain contracts until their implementations are installed and configured.
 

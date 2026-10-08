@@ -1,0 +1,11 @@
+{
+  "name": "kobil-sdk",
+  "version": "0.4.2",
+  "description": "KOBIL SDK integration: skills, reference code and local MCP tools",
+  "mcpServers": {
+    "KOBILSDK": {
+      "command": "${extensionPath}${/}bin${/}kobil-sdk-mcp",
+      "args": []
+    }
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "alias": "KSSIDP Enrollment - Multi form flow",
+  "providerId": "basic-flow",
+  "topFlowOldAlias": "KSSIDP Enrollment - Multi form flow",
+  "authenticationFlows": [
+    {
+      "id": "14e1e95e-977c-4ed3-8f53-8e7415e0fc5d",
+      "alias": "KSSIDP Enrollment - Multi form flow",
+      "description": "",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "ast-headers-to-session",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 0,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "Activation Code Verifier Config ID_10108213112066583",
+          "authenticator": "kssidp-activation-code-verifier",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 2,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "bddk ast Reg ID_10108213115705458",
+          "authenticator": "ast-login-authenticator",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 3,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "kobil-risk-and-policy-evaluator",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 5,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "Password verification or registration with temp pwd check ID_10108213115678738",
+          "authenticator": "kssidp-configure-or-verify-password",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 6,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "Link user and clientId with MLoA as out of band ID_10108213115610650",
+          "authenticator": "ast-login-authenticator",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 8,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "group-mapping ID_10108213115764690",
+          "authenticator": "kobil-user-group-authenticator",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 9,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "kssidp-delete-activation-code",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorConfig": "test ID_10108213115786751",
+          "authenticator": "kobil-claims-authenticator",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 11,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    }
+  ],
+  "authenticatorConfigs": [
+    {
+      "id": "314e3aea-5f2e-47e3-aa86-28c9b37ba728",
+      "alias": "Activation Code Verifier Config ID_10108213112066583",
+      "config": {
+        "result_second_factor_value": "weak out-of-band"
+      }
+    },
+    {
+      "id": "67ba4c88-2788-4c8f-bd94-976ce82bea23",
+      "alias": "Link user and clientId with MLoA as out of band ID_10108213115610650",
+      "config": {
+        "Action": "link",
+        "json-script": "{\n\"formId\": \"unlink-all-devices\",\n\"formDisplayTitle\": {\n\"en\": \"Unlink All Previous Devices\"\n},\n\"formDescription\": null,\n\"backButtonAction\": \"exit\",\n\"formInputs\": [\n{\n\"key\": \"titleDisplayText\",\n\"attName\": \"\",\n\"type\": \"displayText\",\n\"value\": \"\",\n\"name\": {\n\"en\": \"Unlink AlL Previous Devices\" \n}\n},\n{\n\"key\": \"msgDisplayText\",\n\"attName\": \"\",\n\"type\": \"displayText\",\n\"value\": \"\",\n\"name\": {\n\"en\": \"Confirm Unlink all your previously linked devices?\" \n}\n},\n{\n\"key\": \"confirmButton\",\n\"type\": \"button\",\n\"value\": \"outlined\",\n\"name\": {\"en\": \"\"},\n\"isClicked\":false,\n\"placeholder\": {\n\"en\": \"\"\n},\n\"attributes\": {\n\"optional\": true,\n\"actionButton\": {\n\"action\": \"submit\",\n\"text\": {\n\"en\": \"Confirm\"\n}\n}\n}\n},\n{\n\"key\": \"declineButton\",\n\"type\": \"button\",\n\"value\": \"outlined\",\n\"name\": {\"en\": \"\"},\n\"isClicked\":false,\n\"placeholder\": {\n\"en\": \"\"\n},\n\"attributes\": {\n\"optional\": true,\n\"actionButton\": {\n\"action\": \"submit\",\n\"text\": {\n\"en\": \"Decline\"\n}\n}\n}\n}\n]\n}",
+        "read_ast_data_from_session": "true",
+        "MLoA": "out-of-band"
+      }
+    },
+    {
+      "id": "383713a3-79cd-4d2f-a361-a55ab58fdba8",
+      "alias": "Password verification or registration with temp pwd check ID_10108213115678738",
+      "config": {
+        "ForceResetTemporaryPwdConfig": "With Password Verification"
+      }
+    },
+    {
+      "id": "01e0a660-6e52-4f83-8ba6-85132898f49f",
+      "alias": "bddk ast Reg ID_10108213115705458",
+      "config": {
+        "Action": "activate",
+        "ast_clientid_required": "true",
+        "json-script": "{\n\"formId\": \"unlink-all-devices\",\n\"formDisplayTitle\": {\n\"en\": \"Unlink All Previous Devices\"\n},\n\"formDescription\": null,\n\"backButtonAction\": \"exit\",\n\"formInputs\": [\n{\n\"key\": \"titleDisplayText\",\n\"attName\": \"\",\n\"type\": \"displayText\",\n\"value\": \"\",\n\"name\": {\n\"en\": \"Unlink AlL Previous Devices\" \n}\n},\n{\n\"key\": \"msgDisplayText\",\n\"attName\": \"\",\n\"type\": \"displayText\",\n\"value\": \"\",\n\"name\": {\n\"en\": \"Confirm Unlink all your previously linked devices?\" \n}\n},\n{\n\"key\": \"confirmButton\",\n\"type\": \"button\",\n\"value\": \"outlined\",\n\"name\": {\"en\": \"\"},\n\"isClicked\":false,\n\"placeholder\": {\n\"en\": \"\"\n},\n\"attributes\": {\n\"optional\": true,\n\"actionButton\": {\n\"action\": \"submit\",\n\"text\": {\n\"en\": \"Confirm\"\n}\n}\n}\n},\n{\n\"key\": \"declineButton\",\n\"type\": \"button\",\n\"value\": \"outlined\",\n\"name\": {\"en\": \"\"},\n\"isClicked\":false,\n\"placeholder\": {\n\"en\": \"\"\n},\n\"attributes\": {\n\"optional\": true,\n\"actionButton\": {\n\"action\": \"submit\",\n\"text\": {\n\"en\": \"Decline\"\n}\n}\n}\n}\n]\n}"
+      }
+    },
+    {
+      "id": "3771e558-b99a-487c-b772-3cba06649dcb",
+      "alias": "group-mapping ID_10108213115764690",
+      "config": {
+        "user_group": "ks-users"
+      }
+    },
+    {
+      "id": "d78c85a4-bc6e-4757-b37e-2198a6da814a",
+      "alias": "test ID_10108213115786751",
+      "config": {
+        "ACR": "true",
+        "FIRST_FACTOR": "true",
+        "AMR": "true"
+      }
+    }
+  ]
+}
